@@ -1,4 +1,4 @@
-# USDC Partners Directory — Built on Base
+# USDC Partners Directory — Built on Base and for all
 
 The official-style hub for every company and tool using **USDC** (Circle’s regulated digital dollar).
 
