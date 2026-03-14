@@ -18,7 +18,7 @@ This project is my public-good contribution to the usdc ecosystem.
 
 Everyday hub for usdc merchants world wide
 
-GitHub: https://github.com/TheF
+GitHub: https://github.com/The
 Live preview coming soon via Vercel.
 
 Made with ❤️ for the Usdc ecosystem.
