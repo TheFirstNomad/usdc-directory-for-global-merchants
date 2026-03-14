@@ -16,8 +16,6 @@ This project is my public-good contribution to the Base ecosystem.
 - Base + Arc + Tempo sections  
 - Wallet connect (OnchainKit)
 
-## For Base Builders & Grants
-This repo is being actively farmed for **Base Builder Grants** + Builder Score.  
 Every commit = real activity proof.
 
 GitHub: https://github.com/TheFirstNomad/mynewdirectory  
