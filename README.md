@@ -21,4 +21,4 @@ Everyday hub for usdc merchants world wide
 GitHub: https://github.com/TheFirstNomad/mynewdirectory  
 Live preview coming soon via Vercel.
 
-Made with ❤️ for the Base ecosystem.
+Made with ❤️ for the Usdc ecosystem.
