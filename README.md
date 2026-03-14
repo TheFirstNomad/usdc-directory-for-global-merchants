@@ -16,7 +16,7 @@ This project is my public-good contribution to the Base ecosystem.
 - Base + Arc + Tempo sections  
 - Wallet connect (OnchainKit)
 
-Ever
+Eve
 
 GitHub: https://github.com/TheFirstNomad/mynewdirectory  
 Live preview coming soon via Vercel.
