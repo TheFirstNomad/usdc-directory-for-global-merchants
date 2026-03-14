@@ -6,7 +6,7 @@ The official-style hub for every company and tool using **USDC** (Circle’s reg
 This project is my public-good contribution to the Base ecosystem.
 
 ## Current Stats
-- ~$78B+ USDC in circulation  
+- ~$78.1B+ USDC in circulation  
 - Native on 30+ blockchains (including Base)  
 - $69T+ all-time transfer volume  
 
