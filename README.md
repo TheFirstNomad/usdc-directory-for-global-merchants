@@ -11,7 +11,7 @@ This project is my public-good contribution to the Base ecosystem.
 - $69T+ all-time transfer volume  
 
 ## Features (coming in next commits)
-- Live search + filters  
+- Live search + filter  
 - Partner cards with real Circle Alliance members  
 - Base + Arc + Tempo sections  
 - Wallet connect (OnchainKit)
