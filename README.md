@@ -3,7 +3,7 @@
 The hub for every company and tool using **USDC** (Circle’s regulated digital dollar).
 
 **Built for freedom* — the #1 regulated digital dollar activity.  
-This project is my public-good contribution to the Base ecosystem.
+This project is my public-good contribution to the usdc ecosystem.
 
 ## Current Stats
 - ~$78B+ USDC in circulation 
