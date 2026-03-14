@@ -14,7 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      partners: {
+        Row: {
+          categories: string[]
+          created_at: string
+          description: string
+          featured: boolean | null
+          id: string
+          logo_emoji: string | null
+          logo_url: string | null
+          name: string
+          region: string | null
+          updated_at: string
+          use_cases: string[] | null
+          website: string | null
+        }
+        Insert: {
+          categories?: string[]
+          created_at?: string
+          description: string
+          featured?: boolean | null
+          id?: string
+          logo_emoji?: string | null
+          logo_url?: string | null
+          name: string
+          region?: string | null
+          updated_at?: string
+          use_cases?: string[] | null
+          website?: string | null
+        }
+        Update: {
+          categories?: string[]
+          created_at?: string
+          description?: string
+          featured?: boolean | null
+          id?: string
+          logo_emoji?: string | null
+          logo_url?: string | null
+          name?: string
+          region?: string | null
+          updated_at?: string
+          use_cases?: string[] | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      submissions: {
+        Row: {
+          categories: string[]
+          company_name: string
+          contact_email: string
+          created_at: string
+          description: string
+          id: string
+          region: string | null
+          status: string
+          website: string
+        }
+        Insert: {
+          categories?: string[]
+          company_name: string
+          contact_email: string
+          created_at?: string
+          description: string
+          id?: string
+          region?: string | null
+          status?: string
+          website: string
+        }
+        Update: {
+          categories?: string[]
+          company_name?: string
+          contact_email?: string
+          created_at?: string
+          description?: string
+          id?: string
+          region?: string | null
+          status?: string
+          website?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
