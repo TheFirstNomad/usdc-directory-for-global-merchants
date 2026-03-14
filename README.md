@@ -13,7 +13,7 @@ This project is my public-good contribution to the Base ecosystem.
 ## Features (coming in next commits)
 - Live search + filters  
 - Partner cards with real Circle Alliance members  
-- Base + Arc + Tempo sections  
+- Base + Arc + Tempo sections coming soon  
 - Wallet connect (OnchainKit)
 
 Everyday hub for usdc merchants world wide
