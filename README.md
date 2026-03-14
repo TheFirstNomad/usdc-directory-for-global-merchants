@@ -1,6 +1,6 @@
 # USDC Partners Directory — Built on Base and for all
 
-The official-style hub for every company and tool using **USDC** (Circle’s regulated digital dollar).
+The hub for every company and tool using **USDC** (Circle’s regulated digital dollar).
 
 **Built for freedom* — the #1 regulated digital dollar activity.  
 This project is my public-good contribution to the Base ecosystem.
