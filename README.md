@@ -2,7 +2,7 @@
 
 The official-style hub for every company and tool using **USDC** (Circle’s regulated digital dollar).
 
-**Built for Base* — the #1 chain for USDC activity.  
+**Built for freedom* — the #1 chain for USDC activity.  
 This project is my public-good contribution to the Base ecosystem.
 
 ## Current Stats
