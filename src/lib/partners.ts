@@ -75,3 +75,13 @@ export const REGIONS = [
   "Middle East",
   "Emerging Markets",
 ];
+
+export const NETWORKS = [
+  "Ethereum",
+  "Base",
+  "Solana",
+  "Polygon",
+  "Arbitrum",
+  "Noble",
+  "Avalanche",
+];

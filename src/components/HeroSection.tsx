@@ -2,6 +2,7 @@ import { Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { CATEGORIES } from "@/lib/partners";
+import { useState, useRef, useMemo } from "react";
 
 const categoryEmojis: Record<string, string> = {
   Payments: "💳",
@@ -22,6 +23,7 @@ interface HeroSectionProps {
   partnerCount: number;
   onCategorySelect: (cat: string) => void;
   selectedCategories: string[];
+  partnerNames?: string[];
 }
 
 const HeroSection = ({
@@ -31,13 +33,26 @@ const HeroSection = ({
   partnerCount,
   onCategorySelect,
   selectedCategories,
+  partnerNames = [],
 }: HeroSectionProps) => {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const suggestions = useMemo(() => {
+    if (!searchQuery || searchQuery.length < 2) return [];
+    const q = searchQuery.toLowerCase();
+    const nameMatches = partnerNames
+      .filter((n) => n.toLowerCase().includes(q))
+      .slice(0, 3);
+    const catMatches = CATEGORIES.filter((c) => c.toLowerCase().includes(q)).slice(0, 2);
+    return [...new Set([...nameMatches, ...catMatches])].slice(0, 5);
+  }, [searchQuery, partnerNames]);
+
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-background via-primary/[0.04] to-background pt-16 pb-12">
-      {/* Subtle pattern overlay */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
+    <section className="relative overflow-hidden bg-gradient-to-b from-background via-primary/[0.03] to-background pt-20 pb-14">
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
         backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
-        backgroundSize: '40px 40px',
+        backgroundSize: '48px 48px',
       }} />
 
       <div className="relative z-10 max-w-3xl mx-auto text-center px-4 sm:px-6">
@@ -47,47 +62,74 @@ const HeroSection = ({
           transition={{ duration: 0.5 }}
         >
           <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 mb-6">
-            <div className="w-2 h-2 rounded-full bg-[hsl(var(--success))] animate-pulse" />
+            <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
             <span className="text-primary text-xs font-semibold tracking-wide">
               {partnerCount} Verified Partners
             </span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground mb-4 leading-tight tracking-tight">
-            Discover Global Merchants
+            The Global Directory for
             <br />
-            <span className="text-primary">Accepting USDC</span>
+            <span className="text-primary">USDC Merchants</span>
           </h1>
 
           <p className="text-muted-foreground text-base sm:text-lg mb-8 max-w-xl mx-auto leading-relaxed">
-            The trusted directory of companies and tools built on USDC — the leading
-            regulated digital dollar.
+            Find trusted companies, merchants, and tools accepting USDC — the leading
+            regulated digital dollar stablecoin.
           </p>
         </motion.div>
 
-        {/* Floating Search Bar */}
+        {/* Floating Search Bar with Autocomplete */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="bg-card rounded-2xl shadow-lg border border-border flex items-center px-4 py-2 max-w-xl mx-auto gap-2"
+          className="relative max-w-xl mx-auto"
         >
-          <Search className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-          <input
-            type="text"
-            placeholder={`Search ${partnerCount} partners by name, category, or region…`}
-            className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground text-sm py-2 focus:outline-none"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && onSearch()}
-          />
-          <Button
-            size="sm"
-            onClick={onSearch}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-5 focus:ring-2 focus:ring-ring"
-          >
-            Search
-          </Button>
+          <div className="bg-card rounded-2xl shadow-lg border border-border flex items-center px-4 py-2 gap-2">
+            <Search className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder={`Search ${partnerCount} merchants by name, category, or region…`}
+              className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground text-sm py-2 focus:outline-none"
+              value={searchQuery}
+              onChange={(e) => {
+                onSearchChange(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+              onKeyDown={(e) => e.key === "Enter" && onSearch()}
+            />
+            <Button
+              size="sm"
+              onClick={onSearch}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-5 focus:ring-2 focus:ring-ring"
+            >
+              Search
+            </Button>
+          </div>
+
+          {/* Autocomplete dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-20">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                  onMouseDown={() => {
+                    onSearchChange(s);
+                    setShowSuggestions(false);
+                  }}
+                >
+                  <Search className="inline h-3.5 w-3.5 text-muted-foreground mr-2" />
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </motion.div>
 
         {/* Category Pills */}

@@ -10,12 +10,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-const networkColors: Record<string, string> = {
-  Ethereum: "bg-[hsl(240,60%,95%)] text-[hsl(240,60%,40%)]",
-  Base: "bg-[hsl(217,80%,95%)] text-[hsl(217,80%,40%)]",
-  Solana: "bg-[hsl(280,60%,95%)] text-[hsl(280,60%,40%)]",
-};
-
 const PartnerCard = ({ partner, index }: { partner: Partner; index?: number }) => {
   return (
     <Dialog>
@@ -24,7 +18,7 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index?: number }) =
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: (index || 0) * 0.04 }}
-          className="bg-card border border-border rounded-xl overflow-hidden cursor-pointer group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 focus-within:ring-2 focus-within:ring-ring"
+          className="bg-card border border-border rounded-2xl overflow-hidden cursor-pointer group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 focus-within:ring-2 focus-within:ring-ring"
         >
           {/* Banner */}
           <div className="h-20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent relative">
@@ -35,26 +29,35 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index?: number }) =
             )}
           </div>
 
-          {/* Logo overlap */}
+          {/* Logo container */}
           <div className="px-5 -mt-7">
-            <div className="w-14 h-14 rounded-xl bg-card border-2 border-card shadow-md flex items-center justify-center text-2xl group-hover:scale-105 transition-transform">
-              {partner.logo_emoji}
+            <div className="h-14 w-14 rounded-xl bg-card border-2 border-card shadow-md flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform">
+              {partner.logo_url ? (
+                <img
+                  src={partner.logo_url}
+                  alt={`${partner.name} logo`}
+                  className="h-10 w-10 object-contain"
+                  loading="lazy"
+                />
+              ) : (
+                <span className="text-2xl">{partner.logo_emoji}</span>
+              )}
             </div>
           </div>
 
           {/* Body */}
           <div className="px-5 pt-3 pb-5">
             <div className="flex items-center gap-1.5 mb-1">
-              <h3 className="font-semibold text-card-foreground text-base leading-tight truncate">
+              <h3 className="font-bold text-card-foreground text-lg leading-tight truncate">
                 {partner.name}
               </h3>
-              <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success))] flex-shrink-0" />
+              <CheckCircle2 className="h-4 w-4 text-success flex-shrink-0" />
             </div>
             <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed mb-3">
               {partner.description}
             </p>
 
-            {/* Network / Category pills */}
+            {/* Category + Network pills */}
             <div className="flex flex-wrap gap-1.5">
               {partner.categories.slice(0, 2).map((cat) => (
                 <span
@@ -62,6 +65,14 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index?: number }) =
                   className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-tag text-tag-foreground"
                 >
                   {cat}
+                </span>
+              ))}
+              {partner.use_cases.slice(0, 1).map((uc) => (
+                <span
+                  key={uc}
+                  className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground"
+                >
+                  {uc}
                 </span>
               ))}
               {partner.categories.length > 2 && (
@@ -77,13 +88,17 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index?: number }) =
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-xl bg-tag flex items-center justify-center text-3xl">
-              {partner.logo_emoji}
+            <div className="w-14 h-14 rounded-xl bg-tag flex items-center justify-center overflow-hidden">
+              {partner.logo_url ? (
+                <img src={partner.logo_url} alt={`${partner.name} logo`} className="h-10 w-10 object-contain" />
+              ) : (
+                <span className="text-3xl">{partner.logo_emoji}</span>
+              )}
             </div>
             <div>
               <div className="flex items-center gap-1.5">
                 <DialogTitle className="text-lg">{partner.name}</DialogTitle>
-                <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success))]" />
+                <CheckCircle2 className="h-4 w-4 text-success" />
               </div>
               <p className="text-sm text-muted-foreground">{partner.region}</p>
             </div>
