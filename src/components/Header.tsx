@@ -18,7 +18,7 @@ const Header = () => {
   }, [dark]);
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md bg-card/80 border-b border-border/50">
+    <header className="sticky top-0 z-50 backdrop-blur-md bg-card/90 border-b border-border/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
@@ -55,7 +55,7 @@ const Header = () => {
           </button>
           <Link to="/submit">
             <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-ring">
-              Submit Merchant
+              Add Your Business
             </Button>
           </Link>
         </div>
@@ -95,7 +95,7 @@ const Header = () => {
           ))}
           <Link to="/submit" onClick={() => setMobileOpen(false)}>
             <Button size="sm" className="w-full mt-2 bg-primary text-primary-foreground">
-              Submit Merchant
+              Add Your Business
             </Button>
           </Link>
         </div>
