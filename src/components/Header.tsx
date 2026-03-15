@@ -20,13 +20,21 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-card/90 border-b border-border/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-black text-sm">$</span>
+        {/* === REAL OFFICIAL USDC LOGO + PRO STYLING === */}
+        <Link to="/" className="flex items-center gap-3">
+          <img 
+            src="/Circle_USDC_Logo.svg" 
+            alt="USDC" 
+            className="h-9 w-9 flex-shrink-0" 
+          />
+          <div className="flex flex-col -space-x-px">
+            <span className="font-bold text-2xl tracking-tighter bg-gradient-to-r from-[#2775CA] to-[#4B0082] bg-clip-text text-transparent">
+              USDC
+            </span>
+            <span className="font-semibold text-2xl tracking-tight text-foreground -mt-1">
+              Directory
+            </span>
           </div>
-          <span className="font-bold text-lg text-foreground tracking-tight">
-            USDC Directory
-          </span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
