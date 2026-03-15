@@ -1,89 +1,117 @@
 import { Search } from "lucide-react";
-import worldMap from "@/assets/world-map-dots.png";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { CATEGORIES } from "@/lib/partners";
 
-const stats = [
-  { value: "$78B+", label: "In Circulation" },
-  { value: "30+", label: "Blockchains" },
-  { value: "$69T+", label: "All-Time Volume" },
-  { value: "CCTP", label: "Cross-Chain" },
-];
+const categoryEmojis: Record<string, string> = {
+  Payments: "💳",
+  Remittances: "💸",
+  Wallets: "👛",
+  "On/Off-Ramps": "🔄",
+  DeFi: "🏦",
+  RWA: "🏠",
+  Infrastructure: "⚙️",
+  "AI Payments": "🤖",
+  Enterprise: "🏢",
+};
 
 interface HeroSectionProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onSearch: () => void;
   partnerCount: number;
+  onCategorySelect: (cat: string) => void;
+  selectedCategories: string[];
 }
 
-const HeroSection = ({ searchQuery, onSearchChange, partnerCount }: HeroSectionProps) => {
+const HeroSection = ({
+  searchQuery,
+  onSearchChange,
+  onSearch,
+  partnerCount,
+  onCategorySelect,
+  selectedCategories,
+}: HeroSectionProps) => {
   return (
-    <section className="bg-hero relative overflow-hidden pb-14 pt-14">
-      <img
-        src={worldMap}
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none"
-      />
-      <div className="relative z-10 max-w-4xl mx-auto text-center px-6">
-        <div className="inline-flex items-center gap-2 bg-hero-foreground/10 border border-hero-foreground/20 rounded-full px-4 py-1.5 mb-6">
-          <span className="text-hero-foreground text-xs font-medium">
-            Official Circle Alliance Partners
-          </span>
-        </div>
+    <section className="relative overflow-hidden bg-gradient-to-b from-background via-primary/[0.04] to-background pt-16 pb-12">
+      {/* Subtle pattern overlay */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
+        backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
+        backgroundSize: '40px 40px',
+      }} />
 
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-hero-foreground mb-4 leading-tight">
-          USDC Partners Directory
-        </h1>
-        <p className="text-hero-muted text-base sm:text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
-          Discover the global ecosystem of companies and tools built on USDC — the leading
-          regulated digital dollar issued by{" "}
-          <a
-            href="https://www.circle.com/usdc"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2 text-hero-foreground hover:opacity-80"
-          >
-            Circle
-          </a>{" "}
-          (1:1 backed by cash & U.S. Treasuries).
-        </p>
+      <div className="relative z-10 max-w-3xl mx-auto text-center px-4 sm:px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 mb-6">
+            <div className="w-2 h-2 rounded-full bg-[hsl(var(--success))] animate-pulse" />
+            <span className="text-primary text-xs font-semibold tracking-wide">
+              {partnerCount} Verified Partners
+            </span>
+          </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto mb-8">
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="bg-hero-foreground/10 backdrop-blur-sm border border-hero-foreground/15 rounded-xl px-4 py-3"
-            >
-              <div className="text-hero-foreground font-extrabold text-xl sm:text-2xl">
-                {stat.value}
-              </div>
-              <div className="text-hero-muted text-xs font-medium mt-0.5">{stat.label}</div>
-            </div>
-          ))}
-        </div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground mb-4 leading-tight tracking-tight">
+            Discover Global Merchants
+            <br />
+            <span className="text-primary">Accepting USDC</span>
+          </h1>
 
-        {/* Search */}
-        <div className="bg-card rounded-xl shadow-lg flex items-center px-4 py-3.5 max-w-xl mx-auto">
-          <Search className="h-5 w-5 text-muted-foreground mr-3 flex-shrink-0" />
+          <p className="text-muted-foreground text-base sm:text-lg mb-8 max-w-xl mx-auto leading-relaxed">
+            The trusted directory of companies and tools built on USDC — the leading
+            regulated digital dollar.
+          </p>
+        </motion.div>
+
+        {/* Floating Search Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="bg-card rounded-2xl shadow-lg border border-border flex items-center px-4 py-2 max-w-xl mx-auto gap-2"
+        >
+          <Search className="h-5 w-5 text-muted-foreground flex-shrink-0" />
           <input
             type="text"
-            placeholder={`Search ${partnerCount} partners by name, category, or region...`}
-            className="w-full bg-transparent outline-none text-foreground placeholder:text-muted-foreground text-sm"
+            placeholder={`Search ${partnerCount} partners by name, category, or region…`}
+            className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground text-sm py-2 focus:outline-none"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && onSearch()}
           />
-        </div>
-
-        <p className="text-hero-muted/60 text-xs mt-5">
-          Listing does not imply endorsement ·{" "}
-          <a
-            href="https://partners.circle.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
+          <Button
+            size="sm"
+            onClick={onSearch}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-5 focus:ring-2 focus:ring-ring"
           >
-            View full list at partners.circle.com
-          </a>
-        </p>
+            Search
+          </Button>
+        </motion.div>
+
+        {/* Category Pills */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="mt-6 flex gap-2 overflow-x-auto scrollbar-hide justify-start sm:justify-center px-2 pb-2"
+        >
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => onCategorySelect(cat)}
+              className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium transition-all border focus:outline-none focus:ring-2 focus:ring-ring ${
+                selectedCategories.includes(cat)
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+              }`}
+            >
+              <span>{categoryEmojis[cat] || "📦"}</span>
+              {cat}
+            </button>
+          ))}
+        </motion.div>
       </div>
     </section>
   );

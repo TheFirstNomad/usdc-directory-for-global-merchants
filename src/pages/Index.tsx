@@ -1,10 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
+import { motion } from "framer-motion";
+import { SearchX } from "lucide-react";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import PartnerCard from "@/components/PartnerCard";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import CategoryFilter from "@/components/CategoryFilter";
 import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
 import { fetchPartners, type Partner } from "@/lib/partners";
 
 const Index = () => {
@@ -57,13 +60,24 @@ const Index = () => {
     });
   }, [searchQuery, selectedCategories, selectedRegions, partners]);
 
+  const clearAll = () => {
+    setSelectedCategories([]);
+    setSelectedRegions([]);
+    setSearchQuery("");
+  };
+
+  const hasFilters = selectedCategories.length > 0 || selectedRegions.length > 0 || searchQuery.length > 0;
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <HeroSection
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onSearch={() => {}}
         partnerCount={partners.length}
+        onCategorySelect={toggleCategory}
+        selectedCategories={selectedCategories}
       />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8">
@@ -80,39 +94,54 @@ const Index = () => {
           </aside>
 
           <div className="flex-1">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-muted-foreground">
-                {loading ? "Loading..." : `${filteredPartners.length} partners`}
+            <div className="flex items-center justify-between mb-5">
+              <p className="text-sm text-muted-foreground font-medium">
+                {loading ? "Loading…" : `${filteredPartners.length} partners`}
               </p>
-              {(selectedCategories.length > 0 || selectedRegions.length > 0) && (
+              {hasFilters && (
                 <button
-                  onClick={() => {
-                    setSelectedCategories([]);
-                    setSelectedRegions([]);
-                  }}
-                  className="text-xs text-primary hover:underline font-medium"
+                  onClick={clearAll}
+                  className="text-xs text-primary hover:underline font-medium focus:outline-none focus:ring-2 focus:ring-ring rounded px-1"
                 >
-                  Clear filters
+                  Clear all filters
                 </button>
               )}
             </div>
 
-            <div className="space-y-3">
-              {loading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="bg-card border border-border rounded-xl p-5 h-24 animate-pulse" />
-                ))
-              ) : filteredPartners.length > 0 ? (
-                filteredPartners.map((partner) => (
-                  <PartnerCard key={partner.id} partner={partner} />
-                ))
-              ) : (
-                <div className="text-center py-16 text-muted-foreground">
-                  <p className="text-lg font-medium">No partners found</p>
-                  <p className="text-sm mt-1">Try adjusting your search or filters</p>
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-card border border-border rounded-xl h-56 animate-pulse" />
+                ))}
+              </div>
+            ) : filteredPartners.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredPartners.map((partner, i) => (
+                  <PartnerCard key={partner.id} partner={partner} index={i} />
+                ))}
+              </div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-20"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                  <SearchX className="h-8 w-8 text-muted-foreground" />
                 </div>
-              )}
-            </div>
+                <p className="text-lg font-semibold text-foreground mb-1">No partners found</p>
+                <p className="text-sm text-muted-foreground mb-5">
+                  Try adjusting your search or filters
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={clearAll}
+                  className="focus:ring-2 focus:ring-ring"
+                >
+                  Clear Filters
+                </Button>
+              </motion.div>
+            )}
           </div>
         </div>
       </main>
