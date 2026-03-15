@@ -19,7 +19,7 @@ This project is my public-good contribution to the usdc ecosystem.
 Everyday hub for usdc merchants world wide
 
 GitHub: https://github.com/TheFirstNomad/usdc-directory-for-global-merchants
-## Live Demo
-https://usdc-directory-for-global-merchants-6k93mysvo.vercel.app
+## Live web app
+https://www.usdc.directory/
 
 Made with ❤️ for the Usdc ecosystem.
