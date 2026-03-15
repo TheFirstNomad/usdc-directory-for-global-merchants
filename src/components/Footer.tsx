@@ -5,7 +5,7 @@ const Footer = () => {
     <footer className="bg-card border-t border-border py-12 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row items-start justify-between gap-10">
-          {/* === REAL USDC LOGO + PRO BRANDING === */}
+          {/* === REAL USDC LOGO + NEW COOL TEXT === */}
           <div className="max-w-md">
             <div className="flex items-center gap-3 mb-4">
               <img 
@@ -24,26 +24,9 @@ const Footer = () => {
             </div>
             
             <p className="text-sm text-muted-foreground leading-relaxed">
-              USDC is issued by{" "}
-              <a
-                href="https://www.circle.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-foreground transition-colors"
-              >
-                Circle Internet Financial
-              </a>
-              . This directory highlights official Circle Alliance members. 
-              For the complete live list always visit{" "}
-              <a
-                href="https://partners.circle.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-foreground transition-colors"
-              >
-                partners.circle.com
-              </a>
-              .
+              USDC Directory is your global guide to the digital dollar. 
+              Discover where you can spend, send, and use USDC across trusted 
+              exchanges, wallets, merchants, and businesses worldwide.
             </p>
           </div>
 
@@ -74,7 +57,6 @@ const Footer = () => {
             © 2026 USDC Directory. All rights reserved.
           </p>
 
-          {/* Social Icons + Legal */}
           <div className="flex items-center gap-6">
             <div className="flex gap-4">
               <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
