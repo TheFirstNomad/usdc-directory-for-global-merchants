@@ -142,6 +142,11 @@ const Submit = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEO
+        title="Submit Your Business"
+        description="Add your business to the USDC Directory — the global hub for merchants accepting USDC digital dollars."
+        path="/submit"
+      />
       <Header />
 
       <section className="bg-gradient-to-b from-primary/5 to-background py-14 px-6">
