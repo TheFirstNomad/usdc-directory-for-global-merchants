@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -46,6 +47,18 @@ const useCases = [
 const About = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEO
+        title="About USDC"
+        description="Learn about USDC — the world's leading regulated digital dollar, backed 1:1 by cash and U.S. Treasuries, issued by Circle."
+        path="/about"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "AboutPage",
+          name: "About USDC",
+          url: "https://usdc.directory/about",
+          description: "Learn about USDC — the world's leading regulated digital dollar.",
+        }}
+      />
       <Header />
 
       <section className="bg-hero py-16 px-6">

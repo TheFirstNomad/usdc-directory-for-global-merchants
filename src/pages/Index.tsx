@@ -7,6 +7,7 @@ import PartnerCard from "@/components/PartnerCard";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import CategoryFilter from "@/components/CategoryFilter";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { fetchPartners, type Partner } from "@/lib/partners";
 
@@ -88,6 +89,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEO path="/" />
       <Header />
       <HeroSection
         searchQuery={searchQuery}
