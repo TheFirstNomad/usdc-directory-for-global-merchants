@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
