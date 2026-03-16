@@ -5,9 +5,9 @@ import { motion } from "framer-motion";
 
 const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) => {
   // Fallback to official logo if DB logo is broken/missing
-  const logoUrl = partner.logo && partner.logo !== "" 
-    ? partner.logo 
-    : `https://cryptologos.cc/logos/${partner.name.toLowerCase().replace(/\s+/g, "-")}-logo.png`;
+  const logoUrl = partner.logo_url && partner.logo_url !== "" 
+    ? partner.logo_url 
+    : `https://logo.clearbit.com/${partner.website?.replace(/https?:\/\//, '').replace(/\/.*/, '') || partner.name.toLowerCase().replace(/\s+/g, '') + '.com'}`;
 
   return (
     <motion.div
