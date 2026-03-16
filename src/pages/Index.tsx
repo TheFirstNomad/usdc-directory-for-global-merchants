@@ -89,6 +89,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEO path="/" />
       <Header />
       <HeroSection
         searchQuery={searchQuery}
