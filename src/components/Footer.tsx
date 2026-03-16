@@ -24,8 +24,8 @@ const Footer = () => {
             </div>
             
             <p className="text-sm text-muted-foreground leading-relaxed">
-              USDC Directory is your global guide to the digital dollar. 
-              Discover where you can spend, send, and use USDC across trusted 
+              Independent global guide to the digital dollar. 
+              Discover where you can spend, send, and use USDC across  
               exchanges, wallets, merchants, and businesses worldwide.
             </p>
           </div>
