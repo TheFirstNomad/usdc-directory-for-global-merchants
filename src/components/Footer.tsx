@@ -5,7 +5,7 @@ const Footer = () => {
     <footer className="bg-card border-t border-border py-12 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row items-start justify-between gap-10">
-          {/* === REAL USDC LOGO + NEW COOL TEXT === */}
+          {/* Logo + Cool Description */}
           <div className="max-w-md">
             <div className="flex items-center gap-3 mb-4">
               <img 
@@ -24,36 +24,34 @@ const Footer = () => {
             </div>
             
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Independent global guide to the digital dollar. 
-              Discover where you can spend, send, and use USDC across  
-              exchanges, wallets, merchants, and businesses worldwide.
+              Independent global guide to the digital dollar. Discover where you can 
+              spend, send, and use USDC across exchanges, wallets, merchants, and 
+              businesses worldwide.
             </p>
+
+            {/* New Geo Mapping note */}
+            <div className="mt-6 text-xs font-medium text-[#2775CA] flex items-center gap-2">
+              🗺️ Geo Mapping for Businesses — Coming Soon
+            </div>
           </div>
 
-          {/* Links Columns */}
-          <div className="flex gap-12">
-            <div>
-              <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-4">Resources</h4>
-              <div className="space-y-3 text-sm">
-                <a href="https://www.circle.com/usdc" target="_blank" rel="noopener noreferrer" className="block text-muted-foreground hover:text-foreground transition-colors">Get USDC</a>
-                <a href="https://partners.circle.com/" target="_blank" rel="noopener noreferrer" className="block text-muted-foreground hover:text-foreground transition-colors">Circle Alliance</a>
-                <a href="https://developers.circle.com/" target="_blank" rel="noopener noreferrer" className="block text-muted-foreground hover:text-foreground transition-colors">Developer Docs</a>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-4">Directory</h4>
-              <div className="space-y-3 text-sm">
-                <a href="/about" className="block text-muted-foreground hover:text-foreground transition-colors">About USDC</a>
-                <a href="/submit" className="block text-muted-foreground hover:text-foreground transition-colors">Submit Company</a>
-              </div>
-            </div>
+          {/* Buy This Directory Button (prominent) */}
+          <div className="mt-8 md:mt-0">
+            <a
+              href="https://unstoppabledomains.com/d/usdc.directory"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#2775CA] to-[#4B0082] text-white font-semibold rounded-2xl hover:scale-105 transition-all shadow-lg"
+            >
+              Buy this Directory
+              <span className="text-xl">→</span>
+            </a>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-border mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-muted-foreground">
+        <div className="border-t border-border mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+          <p className="text-muted-foreground">
             © 2026 USDC Directory. All rights reserved.
           </p>
 
@@ -67,7 +65,7 @@ const Footer = () => {
               </a>
             </div>
 
-            <div className="flex gap-4 text-xs text-muted-foreground">
+            <div className="flex gap-4 text-muted-foreground">
               <a href="#" className="hover:text-foreground transition-colors">Terms</a>
               <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
             </div>
