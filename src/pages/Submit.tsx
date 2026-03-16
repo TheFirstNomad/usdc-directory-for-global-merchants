@@ -103,6 +103,7 @@ const Submit = () => {
   if (submitted) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
+        <SEO title="Submission Received" description="Thank you for joining the USDC ecosystem." path="/submit" />
         <Header />
         <main className="flex-1 flex items-center justify-center px-6 py-20">
           <motion.div
