@@ -1,11 +1,11 @@
-import { Twitter, MessageCircle } from "lucide-react";
+import { Twitter, MessageCircle } from "lucide-react"; // kept import in case you want to add back later
 
 const Footer = () => {
   return (
     <footer className="bg-card border-t border-border py-12 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row items-start justify-between gap-10">
-          {/* Logo + Cool Description */}
+          {/* Logo + Description */}
           <div className="max-w-md">
             <div className="flex items-center gap-3 mb-4">
               <img 
@@ -29,47 +29,29 @@ const Footer = () => {
               businesses worldwide.
             </p>
 
-            {/* New Geo Mapping note */}
+            {/* Geo Mapping note */}
             <div className="mt-6 text-xs font-medium text-[#2775CA] flex items-center gap-2">
               🗺️ Geo Mapping for Businesses — Coming Soon
             </div>
           </div>
 
-          {/* Buy This Directory Button (prominent) */}
+          {/* Buy this Business Button */}
           <div className="mt-8 md:mt-0">
             <a
               href="https://unstoppabledomains.com/d/usdc.directory"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#2775CA] to-[#4B0082] text-white font-semibold rounded-2xl hover:scale-105 transition-all shadow-lg"
+              className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#2775CA] to-[#4B0082] text-white font-semibold rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl text-base"
             >
-              Buy this Directory
+              Buy this Business
               <span className="text-xl">→</span>
             </a>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="border-t border-border mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-          <p className="text-muted-foreground">
-            © 2026 USDC Directory. All rights reserved.
-          </p>
-
-          <div className="flex items-center gap-6">
-            <div className="flex gap-4">
-              <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
-                <MessageCircle className="h-5 w-5" />
-              </a>
-            </div>
-
-            <div className="flex gap-4 text-muted-foreground">
-              <a href="#" className="hover:text-foreground transition-colors">Terms</a>
-              <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
-            </div>
-          </div>
+        {/* Super clean bottom copyright only */}
+        <div className="border-t border-border mt-12 pt-6 text-center text-xs text-muted-foreground">
+          © 2026 USDC Directory. All rights reserved.
         </div>
       </div>
     </footer>
