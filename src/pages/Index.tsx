@@ -4,6 +4,7 @@ import { SearchX, LayoutGrid, Map } from "lucide-react";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import PartnerCard from "@/components/PartnerCard";
+import ShimmerCard from "@/components/ShimmerCard";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import CategoryFilter from "@/components/CategoryFilter";
 import Footer from "@/components/Footer";
