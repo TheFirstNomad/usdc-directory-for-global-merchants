@@ -4,6 +4,7 @@ import { SearchX, LayoutGrid, Map } from "lucide-react";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import PartnerCard from "@/components/PartnerCard";
+import ShimmerCard from "@/components/ShimmerCard";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import CategoryFilter from "@/components/CategoryFilter";
 import Footer from "@/components/Footer";
@@ -166,8 +167,8 @@ const Index = () => {
               </div>
             ) : loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="bg-card border border-border rounded-2xl h-56 animate-pulse" />
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <ShimmerCard key={i} />
                 ))}
               </div>
             ) : filteredPartners.length > 0 ? (
