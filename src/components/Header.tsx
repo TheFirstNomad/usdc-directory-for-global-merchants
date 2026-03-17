@@ -18,31 +18,32 @@ const Header = () => {
   }, [dark]);
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md bg-card/90 border-b border-border/50">
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-card/80 border-b border-border/40 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
-        {/* === REAL OFFICIAL USDC LOGO + PRO STYLING === */}
-        <Link to="/" className="flex items-center gap-3">
-          <img 
-            src="/Circle_USDC_Logo.svg" 
-            alt="USDC" 
-            className="h-9 w-9 flex-shrink-0" 
+        {/* Logo — matches footer exactly */}
+        <Link to="/" className="flex items-center gap-2.5">
+          <img
+            src="/Circle_USDC_Logo.svg"
+            alt="USDC"
+            className="h-8 w-8 flex-shrink-0"
           />
-          <div className="flex flex-col -space-x-px">
-            <span className="font-bold text-2xl tracking-tighter bg-gradient-to-r from-[#2775CA] to-[#4B0082] bg-clip-text text-transparent">
+          <div className="flex items-baseline gap-1">
+            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-[hsl(210,79%,46%)] to-[hsl(275,100%,25%)] bg-clip-text text-transparent">
               USDC
             </span>
-            <span className="font-semibold text-2xl tracking-tight text-foreground -mt-1">
+            <span className="font-semibold text-lg tracking-tight text-foreground">
               Directory
             </span>
           </div>
         </Link>
 
+        {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               to={link.href}
-              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
+              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                 location.pathname === link.href
                   ? "text-primary bg-primary/10"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -53,22 +54,24 @@ const Header = () => {
           ))}
         </nav>
 
+        {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-2">
           <button
             onClick={() => setDark(!dark)}
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             aria-label="Toggle dark mode"
           >
             {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
           <Link to="/submit">
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-ring">
+            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-md">
               Add Your Business
             </Button>
           </Link>
         </div>
 
-        <div className="flex md:hidden items-center gap-2">
+        {/* Mobile actions */}
+        <div className="flex md:hidden items-center gap-1">
           <button
             onClick={() => setDark(!dark)}
             className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
@@ -79,20 +82,22 @@ const Header = () => {
           <button
             className="p-2 text-foreground"
             onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
 
+      {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-border/50 bg-card/95 backdrop-blur-md px-4 py-4 space-y-2">
+        <div className="md:hidden border-t border-border/40 bg-card/95 backdrop-blur-xl px-4 py-4 space-y-1 animate-fade-in">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               to={link.href}
               onClick={() => setMobileOpen(false)}
-              className={`block px-3 py-2 text-sm font-medium rounded-lg ${
+              className={`block px-3 py-2.5 text-sm font-medium rounded-lg ${
                 location.pathname === link.href
                   ? "text-primary bg-primary/10"
                   : "text-muted-foreground"
@@ -102,7 +107,7 @@ const Header = () => {
             </Link>
           ))}
           <Link to="/submit" onClick={() => setMobileOpen(false)}>
-            <Button size="sm" className="w-full mt-2 bg-primary text-primary-foreground">
+            <Button size="sm" className="w-full mt-2 bg-primary text-primary-foreground font-semibold">
               Add Your Business
             </Button>
           </Link>

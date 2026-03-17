@@ -8,10 +8,10 @@ const categoryColors: Record<string, string> = {
   Remittances: "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]",
   Wallets: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300",
   "On/Off-Ramps": "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-  DeFi: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300",
+  DeFi: "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-300",
   RWA: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300",
   Infrastructure: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
-  "AI Payments": "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-300",
+  "AI Payments": "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300",
   Enterprise: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300",
 };
 
@@ -37,19 +37,19 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index * 0.03, 0.5), duration: 0.4 }}
-      className="group relative bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/50 hover:-translate-y-1 hover:shadow-xl transition-all duration-300 h-full flex flex-col"
+      className="partner-card group relative bg-card rounded-2xl overflow-hidden h-full flex flex-col"
     >
       {/* Logo section */}
       <div className="h-24 flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted/20 p-6 relative">
         {partner.featured && (
-          <div className="absolute top-3 right-3 text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+          <div className="absolute top-3 left-3 text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1">
             ⭐ Featured
           </div>
         )}
         <img
           src={logoUrl}
           alt={`${partner.name} logo`}
-          className="h-16 w-16 object-contain rounded-lg bg-card p-1 shadow-sm group-hover:scale-110 transition-transform duration-300"
+          className="h-16 w-16 object-contain rounded-xl bg-card p-1.5 shadow-sm group-hover:scale-110 transition-transform duration-300"
           loading="lazy"
           onError={(e) => {
             e.currentTarget.src =
@@ -59,23 +59,25 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
       </div>
 
       <div className="p-5 flex-1 flex flex-col">
-        {/* Name + verified */}
-        <div className="flex items-center gap-2 mb-2">
-          <h3 className="font-bold text-lg tracking-tight text-foreground leading-tight">
+        {/* Name + verified badge */}
+        <div className="flex items-center gap-2 mb-1.5">
+          <h3 className="font-bold text-lg tracking-tight text-foreground leading-tight truncate">
             {partner.name}
           </h3>
           {partner.featured && (
-            <BadgeCheck className="h-4.5 w-4.5 text-success flex-shrink-0" />
+            <BadgeCheck className="h-[18px] w-[18px] text-primary flex-shrink-0" />
           )}
         </div>
 
         {/* Region */}
-        <div className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
+        <div className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
           <span>{regionFlags[partner.region] || "🌍"}</span>
-          {partner.region}
+          <span>{partner.region}</span>
+          <span className="text-muted-foreground/40">•</span>
+          <span className="text-muted-foreground/60">Updated today</span>
         </div>
 
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1 leading-relaxed">
           {partner.description}
         </p>
 
