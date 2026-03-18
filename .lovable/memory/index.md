@@ -1,15 +1,9 @@
-USDC Directory design system and project constraints.
+# Memory: index.md
+Updated: today
 
-Primary: 210 79% 46% (#2775CA USDC Blue). Success: 162 100% 41% (#00D395 Circle Green).
-Background: slate-50 light / slate-900 dark. Font: Inter.
-DB tables: partners (public read), submissions (public insert). Data from Supabase.
-Pages: / (directory), /about (USDC info), /submit (4-step multi-step form).
-Dark mode toggle in Header. Glassmorphism nav. Framer Motion animations.
-Card grid: 1 col mobile, 2 tablet, 3 desktop. Banner + overlapping logo pattern.
-Cards support logo_url (img tag, object-contain) and fallback to logo_emoji.
-Category pills in hero with emoji icons. Scrollbar-hide utility.
-Networks filter: Ethereum, Base, Solana, Polygon, Arbitrum, Noble, Avalanche.
-Map view toggle placeholder on Index page. Autocomplete in hero search.
-Submit form: 4 steps (Basic Info, Payment/Chains, Global Presence, Verification).
-Success state shows "We Accept USDC" badge download button.
-CTA button text: "Add Your Business".
+Circle blue USDC branding. Primary: 217 91% 48% (hsl of #2775C9). Hero = primary. Tags = light blue.
+DB tables: partners (public read, has usdc_score column 0-100), submissions (public insert). Data from Supabase.
+152 merchants seeded including Circle Alliance + public USDC merchants.
+Pages: / (directory), /about, /submit, /insights, /acquire, /license, /merchant/:id (detail), /map (world map).
+Partner interface includes usdc_score optional field.
+Pay with USDC demo button on cards and detail page (testnet demo toast).
