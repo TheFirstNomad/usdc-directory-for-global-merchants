@@ -10,6 +10,8 @@ import Submit from "./pages/Submit.tsx";
 import Insights from "./pages/Insights.tsx";
 import Acquire from "./pages/Acquire.tsx";
 import License from "./pages/License.tsx";
+import MerchantDetail from "./pages/MerchantDetail.tsx";
+import MapView from "./pages/MapView.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
