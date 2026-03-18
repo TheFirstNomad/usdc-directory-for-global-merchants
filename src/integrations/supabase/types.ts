@@ -26,6 +26,7 @@ export type Database = {
           name: string
           region: string | null
           updated_at: string
+          usdc_score: number | null
           use_cases: string[] | null
           website: string | null
         }
@@ -40,6 +41,7 @@ export type Database = {
           name: string
           region?: string | null
           updated_at?: string
+          usdc_score?: number | null
           use_cases?: string[] | null
           website?: string | null
         }
@@ -54,6 +56,7 @@ export type Database = {
           name?: string
           region?: string | null
           updated_at?: string
+          usdc_score?: number | null
           use_cases?: string[] | null
           website?: string | null
         }
