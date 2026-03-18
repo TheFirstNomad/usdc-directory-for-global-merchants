@@ -1,7 +1,10 @@
 import { Partner } from "@/lib/partners";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, BadgeCheck } from "lucide-react";
+import { ExternalLink, BadgeCheck, Zap } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const categoryColors: Record<string, string> = {
   Payments: "bg-primary/10 text-primary",
@@ -27,10 +30,26 @@ const regionFlags: Record<string, string> = {
 };
 
 const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) => {
+  const { toast } = useToast();
+  const [paying, setPaying] = useState(false);
+
   const logoUrl =
     partner.logo_url && partner.logo_url !== ""
       ? partner.logo_url
       : `https://logo.clearbit.com/${partner.website?.replace(/https?:\/\//, "").replace(/\/.*/, "") || partner.name.toLowerCase().replace(/\s+/g, "") + ".com"}`;
+
+  const handlePay = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPaying(true);
+    setTimeout(() => {
+      setPaying(false);
+      toast({
+        title: "✅ USDC Payment Sent!",
+        description: `Demo: 10.00 USDC → ${partner.name} on Base testnet.`,
+      });
+    }, 1500);
+  };
 
   return (
     <motion.div
@@ -39,71 +58,90 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
       transition={{ delay: Math.min(index * 0.03, 0.5), duration: 0.4 }}
       className="partner-card group relative bg-card rounded-2xl overflow-hidden h-full flex flex-col"
     >
-      {/* Logo section */}
-      <div className="h-24 flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted/20 p-6 relative">
-        {partner.featured && (
-          <div className="absolute top-3 left-3 text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1">
-            ⭐ Featured
-          </div>
-        )}
-        <img
-          src={logoUrl}
-          alt={`${partner.name} logo`}
-          className="h-16 w-16 object-contain rounded-xl bg-card p-1.5 shadow-sm group-hover:scale-110 transition-transform duration-300"
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.src =
-              "https://cryptologos.cc/logos/usd-coin-usdc-logo.png";
-          }}
-        />
-      </div>
-
-      <div className="p-5 flex-1 flex flex-col">
-        {/* Name + verified badge */}
-        <div className="flex items-center gap-2 mb-1.5">
-          <h3 className="font-bold text-lg tracking-tight text-foreground leading-tight truncate">
-            {partner.name}
-          </h3>
+      <Link to={`/merchant/${partner.id}`} className="flex flex-col h-full">
+        {/* Logo section */}
+        <div className="h-24 flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted/20 p-6 relative">
           {partner.featured && (
-            <BadgeCheck className="h-[18px] w-[18px] text-primary flex-shrink-0" />
+            <div className="absolute top-3 left-3 text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1">
+              ⭐ Featured
+            </div>
           )}
+          <img
+            src={logoUrl}
+            alt={`${partner.name} logo`}
+            className="h-16 w-16 object-contain rounded-xl bg-card p-1.5 shadow-sm group-hover:scale-110 transition-transform duration-300"
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.src =
+                "https://cryptologos.cc/logos/usd-coin-usdc-logo.png";
+            }}
+          />
         </div>
 
-        {/* Region */}
-        <div className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
-          <span>{regionFlags[partner.region] || "🌍"}</span>
-          <span>{partner.region}</span>
-          <span className="text-muted-foreground/40">•</span>
-          <span className="text-muted-foreground/60">Updated today</span>
-        </div>
+        <div className="p-5 flex-1 flex flex-col">
+          <div className="flex items-center gap-2 mb-1.5">
+            <h3 className="font-bold text-lg tracking-tight text-foreground leading-tight truncate">
+              {partner.name}
+            </h3>
+            {partner.featured && (
+              <BadgeCheck className="h-[18px] w-[18px] text-primary flex-shrink-0" />
+            )}
+          </div>
 
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1 leading-relaxed">
-          {partner.description}
-        </p>
+          <div className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
+            <span>{regionFlags[partner.region] || "🌍"}</span>
+            <span>{partner.region}</span>
+            {(partner as any).usdc_score > 0 && (
+              <>
+                <span className="text-muted-foreground/40">•</span>
+                <span className="text-primary font-medium">Score: {(partner as any).usdc_score}</span>
+              </>
+            )}
+          </div>
 
-        {/* Color-coded category pills */}
-        <div className="flex flex-wrap gap-1.5 mb-5">
-          {partner.categories.slice(0, 3).map((cat, i) => (
-            <span
-              key={i}
-              className={`px-2.5 py-0.5 text-[10px] font-semibold rounded-full ${categoryColors[cat] || "bg-muted text-muted-foreground"}`}
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1 leading-relaxed">
+            {partner.description}
+          </p>
+
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {partner.categories.slice(0, 3).map((cat, i) => (
+              <span
+                key={i}
+                className={`px-2.5 py-0.5 text-[10px] font-semibold rounded-full ${categoryColors[cat] || "bg-muted text-muted-foreground"}`}
+              >
+                {cat}
+              </span>
+            ))}
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all font-medium text-xs"
+              asChild
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
-              {cat}
-            </span>
-          ))}
+              <a href={partner.website || "#"} target="_blank" rel="noopener noreferrer">
+                Visit <ExternalLink className="ml-1 h-3 w-3" />
+              </a>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground text-xs"
+              onClick={handlePay}
+              disabled={paying}
+            >
+              {paying ? (
+                <div className="h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <><Zap className="h-3 w-3 mr-1" /> Pay</>
+              )}
+            </Button>
+          </div>
         </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all font-medium"
-          asChild
-        >
-          <a href={partner.website || "#"} target="_blank" rel="noopener noreferrer">
-            Visit Site <ExternalLink className="ml-2 h-3.5 w-3.5" />
-          </a>
-        </Button>
-      </div>
+      </Link>
     </motion.div>
   );
 };
