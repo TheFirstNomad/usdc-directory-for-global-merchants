@@ -72,7 +72,7 @@ const HeroSection = ({
   return (
     <section className="relative overflow-hidden pt-20 pb-14 sm:pt-28 sm:pb-20">
       {/* Multi-layer gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.07] via-background to-[hsl(var(--success))]/[0.04]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.07] via-background to-[hsl(275,100%,25%)]/[0.04]" />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
 
       {/* Subtle dot pattern */}
@@ -87,8 +87,7 @@ const HeroSection = ({
 
       {/* Glow orbs */}
       <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full bg-primary/[0.08] blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[350px] h-[350px] rounded-full bg-[hsl(var(--success))]/[0.06] blur-[100px] pointer-events-none" />
-      <div className="absolute top-20 left-10 w-[200px] h-[200px] rounded-full bg-[hsl(275,100%,25%)]/[0.04] blur-[80px] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[350px] h-[350px] rounded-full bg-[hsl(275,100%,25%)]/[0.06] blur-[100px] pointer-events-none" />
 
       <div className="relative z-10 max-w-3xl mx-auto text-center px-4 sm:px-6">
         <motion.div
@@ -105,16 +104,17 @@ const HeroSection = ({
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-foreground mb-5 leading-[1.08] tracking-tight">
-            The Global Directory for{" "}
+            The #1 Everyday Directory for{" "}
             <span className="bg-gradient-to-r from-primary via-[hsl(210,90%,55%)] to-[hsl(275,100%,25%)] bg-clip-text text-transparent">
-              USDC Merchants
-            </span>
+              Spending USDC
+            </span>{" "}
+            Worldwide
           </h1>
 
           <p className="text-muted-foreground text-base sm:text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-            Discover trusted companies, merchants, and protocols accepting{" "}
-            <span className="font-semibold text-foreground">USDC</span> — the leading
-            regulated digital dollar.
+            Built for freedom with Circle's regulated digital dollar. Discover trusted
+            merchants, exchanges, and protocols accepting{" "}
+            <span className="font-semibold text-foreground">USDC</span> globally.
           </p>
         </motion.div>
 
