@@ -12,6 +12,7 @@ export interface Partner {
   use_cases: string[];
   featured: boolean;
   created_at: string;
+  usdc_score?: number;
 }
 
 export async function fetchPartners(): Promise<Partner[]> {

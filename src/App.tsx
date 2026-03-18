@@ -30,6 +30,8 @@ const App = () => (
             <Route path="/insights" element={<Insights />} />
             <Route path="/acquire" element={<Acquire />} />
             <Route path="/license" element={<License />} />
+            <Route path="/merchant/:id" element={<MerchantDetail />} />
+            <Route path="/map" element={<MapView />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
