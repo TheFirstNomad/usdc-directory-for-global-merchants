@@ -8,6 +8,7 @@ import ShimmerCard from "@/components/ShimmerCard";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import CategoryFilter from "@/components/CategoryFilter";
 import Footer from "@/components/Footer";
+import AcquisitionBanner from "@/components/AcquisitionBanner";
 import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { fetchPartners, type Partner } from "@/lib/partners";
@@ -91,6 +92,7 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO path="/" />
+      <AcquisitionBanner />
       <Header />
       <HeroSection
         searchQuery={searchQuery}
@@ -123,7 +125,6 @@ const Index = () => {
                 {loading ? "Loading…" : `${filteredPartners.length} merchants`}
               </p>
               <div className="flex items-center gap-2">
-                {/* View toggle */}
                 <div className="flex items-center bg-card border border-border rounded-lg overflow-hidden">
                   <button
                     onClick={() => setViewMode("grid")}
