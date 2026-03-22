@@ -1,7 +1,7 @@
 const IPFooter = () => (
   <footer className="border-t bg-background py-8 text-center text-xs text-muted-foreground">
     <div className="max-w-4xl mx-auto px-4">
-      <p className="font-medium">USDC Directory</p>
+      <p className="font-medium text-foreground">USDC Directory</p>
       <p className="mt-1">© 2026. All rights reserved.</p>
       
       <div className="mt-6 border-t pt-6">
@@ -17,7 +17,7 @@ const IPFooter = () => (
         </p>
       </div>
 
-      <p className="mt-10 text-[10px]">Geo Mapping for Businesses — Coming Soon</p>
+      <p className="mt-10 text-[10px]">🗺️ Geo Mapping for Businesses — Coming Soon</p>
     </div>
   </footer>
 );
