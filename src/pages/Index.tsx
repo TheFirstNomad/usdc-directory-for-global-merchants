@@ -155,7 +155,7 @@ const Index = () => {
                     }`}
                     aria-label="Map view"
                   >
-                    <Map className="h-4 w-4" />
+                    <MapIcon className="h-4 w-4" />
                   </button>
                 </div>
                 {hasFilters && (
