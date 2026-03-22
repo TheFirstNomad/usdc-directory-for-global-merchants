@@ -55,7 +55,7 @@ const Header = () => {
             </Link>
           ))}
           
-          {/* Acquire as direct mailto — consistent with footer */}
+          {/* Acquire as direct mailto */}
           <a
             href="mailto:hello@usdc.directory?subject=USDC%20Directory%20Acquisition%20Inquiry"
             className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
@@ -64,7 +64,7 @@ const Header = () => {
           </a>
         </nav>
 
-        {/* Desktop actions */}
+        {/* Desktop actions — Add Your Business now direct mailto */}
         <div className="hidden md:flex items-center gap-2">
           <button
             onClick={() => setDark(!dark)}
@@ -73,11 +73,14 @@ const Header = () => {
           >
             {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
-          <Link to="/submit">
+          <a
+            href="mailto:hello@usdc.directory?subject=Add%20My%20Business%20to%20USDC%20Directory%20-%20Submission%20Inquiry"
+            className="no-underline"
+          >
             <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-md">
               Add Your Business
             </Button>
-          </Link>
+          </a>
         </div>
 
         {/* Mobile actions */}
@@ -125,11 +128,15 @@ const Header = () => {
             Acquire
           </a>
           
-          <Link to="/submit" onClick={() => setMobileOpen(false)}>
-            <Button size="sm" className="w-full mt-2 bg-primary text-primary-foreground font-semibold">
+          <a 
+            href="mailto:hello@usdc.directory?subject=Add%20My%20Business%20to%20USDC%20Directory%20-%20Submission%20Inquiry"
+            onClick={() => setMobileOpen(false)}
+            className="block mt-2"
+          >
+            <Button size="sm" className="w-full bg-primary text-primary-foreground font-semibold">
               Add Your Business
             </Button>
-          </Link>
+          </a>
         </div>
       )}
     </header>
