@@ -56,7 +56,7 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index * 0.03, 0.5), duration: 0.4 }}
-      className="partner-card group relative bg-card rounded-2xl overflow-hidden h-full flex flex-col"
+      className="partner-card group relative bg-card rounded-2xl overflow-hidden h-full flex flex-col border border-border hover:border-primary/30 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
     >
       <Link to={`/merchant/${partner.id}`} className="flex flex-col h-full">
         {/* Logo section */}
@@ -69,7 +69,7 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
           <img
             src={logoUrl}
             alt={`${partner.name} logo`}
-            className="h-16 w-16 object-contain rounded-xl bg-card p-1.5 shadow-sm group-hover:scale-110 transition-transform duration-300"
+            className="h-16 w-16 object-contain rounded-xl bg-card p-1.5 shadow-sm group-hover:scale-115 transition-transform duration-500"
             loading="lazy"
             onError={(e) => {
               e.currentTarget.src =
