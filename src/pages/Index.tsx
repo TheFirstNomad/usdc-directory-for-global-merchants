@@ -172,7 +172,7 @@ const Index = () => {
             {viewMode === "map" ? (
               <div className="bg-card border border-border rounded-2xl h-96 flex items-center justify-center">
                 <div className="text-center">
-                  <Map className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <MapIcon className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                   <p className="text-lg font-semibold text-foreground mb-1">Map View</p>
                   <p className="text-sm text-muted-foreground max-w-xs">
                     Interactive map coming soon. Find physical USDC merchants near you worldwide.
