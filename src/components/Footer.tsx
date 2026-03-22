@@ -65,8 +65,6 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-border mt-12 pt-6 text-center text-xs text-muted-foreground">
-          © 2026 USDC Directory. All rights reserved.
         </div>
       </div>
 
