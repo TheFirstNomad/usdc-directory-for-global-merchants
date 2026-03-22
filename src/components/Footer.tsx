@@ -2,7 +2,7 @@ import IPFooter from "@/components/IPFooter";
 
 const Footer = () => {
   return (
-    <footer className="bg-card border-t border-border py-12 px-6">
+    <footer className="bg-card border-t border-border py-8 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row items-start justify-between gap-10">
           {/* Logo + Description */}
@@ -64,11 +64,12 @@ const Footer = () => {
             </a>
           </div>
         </div>
-
-        </div>
       </div>
 
-      <IPFooter />
+      {/* Clean thin separator + IPFooter (no big gap) */}
+      <div className="mt-8 pt-6 border-t border-border">
+        <IPFooter />
+      </div>
     </footer>
   );
 };
