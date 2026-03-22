@@ -53,11 +53,11 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Buy this Business */}
+          {/* Acquire CTA — now direct email with pre-filled subject */}
           <div className="mt-4 md:mt-0">
             <a
-              href="/acquire"
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-primary to-[hsl(275,100%,25%)] text-primary-foreground font-semibold rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl text-base"
+              href="mailto:hello@usdc.directory?subject=USDC%20Directory%20Acquisition%20%26%20Licensing%20Inquiry"
+              className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-primary to-[hsl(275,100%,25%)] text-primary-foreground font-semibold rounded-2xl hover:scale-105 active:scale-95 hover:shadow-2xl hover:ring-4 hover:ring-primary/30 transition-all shadow-xl text-base"
             >
               Acquire This Platform
               <span className="text-xl">→</span>
@@ -66,7 +66,7 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Clean thin separator + IPFooter (no big gap) */}
+      {/* Clean thin separator + IPFooter */}
       <div className="mt-8 pt-6 border-t border-border">
         <IPFooter />
       </div>
