@@ -190,7 +190,9 @@ const Index = () => {
             ) : filteredPartners.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredPartners.map((partner, i) => (
-                  <PartnerCard key={partner.id} partner={partner} index={i} />
+                  <Suspense key={partner.id} fallback={<ShimmerCard />}>
+                    <PartnerCard partner={partner} index={i} />
+                  </Suspense>
                 ))}
               </div>
             ) : (
