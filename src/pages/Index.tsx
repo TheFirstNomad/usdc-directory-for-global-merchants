@@ -1,9 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
-import { motion } from "framer-motion";
-import { SearchX, LayoutGrid, Map } from "lucide-react";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
+import { SearchX, LayoutGrid, Map as MapIcon } from "lucide-react";
 import Header from "@/components/Header";
-import HeroSection from "@/components/HeroSection";
-import PartnerCard from "@/components/PartnerCard";
 import ShimmerCard from "@/components/ShimmerCard";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import CategoryFilter from "@/components/CategoryFilter";
@@ -12,6 +9,13 @@ import AcquisitionBanner from "@/components/AcquisitionBanner";
 import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { fetchPartners, type Partner } from "@/lib/partners";
+
+const HeroSection = lazy(() => import("@/components/HeroSection"));
+const PartnerCard = lazy(() => import("@/components/PartnerCard"));
+
+const LazyFallback = () => (
+  <div className="animate-pulse bg-muted rounded-2xl h-24 w-full" />
+);
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -103,15 +107,17 @@ const Index = () => {
       <SEO path="/" />
       <AcquisitionBanner />
       <Header />
-      <HeroSection
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onSearch={() => {}}
-        partnerCount={uniquePartners.length}
-        onCategorySelect={toggleCategory}
-        selectedCategories={selectedCategories}
-        partnerNames={partnerNames}
-      />
+      <Suspense fallback={<LazyFallback />}>
+        <HeroSection
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearch={() => {}}
+          partnerCount={uniquePartners.length}
+          onCategorySelect={toggleCategory}
+          selectedCategories={selectedCategories}
+          partnerNames={partnerNames}
+        />
+      </Suspense>
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8">
         <FeaturedCarousel partners={featuredPartners} />
@@ -151,7 +157,7 @@ const Index = () => {
                     }`}
                     aria-label="Map view"
                   >
-                    <Map className="h-4 w-4" />
+                    <MapIcon className="h-4 w-4" />
                   </button>
                 </div>
                 {hasFilters && (
@@ -168,7 +174,7 @@ const Index = () => {
             {viewMode === "map" ? (
               <div className="bg-card border border-border rounded-2xl h-96 flex items-center justify-center">
                 <div className="text-center">
-                  <Map className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <MapIcon className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                   <p className="text-lg font-semibold text-foreground mb-1">Map View</p>
                   <p className="text-sm text-muted-foreground max-w-xs">
                     Interactive map coming soon. Find physical USDC merchants near you worldwide.
@@ -184,15 +190,13 @@ const Index = () => {
             ) : filteredPartners.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredPartners.map((partner, i) => (
-                  <PartnerCard key={partner.id} partner={partner} index={i} />
+                  <Suspense key={partner.id} fallback={<ShimmerCard />}>
+                    <PartnerCard partner={partner} index={i} />
+                  </Suspense>
                 ))}
               </div>
             ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-20"
-              >
+              <div className="text-center py-20">
                 <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
                   <SearchX className="h-8 w-8 text-muted-foreground" />
                 </div>
@@ -207,7 +211,7 @@ const Index = () => {
                 >
                   Clear Filters
                 </Button>
-              </motion.div>
+              </div>
             )}
           </div>
         </div>
