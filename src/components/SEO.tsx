@@ -5,13 +5,13 @@ interface SEOProps {
   description?: string;
   path?: string;
   type?: string;
-  jsonLd?: Record<string, unknown>;
+  jsonLd?: Record<string, any>;
 }
 
 const SITE_URL = "https://usdc.directory";
 const SITE_NAME = "USDC Directory";
 const DEFAULT_DESCRIPTION =
-  "The global directory of trusted merchants, companies, and tools that accept USDC — the leading regulated digital dollar by Circle.";
+  "The #1 global directory of trusted merchants, exchanges, and protocols accepting USDC — Circle's regulated digital dollar. Offered for licensing or acquisition.";
 const OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 const SEO = ({
@@ -21,9 +21,10 @@ const SEO = ({
   type = "website",
   jsonLd,
 }: SEOProps) => {
-  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} | Global Merchants`;
+  const fullTitle = title
+    ? `${title} | ${SITE_NAME}`
+    : `${SITE_NAME} | Global Merchants Accepting USDC`;
   const url = `${SITE_URL}${path}`;
-
   const defaultJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -42,19 +43,16 @@ const SEO = ({
 
   return (
     <Helmet>
+      {/* Title */}
       <title>{fullTitle}</title>
-      <meta name="description" content={description} />
-      <link rel="canonical" href={url} />
 
       {/* Open Graph */}
-      <meta property="og:type" content={type} />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
+      <meta property="og:type" content={type} />
       <meta property="og:url" content={url} />
-      <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:image" content={OG_IMAGE} />
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
+      <meta property="og:site_name" content={SITE_NAME} />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
@@ -64,7 +62,7 @@ const SEO = ({
 
       {/* JSON-LD */}
       <script type="application/ld+json">
-        {JSON.stringify(jsonLd ?? defaultJsonLd)}
+        {JSON.stringify(jsonLd ? { ...defaultJsonLd, ...jsonLd } : defaultJsonLd)}
       </script>
     </Helmet>
   );
