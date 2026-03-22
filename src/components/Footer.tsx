@@ -47,13 +47,27 @@ const Footer = () => {
               <h4 className="font-semibold text-foreground mb-3">Company</h4>
               <ul className="space-y-2 text-muted-foreground">
                 <li><a href="/about" className="hover:text-foreground transition-colors">About USDC</a></li>
-                <li><a href="/acquire" className="hover:text-foreground transition-colors">Acquire</a></li>
-                <li><a href="/license" className="hover:text-foreground transition-colors">License</a></li>
+                <li>
+                  <a 
+                    href="mailto:hello@usdc.directory?subject=USDC%20Directory%20Acquisition%20Inquiry" 
+                    className="hover:text-foreground transition-colors"
+                  >
+                    Acquire
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="mailto:hello@usdc.directory?subject=USDC%20Directory%20Licensing%20Inquiry" 
+                    className="hover:text-foreground transition-colors"
+                  >
+                    License
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
 
-          {/* Acquire CTA — now direct email with pre-filled subject */}
+          {/* Acquire CTA — already pro */}
           <div className="mt-4 md:mt-0">
             <a
               href="mailto:hello@usdc.directory?subject=USDC%20Directory%20Acquisition%20%26%20Licensing%20Inquiry"
