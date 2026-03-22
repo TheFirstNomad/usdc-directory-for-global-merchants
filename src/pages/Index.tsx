@@ -1,9 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import { SearchX, LayoutGrid, Map } from "lucide-react";
 import Header from "@/components/Header";
-import HeroSection from "@/components/HeroSection";
-import PartnerCard from "@/components/PartnerCard";
 import ShimmerCard from "@/components/ShimmerCard";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import CategoryFilter from "@/components/CategoryFilter";
@@ -12,6 +9,13 @@ import AcquisitionBanner from "@/components/AcquisitionBanner";
 import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { fetchPartners, type Partner } from "@/lib/partners";
+
+const HeroSection = lazy(() => import("@/components/HeroSection"));
+const PartnerCard = lazy(() => import("@/components/PartnerCard"));
+
+const LazyFallback = () => (
+  <div className="animate-pulse bg-muted rounded-2xl h-24 w-full" />
+);
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
