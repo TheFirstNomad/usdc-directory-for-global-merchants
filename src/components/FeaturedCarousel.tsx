@@ -4,11 +4,19 @@ import { ExternalLink } from "lucide-react";
 const FeaturedCarousel = ({ partners }: { partners: Partner[] }) => {
   if (partners.length === 0) return null;
 
+  // Tiny deduplication fix: remove duplicate merchants by name (case-insensitive)
+  // Keeps the first occurrence — fixes the visual duplicates without touching data
+  const uniquePartners = Array.from(
+    new Map(
+      partners.map((p) => [p.name.toLowerCase().trim(), p])
+    ).values()
+  );
+
   return (
     <section className="py-8">
       <h2 className="text-lg font-bold text-foreground mb-4">Featured Partners</h2>
       <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
-        {partners.map((p) => (
+        {uniquePartners.map((p) => (
           <a
             key={p.id}
             href={p.website || "#"}
