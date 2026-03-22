@@ -107,15 +107,17 @@ const Index = () => {
       <SEO path="/" />
       <AcquisitionBanner />
       <Header />
-      <HeroSection
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onSearch={() => {}}
-        partnerCount={uniquePartners.length}
-        onCategorySelect={toggleCategory}
-        selectedCategories={selectedCategories}
-        partnerNames={partnerNames}
-      />
+      <Suspense fallback={<LazyFallback />}>
+        <HeroSection
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearch={() => {}}
+          partnerCount={uniquePartners.length}
+          onCategorySelect={toggleCategory}
+          selectedCategories={selectedCategories}
+          partnerNames={partnerNames}
+        />
+      </Suspense>
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8">
         <FeaturedCarousel partners={featuredPartners} />
