@@ -1,23 +1,22 @@
 const IPFooter = () => (
-  <footer className="border-t bg-background py-8 text-center text-xs text-muted-foreground">
-    <div className="max-w-4xl mx-auto px-4">
-      <p className="font-medium text-foreground">USDC Directory</p>
-      <p className="mt-1">© 2026. All rights reserved.</p>
+  <footer className="border-t bg-background py-12 text-center">
+    <div className="max-w-3xl mx-auto px-4 text-sm text-muted-foreground">
+      <p className="font-medium text-foreground">© 2026 USDC Directory. All rights reserved.</p>
       
-      <div className="mt-6 border-t pt-6">
+      <div className="mt-8 pt-8 border-t">
         <p>The merchant database, scoring algorithm, data pipelines, and platform code are protected intellectual property.</p>
-        <p className="mt-2">
+        <p className="mt-3">
           Offered for licensing or acquisition. Inquiries:{" "}
           <a 
             href="mailto:hello@usdc.directory" 
-            className="underline hover:text-foreground transition-colors"
+            className="text-foreground hover:underline font-medium transition-colors"
           >
             hello@usdc.directory
           </a>
         </p>
       </div>
 
-      <p className="mt-10 text-[10px]">🗺️ Geo Mapping for Businesses — Coming Soon</p>
+      <p className="mt-12 text-xs opacity-75">🗺️ Geo Mapping for Businesses — Coming Soon</p>
     </div>
   </footer>
 );
