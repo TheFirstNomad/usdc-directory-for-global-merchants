@@ -29,6 +29,15 @@ const Index = () => {
     });
   }, []);
 
+  // ✅ Deduplication fix: remove duplicate merchants by name (keeps first occurrence)
+  const uniquePartners = useMemo(() => {
+    return Array.from(
+      new Map(
+        partners.map((p) => [p.name.toLowerCase().trim(), p])
+      ).values()
+    );
+  }, [partners]);
+
   const toggleCategory = (cat: string) =>
     setSelectedCategories((prev) =>
       prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
@@ -45,14 +54,14 @@ const Index = () => {
     );
 
   const featuredPartners = useMemo(
-    () => partners.filter((p) => p.featured),
-    [partners]
+    () => uniquePartners.filter((p) => p.featured),
+    [uniquePartners]
   );
 
-  const partnerNames = useMemo(() => partners.map((p) => p.name), [partners]);
+  const partnerNames = useMemo(() => uniquePartners.map((p) => p.name), [uniquePartners]);
 
   const filteredPartners = useMemo(() => {
-    return partners.filter((p) => {
+    return uniquePartners.filter((p) => {
       const q = searchQuery.toLowerCase();
       const matchesSearch =
         !searchQuery ||
@@ -74,7 +83,7 @@ const Index = () => {
 
       return matchesSearch && matchesCategory && matchesRegion && matchesNetwork;
     });
-  }, [searchQuery, selectedCategories, selectedRegions, selectedNetworks, partners]);
+  }, [searchQuery, selectedCategories, selectedRegions, selectedNetworks, uniquePartners]);
 
   const clearAll = () => {
     setSelectedCategories([]);
@@ -98,7 +107,7 @@ const Index = () => {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onSearch={() => {}}
-        partnerCount={partners.length}
+        partnerCount={uniquePartners.length}
         onCategorySelect={toggleCategory}
         selectedCategories={selectedCategories}
         partnerNames={partnerNames}
