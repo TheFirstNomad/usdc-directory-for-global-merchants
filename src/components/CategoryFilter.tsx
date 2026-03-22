@@ -79,7 +79,7 @@ const CategoryFilter = ({
       <div className="bg-tag rounded-xl p-5 text-center">
         <p className="text-sm font-medium text-tag-foreground mb-2">Accept USDC?</p>
         <a
-          href="/submit"
+          href="mailto:hello@usdc.directory?subject=Add%20My%20Business%20to%20USDC%20Directory%20-%20Submission%20Inquiry"
           className="text-xs text-primary font-semibold hover:underline"
         >
           Add your business →
