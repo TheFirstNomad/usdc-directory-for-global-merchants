@@ -14,8 +14,6 @@ const IPFooter = () => (
         </a>
       </p>
     </div>
-
-    <p className="mt-8 text-[10px] opacity-75">🗺️ Geo Mapping for Businesses — Coming Soon</p>
   </div>
 );
 
