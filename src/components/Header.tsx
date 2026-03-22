@@ -8,7 +8,6 @@ const navLinks = [
   { label: "Map", href: "/map" },
   { label: "About USDC", href: "/about" },
   { label: "Insights", href: "/insights" },
-  { label: "Acquire", href: "/acquire" },
 ];
 
 const Header = () => {
@@ -23,7 +22,7 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-card/80 border-b border-border/40 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
-        {/* Logo — matches footer exactly */}
+        {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5">
           <img
             src="/Circle_USDC_Logo.svg"
@@ -55,6 +54,14 @@ const Header = () => {
               {link.label}
             </Link>
           ))}
+          
+          {/* Acquire as direct mailto — consistent with footer */}
+          <a
+            href="mailto:hello@usdc.directory?subject=USDC%20Directory%20Acquisition%20Inquiry"
+            className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+          >
+            Acquire
+          </a>
         </nav>
 
         {/* Desktop actions */}
@@ -109,6 +116,15 @@ const Header = () => {
               {link.label}
             </Link>
           ))}
+          
+          <a 
+            href="mailto:hello@usdc.directory?subject=USDC%20Directory%20Acquisition%20Inquiry"
+            onClick={() => setMobileOpen(false)}
+            className="block px-3 py-2.5 text-sm font-medium text-muted-foreground"
+          >
+            Acquire
+          </a>
+          
           <Link to="/submit" onClick={() => setMobileOpen(false)}>
             <Button size="sm" className="w-full mt-2 bg-primary text-primary-foreground font-semibold">
               Add Your Business
