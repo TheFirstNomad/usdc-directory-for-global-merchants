@@ -55,16 +55,24 @@ const Header = () => {
             </Link>
           ))}
           
-          {/* Acquire as direct mailto */}
+          {/* Acquire – fixed mailto */}
           <a
-            href="mailto:hello@usdc.directory?subject=USDC%20Directory%20Acquisition%20Inquiry"
+            href="mailto:hello@usdc.directory?subject=USDC%20Directory%20-%20Acquisition%20Inquiry"
             className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
           >
             Acquire
           </a>
+
+          {/* License – fixed mailto */}
+          <a
+            href="mailto:hello@usdc.directory?subject=USDC%20Directory%20-%20Licensing%20Inquiry"
+            className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+          >
+            License
+          </a>
         </nav>
 
-        {/* Desktop actions — Add Your Business now direct mailto */}
+        {/* Desktop actions – BIG ACQUIRE BUTTON (exactly the one you circled) */}
         <div className="hidden md:flex items-center gap-2">
           <button
             onClick={() => setDark(!dark)}
@@ -73,12 +81,16 @@ const Header = () => {
           >
             {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
+
           <a
-            href="mailto:hello@usdc.directory?subject=Add%20My%20Business%20to%20USDC%20Directory%20-%20Submission%20Inquiry"
+            href="mailto:hello@usdc.directory?subject=USDC%20Directory%20Acquisition%20%26%20Licensing%20Inquiry"
             className="no-underline"
           >
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-md">
-              Add Your Business
+            <Button 
+              size="sm" 
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-xl hover:shadow-2xl hover:scale-105 transition-all px-8 py-3 rounded-2xl"
+            >
+              Acquire This Platform →
             </Button>
           </a>
         </div>
@@ -120,6 +132,7 @@ const Header = () => {
             </Link>
           ))}
           
+          {/* Acquire mobile */}
           <a 
             href="mailto:hello@usdc.directory?subject=USDC%20Directory%20Acquisition%20Inquiry"
             onClick={() => setMobileOpen(false)}
@@ -128,13 +141,23 @@ const Header = () => {
             Acquire
           </a>
           
+          {/* License mobile */}
           <a 
-            href="mailto:hello@usdc.directory?subject=Add%20My%20Business%20to%20USDC%20Directory%20-%20Submission%20Inquiry"
+            href="mailto:hello@usdc.directory?subject=USDC%20Directory%20-%20Licensing%20Inquiry"
             onClick={() => setMobileOpen(false)}
-            className="block mt-2"
+            className="block px-3 py-2.5 text-sm font-medium text-muted-foreground"
           >
-            <Button size="sm" className="w-full bg-primary text-primary-foreground font-semibold">
-              Add Your Business
+            License
+          </a>
+          
+          {/* Big button mobile */}
+          <a 
+            href="mailto:hello@usdc.directory?subject=USDC%20Directory%20Acquisition%20%26%20Licensing%20Inquiry"
+            onClick={() => setMobileOpen(false)}
+            className="block mt-4"
+          >
+            <Button size="sm" className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-xl rounded-2xl">
+              Acquire This Platform →
             </Button>
           </a>
         </div>
