@@ -1,20 +1,20 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import SEO from "@/components/SEO";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PaymentModal from "@/components/PaymentModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { submitPartnerApplication, CATEGORIES, REGIONS, NETWORKS } from "@/lib/partners";
-import { CheckCircle2, ArrowRight, ArrowLeft, Download } from "lucide-react";
+import { submitPartnerApplication, CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS, NETWORKS } from "@/lib/partners";
+import { CheckCircle2, ArrowRight, ArrowLeft, Upload } from "lucide-react";
 
 const STEPS = [
-  { title: "Basic Info", description: "Tell us about your business" },
-  { title: "Payment Details", description: "Which chains do you accept USDC on?" },
-  { title: "Global Presence", description: "Where do your customers find you?" },
-  { title: "Verification", description: "Help us verify your business" },
+  { title: "Business Info", description: "Tell us about your business" },
+  { title: "Networks", description: "Which chains do you accept USDC on?" },
+  { title: "Location", description: "Where are your customers?" },
+  { title: "Payment", description: "Pay 10 USDC to list" },
 ];
 
 const PRESENCE_TYPES = ["Online Only", "Physical Locations", "Both"];
@@ -24,6 +24,8 @@ const Submit = () => {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [txHash, setTxHash] = useState("");
   const [form, setForm] = useState({
     company_name: "",
     contact_email: "",
@@ -35,7 +37,7 @@ const Submit = () => {
     presence_type: "Online Only",
     city: "",
     country: "",
-    twitter_handle: "",
+    logo_file: null as File | null,
   });
 
   const toggleCategory = (cat: string) =>
@@ -81,7 +83,8 @@ const Submit = () => {
     if (step > 0) setStep(step - 1);
   };
 
-  const handleSubmit = async () => {
+  const handlePaymentSuccess = async (hash: string) => {
+    setTxHash(hash);
     setLoading(true);
     try {
       await submitPartnerApplication({
@@ -92,9 +95,10 @@ const Submit = () => {
         categories: form.categories,
         region: form.region,
       });
+      setShowPayment(false);
       setSubmitted(true);
     } catch {
-      toast({ title: "Submission failed", description: "Please try again later.", variant: "destructive" });
+      toast({ title: "Submission failed", description: "Payment received but listing failed. Contact hello@usdc.directory with your tx hash.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -103,37 +107,33 @@ const Submit = () => {
   if (submitted) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <SEO title="Submission Received" description="Thank you for joining the USDC ecosystem." path="/submit" />
+        <SEO title="Listed Successfully" description="Your business has been listed on USDC Directory." path="/submit" />
         <Header />
         <main className="flex-1 flex items-center justify-center px-6 py-20">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="max-w-md text-center"
-          >
+          <div className="max-w-md text-center">
             <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="h-10 w-10 text-success" />
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-3">
-              Thank you for joining the USDC Ecosystem!
+              🎉 Your business is listed!
             </h1>
-            <p className="text-muted-foreground mb-6">
-              We'll review your submission and get back to you within 2-3 business days.
-              Once approved, your business will appear in the global directory.
+            <p className="text-muted-foreground mb-4">
+              Payment confirmed. Your listing is now live in the USDC Directory.
             </p>
-            <div className="bg-card border border-border rounded-xl p-5 mb-6">
-              <p className="text-sm font-medium text-foreground mb-3">
-                Download your "We Accept USDC" badge
-              </p>
-              <Button variant="outline" className="focus:ring-2 focus:ring-ring">
-                <Download className="h-4 w-4 mr-2" />
-                Download Badge (SVG)
-              </Button>
-            </div>
+            {txHash && (
+              <a
+                href={`https://testnet.arcscan.app/tx/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary text-sm font-medium hover:underline block mb-6"
+              >
+                View transaction on Arcscan →
+              </a>
+            )}
             <a href="/" className="text-primary text-sm font-medium hover:underline">
               ← Back to Directory
             </a>
-          </motion.div>
+          </div>
         </main>
         <Footer />
       </div>
@@ -143,8 +143,8 @@ const Submit = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
-        title="Submit Your Business"
-        description="Add your business to the USDC Directory — the global hub for merchants accepting USDC digital dollars."
+        title="List Your Business — 10 USDC"
+        description="Add your business to the USDC Directory for just 10 USDC. Get discovered by thousands of USDC users worldwide."
         path="/submit"
       />
       <Header />
@@ -152,11 +152,10 @@ const Submit = () => {
       <section className="bg-gradient-to-b from-primary/5 to-background py-14 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-3xl md:text-4xl font-extrabold text-foreground mb-3">
-            Add Your Business
+            List Your Business
           </h1>
           <p className="text-muted-foreground text-base max-w-xl mx-auto">
-            Join the global USDC merchant directory and reach thousands of users
-            looking to spend digital dollars.
+            Get discovered by thousands of USDC users worldwide. <span className="font-semibold text-foreground">Just 10 USDC</span> for a permanent listing.
           </p>
         </div>
       </section>
@@ -167,9 +166,7 @@ const Submit = () => {
           {STEPS.map((s, i) => (
             <div key={i} className="flex items-center">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-                i <= step
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
+                i <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               }`}>
                 {i < step ? "✓" : i + 1}
               </div>
@@ -187,228 +184,199 @@ const Submit = () => {
           <p className="text-sm text-muted-foreground">{STEPS[step].description}</p>
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-          >
-            {step === 0 && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">Company Name *</label>
-                  <Input
-                    value={form.company_name}
-                    onChange={(e) => setForm({ ...form, company_name: e.target.value })}
-                    placeholder="Your company name"
-                    maxLength={100}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">Contact Email *</label>
-                  <Input
-                    type="email"
-                    value={form.contact_email}
-                    onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
-                    placeholder="you@company.com"
-                    maxLength={255}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">Website *</label>
-                  <Input
-                    type="url"
-                    value={form.website}
-                    onChange={(e) => setForm({ ...form, website: e.target.value })}
-                    placeholder="https://yourcompany.com"
-                    maxLength={255}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">Description *</label>
-                  <Textarea
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    placeholder="Briefly describe what your business does…"
-                    rows={3}
-                    maxLength={1000}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Categories *</label>
-                  <div className="flex flex-wrap gap-2">
-                    {CATEGORIES.map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => toggleCategory(cat)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
-                          form.categories.includes(cat)
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "border-border text-muted-foreground hover:border-primary/50"
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+        <div>
+          {step === 0 && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Company Name *</label>
+                <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="Your company name" maxLength={100} />
               </div>
-            )}
-
-            {step === 1 && (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Select all blockchain networks where you accept USDC payments.
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {NETWORKS.map((net) => (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Contact Email *</label>
+                <Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} placeholder="you@company.com" maxLength={255} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Website *</label>
+                <Input type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://yourcompany.com" maxLength={255} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Description *</label>
+                <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Briefly describe what your business does…" rows={3} maxLength={1000} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Logo (PNG only)</label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card cursor-pointer hover:bg-muted transition-colors text-sm text-muted-foreground">
+                    <Upload className="h-4 w-4" />
+                    {form.logo_file ? form.logo_file.name : "Upload PNG logo"}
+                    <input
+                      type="file"
+                      accept="image/png"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file && file.type === "image/png") {
+                          setForm({ ...form, logo_file: file });
+                        } else {
+                          toast({ title: "PNG files only", variant: "destructive" });
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Recommended: 512×512px, transparent background</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Categories *</label>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIES.map((cat) => (
                     <button
-                      key={net}
+                      key={cat}
                       type="button"
-                      onClick={() => toggleNetwork(net)}
-                      className={`p-4 rounded-xl border text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
-                        form.networks.includes(net)
-                          ? "bg-primary/10 border-primary text-primary"
-                          : "bg-card border-border text-muted-foreground hover:border-primary/40"
+                      onClick={() => toggleCategory(cat)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        form.categories.includes(cat)
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-border text-muted-foreground hover:border-primary/50"
                       }`}
                     >
-                      {net}
+                      {CATEGORY_EMOJIS[cat] || "📦"} {cat}
                     </button>
                   ))}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {step === 2 && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Business Presence</label>
-                  <div className="flex flex-wrap gap-2">
-                    {PRESENCE_TYPES.map((pt) => (
-                      <button
-                        key={pt}
-                        type="button"
-                        onClick={() => setForm({ ...form, presence_type: pt })}
-                        className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
-                          form.presence_type === pt
-                            ? "bg-primary/10 border-primary text-primary"
-                            : "border-border text-muted-foreground hover:border-primary/40"
-                        }`}
-                      >
-                        {pt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">Region</label>
-                  <select
-                    value={form.region}
-                    onChange={(e) => setForm({ ...form, region: e.target.value })}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          {step === 1 && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Select all blockchain networks where you accept USDC.</p>
+              <div className="grid grid-cols-2 gap-3">
+                {NETWORKS.map((net) => (
+                  <button
+                    key={net}
+                    type="button"
+                    onClick={() => toggleNetwork(net)}
+                    className={`p-4 rounded-xl border text-sm font-medium transition-all ${
+                      form.networks.includes(net)
+                        ? "bg-primary/10 border-primary text-primary"
+                        : "bg-card border-border text-muted-foreground hover:border-primary/40"
+                    }`}
                   >
-                    {REGIONS.map((r) => (
-                      <option key={r} value={r}>{r}</option>
-                    ))}
-                  </select>
-                </div>
-                {form.presence_type !== "Online Only" && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1.5">Country</label>
-                      <Input
-                        value={form.country}
-                        onChange={(e) => setForm({ ...form, country: e.target.value })}
-                        placeholder="United States"
-                        maxLength={100}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1.5">City</label>
-                      <Input
-                        value={form.city}
-                        onChange={(e) => setForm({ ...form, city: e.target.value })}
-                        placeholder="New York"
-                        maxLength={100}
-                      />
-                    </div>
-                  </div>
-                )}
+                    {net}
+                  </button>
+                ))}
               </div>
-            )}
+            </div>
+          )}
 
-            {step === 3 && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
-                    X / Twitter Handle (optional)
-                  </label>
-                  <Input
-                    value={form.twitter_handle}
-                    onChange={(e) => setForm({ ...form, twitter_handle: e.target.value })}
-                    placeholder="@yourcompany"
-                    maxLength={50}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Linking your social account helps speed up verification.
-                  </p>
+          {step === 2 && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Business Presence</label>
+                <div className="flex flex-wrap gap-2">
+                  {PRESENCE_TYPES.map((pt) => (
+                    <button
+                      key={pt}
+                      type="button"
+                      onClick={() => setForm({ ...form, presence_type: pt })}
+                      className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
+                        form.presence_type === pt
+                          ? "bg-primary/10 border-primary text-primary"
+                          : "border-border text-muted-foreground hover:border-primary/40"
+                      }`}
+                    >
+                      {pt}
+                    </button>
+                  ))}
                 </div>
-                <div className="bg-tag rounded-xl p-4">
-                  <p className="text-sm text-tag-foreground">
-                    <strong>Verification process:</strong> Our team reviews each submission
-                    to ensure legitimacy. Verified merchants receive a{" "}
-                    <span className="text-success font-semibold">green checkmark</span>{" "}
-                    badge in the directory.
-                  </p>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  By submitting, you agree that your company information may be publicly listed.
-                  For official Circle Alliance membership, visit{" "}
-                  <a href="https://partners.circle.com/" target="_blank" rel="noopener noreferrer" className="underline">
-                    partners.circle.com
-                  </a>.
-                </p>
               </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Region *</label>
+                <div className="flex flex-wrap gap-2">
+                  {REGIONS.map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setForm({ ...form, region: r })}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        form.region === r
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-border text-muted-foreground hover:border-primary/50"
+                      }`}
+                    >
+                      {REGION_FLAGS[r] || "📍"} {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {form.presence_type !== "Online Only" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">Country</label>
+                    <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="Uganda" maxLength={100} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">City</label>
+                    <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Kampala" maxLength={100} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-6">
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 text-center">
+                <img src="/Circle_USDC_Logo.svg" alt="USDC" className="h-10 w-10 mx-auto mb-3" />
+                <h3 className="text-xl font-bold text-foreground mb-1">10 USDC</h3>
+                <p className="text-sm text-muted-foreground mb-4">One-time listing fee</p>
+                <Button
+                  onClick={() => setShowPayment(true)}
+                  className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold px-8 py-3 rounded-xl text-base"
+                >
+                  Pay & List Your Business
+                </Button>
+              </div>
+              <div className="bg-card border border-border rounded-xl p-4">
+                <h4 className="font-semibold text-foreground text-sm mb-2">What you get:</h4>
+                <ul className="space-y-1.5 text-sm text-muted-foreground">
+                  <li>✅ Permanent listing in the global directory</li>
+                  <li>✅ Searchable by category, region, and network</li>
+                  <li>✅ Featured on the USDC Directory homepage</li>
+                  <li>✅ Instant approval after payment</li>
+                </ul>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Need help? Contact{" "}
+                <a href="mailto:hello@usdc.directory" className="text-primary underline">hello@usdc.directory</a>
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* Navigation buttons */}
         <div className="flex items-center justify-between mt-8">
-          <Button
-            variant="outline"
-            onClick={prevStep}
-            disabled={step === 0}
-            className="focus:ring-2 focus:ring-ring"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back
+          <Button variant="outline" onClick={prevStep} disabled={step === 0}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
-
-          {step < STEPS.length - 1 ? (
-            <Button
-              onClick={nextStep}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-ring"
-            >
-              Continue
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-ring"
-            >
-              {loading ? "Submitting…" : "Submit Application"}
+          {step < STEPS.length - 1 && (
+            <Button onClick={nextStep} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              Continue <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           )}
         </div>
       </main>
 
       <Footer />
+
+      {showPayment && (
+        <PaymentModal
+          type="listing"
+          onSuccess={handlePaymentSuccess}
+          onClose={() => setShowPayment(false)}
+        />
+      )}
     </div>
   );
 };
