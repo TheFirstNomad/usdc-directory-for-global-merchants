@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from "react";
-import { SearchX, LayoutGrid, Map as MapIcon } from "lucide-react";
+import { SearchX, LayoutGrid, Map as MapIcon, ArrowUpDown } from "lucide-react";
 import Header from "@/components/Header";
 import ShimmerCard from "@/components/ShimmerCard";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
@@ -22,6 +22,7 @@ const Index = () => {
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [selectedNetworks, setSelectedNetworks] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
+  const [sortBy, setSortBy] = useState<"name" | "newest" | "score">("name");
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -55,7 +56,7 @@ const Index = () => {
   const partnerNames = useMemo(() => uniquePartners.map((p) => p.name), [uniquePartners]);
 
   const filteredPartners = useMemo(() => {
-    return uniquePartners.filter((p) => {
+    const filtered = uniquePartners.filter((p) => {
       const q = searchQuery.toLowerCase();
       const matchesSearch =
         !searchQuery ||
@@ -73,7 +74,13 @@ const Index = () => {
         p.use_cases.some((uc) => selectedNetworks.includes(uc));
       return matchesSearch && matchesCategory && matchesRegion && matchesNetwork;
     });
-  }, [searchQuery, selectedCategories, selectedRegions, selectedNetworks, uniquePartners]);
+
+    return [...filtered].sort((a, b) => {
+      if (sortBy === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortBy === "score") return (b.usdc_score ?? 0) - (a.usdc_score ?? 0);
+      return a.name.localeCompare(b.name);
+    });
+  }, [searchQuery, selectedCategories, selectedRegions, selectedNetworks, uniquePartners, sortBy]);
 
   const clearAll = () => {
     setSelectedCategories([]);
@@ -124,7 +131,19 @@ const Index = () => {
               <p className="text-sm text-muted-foreground font-medium">
                 {loading ? "Loading…" : `${filteredPartners.length} merchants`}
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 bg-card border border-border rounded-lg px-2 py-1">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as "name" | "newest" | "score")}
+                    className="bg-transparent text-sm text-foreground font-medium outline-none cursor-pointer pr-1"
+                  >
+                    <option value="name">Name A–Z</option>
+                    <option value="newest">Newest</option>
+                    <option value="score">USDC Score</option>
+                  </select>
+                </div>
                 <div className="flex items-center bg-card border border-border rounded-lg overflow-hidden">
                   <button
                     onClick={() => setViewMode("grid")}
