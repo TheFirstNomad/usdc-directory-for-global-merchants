@@ -22,6 +22,7 @@ const Index = () => {
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [selectedNetworks, setSelectedNetworks] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
+  const [sortBy, setSortBy] = useState<"name" | "newest" | "score">("name");
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
 
