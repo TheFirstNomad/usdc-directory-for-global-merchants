@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from "react";
-import { SearchX, LayoutGrid, Map as MapIcon } from "lucide-react";
+import { SearchX, LayoutGrid, Map as MapIcon, ArrowUpDown } from "lucide-react";
 import Header from "@/components/Header";
 import ShimmerCard from "@/components/ShimmerCard";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
