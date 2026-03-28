@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
-import AcquisitionBanner from "@/components/AcquisitionBanner";
+
 import { fetchPartners, type Partner, CATEGORIES, REGIONS } from "@/lib/partners";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, Globe, Users, DollarSign } from "lucide-react";
@@ -53,7 +53,7 @@ const Insights = () => {
         description="Explore the USDC ecosystem — merchant distribution, category breakdown, regional coverage, and Circle Alliance statistics."
         path="/insights"
       />
-      <AcquisitionBanner />
+      
       <Header />
 
       <section className="relative overflow-hidden py-16 px-6">

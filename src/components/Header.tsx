@@ -1,7 +1,8 @@
-import { Menu, X, Moon, Sun } from "lucide-react";
+import { Menu, X, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 const navLinks = [
   { label: "Directory", href: "/" },
@@ -12,25 +13,15 @@ const navLinks = [
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [dark, setDark] = useState(false);
   const location = useLocation();
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-  }, [dark]);
-
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-card/80 border-b border-border/40 shadow-sm">
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
-        {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5">
-          <img
-            src="/Circle_USDC_Logo.svg"
-            alt="USDC"
-            className="h-8 w-8 flex-shrink-0"
-          />
+          <img src="/Circle_USDC_Logo.svg" alt="USDC" className="h-8 w-8 flex-shrink-0" />
           <div className="flex items-baseline gap-1">
-            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-[hsl(210,79%,46%)] to-[hsl(275,100%,25%)] bg-clip-text text-transparent">
+            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] bg-clip-text text-transparent">
               USDC
             </span>
             <span className="font-semibold text-lg tracking-tight text-foreground">
@@ -39,7 +30,6 @@ const Header = () => {
           </div>
         </Link>
 
-        {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => (
             <Link
@@ -54,56 +44,39 @@ const Header = () => {
               {link.label}
             </Link>
           ))}
-          
-          {/* Acquire – fixed mailto */}
-          <a
-            href="mailto:hello@usdc.directory?subject=USDC%20Directory%20-%20Acquisition%20Inquiry"
-            className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-          >
-            Acquire
-          </a>
-
-          {/* License – fixed mailto */}
-          <a
-            href="mailto:hello@usdc.directory?subject=USDC%20Directory%20-%20Licensing%20Inquiry"
-            className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-          >
-            License
-          </a>
         </nav>
 
-        {/* Desktop actions – BIG ACQUIRE BUTTON (exactly the one you circled) */}
-        <div className="hidden md:flex items-center gap-2">
-          <button
-            onClick={() => setDark(!dark)}
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            aria-label="Toggle dark mode"
-          >
-            {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button>
+        <div className="hidden md:flex items-center gap-3">
+          <ConnectButton.Custom>
+            {({ account, chain, openConnectModal, openAccountModal, mounted }) => {
+              const connected = mounted && account && chain;
+              return (
+                <button
+                  onClick={connected ? openAccountModal : openConnectModal}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-border bg-card hover:bg-muted transition-colors"
+                >
+                  <Wallet className="h-4 w-4" />
+                  {connected ? (
+                    <span>{account.displayName}</span>
+                  ) : (
+                    <span>Connect Wallet</span>
+                  )}
+                </button>
+              );
+            }}
+          </ConnectButton.Custom>
 
-          <a
-            href="mailto:hello@usdc.directory?subject=USDC%20Directory%20Acquisition%20%26%20Licensing%20Inquiry"
-            className="no-underline"
-          >
-            <Button 
-              size="sm" 
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-xl hover:shadow-2xl hover:scale-105 transition-all px-8 py-3 rounded-2xl"
+          <Link to="/submit">
+            <Button
+              size="sm"
+              className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all px-5 py-2.5 rounded-xl"
             >
-              Acquire This Platform →
+              List Your Business
             </Button>
-          </a>
+          </Link>
         </div>
 
-        {/* Mobile actions */}
         <div className="flex md:hidden items-center gap-1">
-          <button
-            onClick={() => setDark(!dark)}
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Toggle dark mode"
-          >
-            {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button>
           <button
             className="p-2 text-foreground"
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -114,9 +87,8 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-border/40 bg-card/95 backdrop-blur-xl px-4 py-4 space-y-1 animate-fade-in">
+        <div className="md:hidden border-t border-border/40 bg-background/95 backdrop-blur-xl px-4 py-4 space-y-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -131,35 +103,30 @@ const Header = () => {
               {link.label}
             </Link>
           ))}
-          
-          {/* Acquire mobile */}
-          <a 
-            href="mailto:hello@usdc.directory?subject=USDC%20Directory%20Acquisition%20Inquiry"
-            onClick={() => setMobileOpen(false)}
-            className="block px-3 py-2.5 text-sm font-medium text-muted-foreground"
-          >
-            Acquire
-          </a>
-          
-          {/* License mobile */}
-          <a 
-            href="mailto:hello@usdc.directory?subject=USDC%20Directory%20-%20Licensing%20Inquiry"
-            onClick={() => setMobileOpen(false)}
-            className="block px-3 py-2.5 text-sm font-medium text-muted-foreground"
-          >
-            License
-          </a>
-          
-          {/* Big button mobile */}
-          <a 
-            href="mailto:hello@usdc.directory?subject=USDC%20Directory%20Acquisition%20%26%20Licensing%20Inquiry"
-            onClick={() => setMobileOpen(false)}
-            className="block mt-4"
-          >
-            <Button size="sm" className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-xl rounded-2xl">
-              Acquire This Platform →
-            </Button>
-          </a>
+          <div className="pt-3 space-y-2">
+            <ConnectButton.Custom>
+              {({ account, chain, openConnectModal, openAccountModal, mounted }) => {
+                const connected = mounted && account && chain;
+                return (
+                  <button
+                    onClick={() => {
+                      (connected ? openAccountModal : openConnectModal)();
+                      setMobileOpen(false);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border border-border bg-card"
+                  >
+                    <Wallet className="h-4 w-4" />
+                    {connected ? account.displayName : "Connect Wallet"}
+                  </button>
+                );
+              }}
+            </ConnectButton.Custom>
+            <Link to="/submit" onClick={() => setMobileOpen(false)} className="block">
+              <Button size="sm" className="w-full bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold rounded-xl">
+                List Your Business
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
     </header>

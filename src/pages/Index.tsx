@@ -5,7 +5,6 @@ import ShimmerCard from "@/components/ShimmerCard";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import CategoryFilter from "@/components/CategoryFilter";
 import Footer from "@/components/Footer";
-import AcquisitionBanner from "@/components/AcquisitionBanner";
 import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { fetchPartners, type Partner } from "@/lib/partners";
@@ -33,12 +32,9 @@ const Index = () => {
     });
   }, []);
 
-  // ✅ Deduplication fix: remove duplicate merchants by name (keeps first occurrence)
   const uniquePartners = useMemo(() => {
     return Array.from(
-      new Map(
-        partners.map((p) => [p.name.toLowerCase().trim(), p])
-      ).values()
+      new Map(partners.map((p) => [p.name.toLowerCase().trim(), p])).values()
     );
   }, [partners]);
 
@@ -46,22 +42,16 @@ const Index = () => {
     setSelectedCategories((prev) =>
       prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
     );
-
   const toggleRegion = (region: string) =>
     setSelectedRegions((prev) =>
       prev.includes(region) ? prev.filter((r) => r !== region) : [...prev, region]
     );
-
   const toggleNetwork = (network: string) =>
     setSelectedNetworks((prev) =>
       prev.includes(network) ? prev.filter((n) => n !== network) : [...prev, network]
     );
 
-  const featuredPartners = useMemo(
-    () => uniquePartners.filter((p) => p.featured),
-    [uniquePartners]
-  );
-
+  const featuredPartners = useMemo(() => uniquePartners.filter((p) => p.featured), [uniquePartners]);
   const partnerNames = useMemo(() => uniquePartners.map((p) => p.name), [uniquePartners]);
 
   const filteredPartners = useMemo(() => {
@@ -73,18 +63,14 @@ const Index = () => {
         p.description.toLowerCase().includes(q) ||
         p.categories.some((c) => c.toLowerCase().includes(q)) ||
         p.region.toLowerCase().includes(q);
-
       const matchesCategory =
         selectedCategories.length === 0 ||
         p.categories.some((c) => selectedCategories.includes(c));
-
       const matchesRegion =
         selectedRegions.length === 0 || selectedRegions.includes(p.region);
-
       const matchesNetwork =
         selectedNetworks.length === 0 ||
         p.use_cases.some((uc) => selectedNetworks.includes(uc));
-
       return matchesSearch && matchesCategory && matchesRegion && matchesNetwork;
     });
   }, [searchQuery, selectedCategories, selectedRegions, selectedNetworks, uniquePartners]);
@@ -105,7 +91,6 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO path="/" />
-      <AcquisitionBanner />
       <Header />
       <Suspense fallback={<LazyFallback />}>
         <HeroSection
@@ -143,28 +128,21 @@ const Index = () => {
                 <div className="flex items-center bg-card border border-border rounded-lg overflow-hidden">
                   <button
                     onClick={() => setViewMode("grid")}
-                    className={`p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
-                      viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                    }`}
+                    className={`p-2 transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     aria-label="Grid view"
                   >
                     <LayoutGrid className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => setViewMode("map")}
-                    className={`p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
-                      viewMode === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                    }`}
+                    className={`p-2 transition-colors ${viewMode === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     aria-label="Map view"
                   >
                     <MapIcon className="h-4 w-4" />
                   </button>
                 </div>
                 {hasFilters && (
-                  <button
-                    onClick={clearAll}
-                    className="text-xs text-primary hover:underline font-medium focus:outline-none focus:ring-2 focus:ring-ring rounded px-1"
-                  >
+                  <button onClick={clearAll} className="text-xs text-primary hover:underline font-medium">
                     Clear all
                   </button>
                 )}
@@ -201,16 +179,8 @@ const Index = () => {
                   <SearchX className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <p className="text-lg font-semibold text-foreground mb-1">No merchants found</p>
-                <p className="text-sm text-muted-foreground mb-5">
-                  Try adjusting your search or filters
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={clearAll}
-                  className="focus:ring-2 focus:ring-ring"
-                >
-                  Clear Filters
-                </Button>
+                <p className="text-sm text-muted-foreground mb-5">Try adjusting your search or filters</p>
+                <Button variant="outline" onClick={clearAll}>Clear Filters</Button>
               </div>
             )}
           </div>
