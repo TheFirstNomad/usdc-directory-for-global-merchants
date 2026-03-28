@@ -56,7 +56,7 @@ const Index = () => {
   const partnerNames = useMemo(() => uniquePartners.map((p) => p.name), [uniquePartners]);
 
   const filteredPartners = useMemo(() => {
-    return uniquePartners.filter((p) => {
+    const filtered = uniquePartners.filter((p) => {
       const q = searchQuery.toLowerCase();
       const matchesSearch =
         !searchQuery ||
@@ -74,7 +74,13 @@ const Index = () => {
         p.use_cases.some((uc) => selectedNetworks.includes(uc));
       return matchesSearch && matchesCategory && matchesRegion && matchesNetwork;
     });
-  }, [searchQuery, selectedCategories, selectedRegions, selectedNetworks, uniquePartners]);
+
+    return [...filtered].sort((a, b) => {
+      if (sortBy === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortBy === "score") return (b.usdc_score ?? 0) - (a.usdc_score ?? 0);
+      return a.name.localeCompare(b.name);
+    });
+  }, [searchQuery, selectedCategories, selectedRegions, selectedNetworks, uniquePartners, sortBy]);
 
   const clearAll = () => {
     setSelectedCategories([]);
