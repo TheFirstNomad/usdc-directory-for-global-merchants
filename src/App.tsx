@@ -8,8 +8,6 @@ import Index from "./pages/Index.tsx";
 import About from "./pages/About.tsx";
 import Submit from "./pages/Submit.tsx";
 import Insights from "./pages/Insights.tsx";
-import Acquire from "./pages/Acquire.tsx";
-import License from "./pages/License.tsx";
 import MerchantDetail from "./pages/MerchantDetail.tsx";
 import MapView from "./pages/MapView.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -28,8 +26,6 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/submit" element={<Submit />} />
             <Route path="/insights" element={<Insights />} />
-            <Route path="/acquire" element={<Acquire />} />
-            <Route path="/license" element={<License />} />
             <Route path="/merchant/:id" element={<MerchantDetail />} />
             <Route path="/map" element={<MapView />} />
             <Route path="*" element={<NotFound />} />

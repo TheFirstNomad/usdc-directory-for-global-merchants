@@ -64,18 +64,61 @@ export const CATEGORIES = [
   "Infrastructure",
   "AI Payments",
   "Enterprise",
+  "Restaurants & Cafes",
+  "Hotels & Travel",
+  "Casinos & Gambling",
+  "Retail & Shops",
+  "P2P Traders & Individuals",
+  "Services & Freelancers",
 ];
+
+export const CATEGORY_EMOJIS: Record<string, string> = {
+  Payments: "💳",
+  Remittances: "💸",
+  Wallets: "👛",
+  "On/Off-Ramps": "🔄",
+  DeFi: "🏦",
+  RWA: "🏠",
+  Infrastructure: "⚙️",
+  "AI Payments": "🤖",
+  Enterprise: "🏢",
+  "Restaurants & Cafes": "🍽️",
+  "Hotels & Travel": "🏨",
+  "Casinos & Gambling": "🎰",
+  "Retail & Shops": "🛒",
+  "P2P Traders & Individuals": "👤",
+  "Services & Freelancers": "💼",
+};
 
 export const REGIONS = [
   "Global",
-  "North America",
-  "Latin America",
-  "Europe",
   "Africa",
-  "Asia Pacific",
-  "Middle East",
-  "Emerging Markets",
+  "Europe",
+  "Asia",
+  "North America",
+  "South America",
+  "Uganda",
+  "Kampala",
+  "Kenya",
+  "Nigeria",
+  "South Africa",
+  "Other",
 ];
+
+export const REGION_FLAGS: Record<string, string> = {
+  Global: "🌍",
+  Africa: "🌍",
+  Europe: "🇪🇺",
+  Asia: "🌏",
+  "North America": "🇺🇸",
+  "South America": "🌎",
+  Uganda: "🇺🇬",
+  Kampala: "🇺🇬",
+  Kenya: "🇰🇪",
+  Nigeria: "🇳🇬",
+  "South Africa": "🇿🇦",
+  Other: "📍",
+};
 
 export const NETWORKS = [
   "Ethereum",
@@ -85,4 +128,5 @@ export const NETWORKS = [
   "Arbitrum",
   "Noble",
   "Avalanche",
+  "Arc",
 ];
