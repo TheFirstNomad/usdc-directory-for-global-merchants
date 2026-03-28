@@ -9,6 +9,7 @@ import About from "./pages/About.tsx";
 import Submit from "./pages/Submit.tsx";
 import Insights from "./pages/Insights.tsx";
 import MerchantDetail from "./pages/MerchantDetail.tsx";
+import EditListing from "./pages/EditListing.tsx";
 import MapView from "./pages/MapView.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/submit" element={<Submit />} />
             <Route path="/insights" element={<Insights />} />
             <Route path="/merchant/:id" element={<MerchantDetail />} />
+            <Route path="/edit/:id" element={<EditListing />} />
             <Route path="/map" element={<MapView />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

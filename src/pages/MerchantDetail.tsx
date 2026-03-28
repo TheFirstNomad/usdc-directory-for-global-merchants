@@ -300,9 +300,11 @@ const MerchantDetail = () => {
               <p className="text-xs text-muted-foreground mb-3">
                 Claim and manage your listing. Verified owners get priority placement.
               </p>
-              <Button variant="outline" size="sm" className="w-full text-xs">
-                Claim This Listing
-              </Button>
+              <Link to={`/edit/${id}`}>
+                <Button variant="outline" size="sm" className="w-full text-xs">
+                  Edit This Listing — 5 USDC
+                </Button>
+              </Link>
             </div>
           </div>
         </motion.div>
