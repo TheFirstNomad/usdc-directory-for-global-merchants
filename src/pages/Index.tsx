@@ -131,7 +131,19 @@ const Index = () => {
               <p className="text-sm text-muted-foreground font-medium">
                 {loading ? "Loading…" : `${filteredPartners.length} merchants`}
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 bg-card border border-border rounded-lg px-2 py-1">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as "name" | "newest" | "score")}
+                    className="bg-transparent text-sm text-foreground font-medium outline-none cursor-pointer pr-1"
+                  >
+                    <option value="name">Name A–Z</option>
+                    <option value="newest">Newest</option>
+                    <option value="score">USDC Score</option>
+                  </select>
+                </div>
                 <div className="flex items-center bg-card border border-border rounded-lg overflow-hidden">
                   <button
                     onClick={() => setViewMode("grid")}
