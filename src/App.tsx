@@ -9,6 +9,7 @@ import About from "./pages/About.tsx";
 import Submit from "./pages/Submit.tsx";
 import Insights from "./pages/Insights.tsx";
 import MerchantDetail from "./pages/MerchantDetail.tsx";
+import EditListing from "./pages/EditListing.tsx";
 import MapView from "./pages/MapView.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
