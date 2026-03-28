@@ -53,7 +53,7 @@ const Insights = () => {
         description="Explore the USDC ecosystem — merchant distribution, category breakdown, regional coverage, and Circle Alliance statistics."
         path="/insights"
       />
-      <AcquisitionBanner />
+      
       <Header />
 
       <section className="relative overflow-hidden py-16 px-6">
