@@ -2,6 +2,7 @@ import { Menu, X, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 const navLinks = [
   { label: "Directory", href: "/" },
@@ -46,13 +47,31 @@ const Header = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
+          <ConnectButton.Custom>
+            {({ account, chain, openConnectModal, openAccountModal, mounted }) => {
+              const connected = mounted && account && chain;
+              return (
+                <button
+                  onClick={connected ? openAccountModal : openConnectModal}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-border bg-card hover:bg-muted transition-colors"
+                >
+                  <Wallet className="h-4 w-4" />
+                  {connected ? (
+                    <span>{account.displayName}</span>
+                  ) : (
+                    <span>Connect Wallet</span>
+                  )}
+                </button>
+              );
+            }}
+          </ConnectButton.Custom>
+
           <Link to="/submit">
             <Button
               size="sm"
-              className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all px-6 py-2.5 rounded-xl"
+              className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all px-5 py-2.5 rounded-xl"
             >
-              <Wallet className="h-4 w-4 mr-2" />
-              List Your Business — 10 USDC
+              List Your Business
             </Button>
           </Link>
         </div>
@@ -69,7 +88,7 @@ const Header = () => {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-border/40 bg-background/95 backdrop-blur-xl px-4 py-4 space-y-1 animate-fade-in">
+        <div className="md:hidden border-t border-border/40 bg-background/95 backdrop-blur-xl px-4 py-4 space-y-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -84,12 +103,30 @@ const Header = () => {
               {link.label}
             </Link>
           ))}
-          <Link to="/submit" onClick={() => setMobileOpen(false)} className="block mt-4">
-            <Button size="sm" className="w-full bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold rounded-xl">
-              <Wallet className="h-4 w-4 mr-2" />
-              List Your Business — 10 USDC
-            </Button>
-          </Link>
+          <div className="pt-3 space-y-2">
+            <ConnectButton.Custom>
+              {({ account, chain, openConnectModal, openAccountModal, mounted }) => {
+                const connected = mounted && account && chain;
+                return (
+                  <button
+                    onClick={() => {
+                      (connected ? openAccountModal : openConnectModal)();
+                      setMobileOpen(false);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border border-border bg-card"
+                  >
+                    <Wallet className="h-4 w-4" />
+                    {connected ? account.displayName : "Connect Wallet"}
+                  </button>
+                );
+              }}
+            </ConnectButton.Custom>
+            <Link to="/submit" onClick={() => setMobileOpen(false)} className="block">
+              <Button size="sm" className="w-full bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold rounded-xl">
+                List Your Business
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
     </header>
