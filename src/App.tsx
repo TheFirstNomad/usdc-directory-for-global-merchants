@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -13,7 +14,7 @@ import EditListing from "./pages/EditListing.tsx";
 import MapView from "./pages/MapView.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
-const App = () => (
+const App = forwardRef<HTMLDivElement>((_, _ref) => (
   <HelmetProvider>
     <Web3Provider>
       <TooltipProvider>
@@ -34,6 +35,8 @@ const App = () => (
       </TooltipProvider>
     </Web3Provider>
   </HelmetProvider>
-);
+));
+
+App.displayName = "App";
 
 export default App;
