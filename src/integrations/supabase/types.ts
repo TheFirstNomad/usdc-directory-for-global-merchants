@@ -24,10 +24,14 @@ export type Database = {
           logo_emoji: string | null
           logo_url: string | null
           name: string
+          networks: string[]
+          payment_id: string | null
+          payment_status: string
           region: string | null
           updated_at: string
           usdc_score: number | null
           use_cases: string[] | null
+          wallet_address: string | null
           website: string | null
         }
         Insert: {
@@ -39,10 +43,14 @@ export type Database = {
           logo_emoji?: string | null
           logo_url?: string | null
           name: string
+          networks?: string[]
+          payment_id?: string | null
+          payment_status?: string
           region?: string | null
           updated_at?: string
           usdc_score?: number | null
           use_cases?: string[] | null
+          wallet_address?: string | null
           website?: string | null
         }
         Update: {
@@ -54,10 +62,14 @@ export type Database = {
           logo_emoji?: string | null
           logo_url?: string | null
           name?: string
+          networks?: string[]
+          payment_id?: string | null
+          payment_status?: string
           region?: string | null
           updated_at?: string
           usdc_score?: number | null
           use_cases?: string[] | null
+          wallet_address?: string | null
           website?: string | null
         }
         Relationships: []
@@ -70,8 +82,14 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          logo_url: string | null
+          networks: string[]
+          partner_id: string | null
+          payment_id: string | null
+          payment_status: string
           region: string | null
           status: string
+          wallet_address: string | null
           website: string
         }
         Insert: {
@@ -81,8 +99,14 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
+          logo_url?: string | null
+          networks?: string[]
+          partner_id?: string | null
+          payment_id?: string | null
+          payment_status?: string
           region?: string | null
           status?: string
+          wallet_address?: string | null
           website: string
         }
         Update: {
@@ -92,11 +116,25 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          logo_url?: string | null
+          networks?: string[]
+          partner_id?: string | null
+          payment_id?: string | null
+          payment_status?: string
           region?: string | null
           status?: string
+          wallet_address?: string | null
           website?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "submissions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
