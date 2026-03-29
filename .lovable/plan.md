@@ -1,35 +1,32 @@
 
 
-## Replace RainbowKit with Reown AppKit + Rename to "Sign In"
+## Fix: Chain ID double-prefix bug in Reown AppKit
 
-**What changes**: Remove RainbowKit entirely, replace with Reown AppKit which supports direct browser extension wallets (MetaMask, etc.) AND WalletConnect QR for mobile. Rename "Connect Wallet" to "Sign In" everywhere.
+**Problem**: WalletConnect fails with `"chain eip155:eip155:5042002 should conform to namespace:chainId format"`. The Arc Testnet chain is defined using viem's `defineChain()` and cast as `any` into AppKit, which double-prefixes the namespace.
 
-### Dependencies
-- **Install**: `@reown/appkit`, `@reown/appkit-adapter-wagmi`
-- **Remove**: `@rainbow-me/rainbowkit`
+**Root cause**: Reown AppKit expects networks defined with its own helper (`defineChain` from `@reown/appkit/networks`), not viem's `defineChain`. The viem chain object lacks the `caipNetworkId` property, so AppKit tries to auto-generate it incorrectly.
 
-### Files to modify
+### Fix
 
-1. **`src/components/Web3Provider.tsx`** — Full rewrite:
-   - Import `WagmiAdapter` from `@reown/appkit-adapter-wagmi`
-   - Import `createAppKit` from `@reown/appkit/react`
-   - Define Arc Testnet as an AppKit-compatible network object
-   - Create adapter with project ID from `import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID`
-   - Call `createAppKit()` at module level with metadata (name, description, URL, icon)
-   - Export provider wrapping `WagmiProvider` + `QueryClientProvider` (no RainbowKitProvider)
+**`src/components/Web3Provider.tsx`** — Define the Arc Testnet network using AppKit's expected format directly in this file, instead of importing from `src/lib/web3.ts`:
 
-2. **`src/components/Header.tsx`** — Replace RainbowKit `ConnectButton`:
-   - Use `useAppKit()` for `open()` method, `useAppKitAccount()` for connection state
-   - Rename button label from "Connect Wallet" to **"Sign In"**
-   - Connected state shows truncated address; clicking opens account view
-   - Same changes for both desktop and mobile menu
+```ts
+const arcTestnetNetwork = {
+  id: "eip155:5042002",
+  chainId: 5042002,
+  name: "Arc Testnet",
+  currency: "USDC",
+  explorerUrl: "https://testnet.arcscan.app",
+  rpcUrl: "https://rpc.testnet.arc.network",
+  chainNamespace: "eip155",
+} as const;
+```
 
-3. **`src/components/PaymentModal.tsx`** — Replace `<ConnectButton />` fallback:
-   - Use `useAppKit()` to trigger `open()` instead of RainbowKit's ConnectButton
-   - Label the fallback button "Sign In to Pay"
-   - Keep all existing wagmi hooks (`useAccount`, `useSendTransaction`) unchanged
+Pass this object (not the viem chain) to both `WagmiAdapter` and `createAppKit` `networks` arrays. Remove the `as any` casts.
 
-### What stays the same
-- `src/lib/web3.ts` — chain config, treasury address, fees
-- All wagmi transaction hooks throughout the app
+**`src/lib/web3.ts`** — Keep unchanged (still used by wagmi hooks for transactions).
+
+### Technical detail
+- AppKit's network objects need `id` as `"eip155:5042002"` (string CAIP format) and a separate `chainId` as the number
+- The viem chain definition stays for use with wagmi transaction hooks (`useSendTransaction`, etc.)
 
