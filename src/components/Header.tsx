@@ -60,11 +60,19 @@ const Header = () => {
 
         <div className="hidden md:flex items-center gap-3">
           <button
+            onClick={toggleTheme}
+            className="p-2 rounded-xl border border-border bg-card hover:bg-muted transition-colors text-foreground"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+
+          <button
             onClick={handleAuth}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-border bg-card hover:bg-muted transition-colors"
           >
-            <LogIn className="h-4 w-4" />
-            <span>{isConnected ? truncatedAddress : "Sign In"}</span>
+            <Wallet className="h-4 w-4" />
+            <span>{isConnected ? truncatedAddress : "Connect Wallet"}</span>
           </button>
 
           <Link to="/submit">
