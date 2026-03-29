@@ -8,6 +8,7 @@ import { useTheme } from "@/components/ThemeProvider";
 const navLinks = [
   { label: "Directory", href: "/" },
   { label: "Map", href: "/map" },
+  { label: "My Listings", href: "/my-listings" },
   { label: "About USDC", href: "/about" },
   { label: "Insights", href: "/insights" },
 ];

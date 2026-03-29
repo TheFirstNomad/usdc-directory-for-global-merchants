@@ -1,50 +1,74 @@
 import { useState } from "react";
-import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from "wagmi";
-import { parseUnits } from "viem";
-import { TREASURY_ADDRESS, LISTING_FEE_DISPLAY, UPDATE_FEE_DISPLAY } from "@/lib/web3";
-import { Button } from "@/components/ui/button";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { useAppKit } from "@reown/appkit/react";
-import { CheckCircle2, ExternalLink, Copy, Wallet, Loader2, LogIn } from "lucide-react";
+import { LISTING_FEE_DISPLAY, UPDATE_FEE_DISPLAY } from "@/lib/web3";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, ExternalLink, Loader2, LogIn, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface PaymentModalProps {
   type: "listing" | "update";
-  onSuccess: (txHash: string) => void;
+  submissionData: Record<string, unknown>;
+  onSuccess: (orderId: string) => void;
   onClose: () => void;
 }
 
-const PaymentModal = ({ type, onSuccess, onClose }: PaymentModalProps) => {
+const PaymentModal = ({ type, submissionData, onSuccess, onClose }: PaymentModalProps) => {
   const { toast } = useToast();
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useAppKitAccount();
   const { open } = useAppKit();
-  const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const amount = type === "listing" ? LISTING_FEE_DISPLAY : UPDATE_FEE_DISPLAY;
-  const amountWei = parseUnits(amount, 6);
 
-  const { sendTransaction, data: txHash, isPending } = useSendTransaction();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash: txHash,
-  });
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || `https://${projectId}.supabase.co`;
 
-  const handlePay = () => {
-    if (!isConnected) return;
-    sendTransaction({
-      to: TREASURY_ADDRESS,
-      value: amountWei,
-    });
+  const createInvoice = async () => {
+    if (!isConnected || !address) {
+      toast({ title: "Please connect your wallet first", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(
+        `${supabaseUrl}/functions/v1/create-nowpayments-invoice`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type,
+            wallet_address: address,
+            submission_data: submissionData,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to create invoice");
+      }
+
+      const data = await res.json();
+      setInvoiceUrl(data.invoice_url);
+      setOrderId(data.order_id);
+
+      // Open invoice in new tab
+      window.open(data.invoice_url, "_blank");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to create payment";
+      setError(message);
+      toast({ title: "Payment Error", description: message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const copyAddress = () => {
-    navigator.clipboard.writeText(TREASURY_ADDRESS);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({ title: "Address copied!" });
-  };
-
-  if (isSuccess && txHash) {
-    onSuccess(txHash);
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -56,26 +80,45 @@ const PaymentModal = ({ type, onSuccess, onClose }: PaymentModalProps) => {
           ×
         </button>
 
-        {isSuccess && txHash ? (
+        {invoiceUrl ? (
           <div className="text-center">
-            <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 className="h-10 w-10 text-success" />
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+              <CreditCard className="h-10 w-10 text-primary" />
             </div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">Payment Confirmed! 🎉</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-2">Payment Created</h2>
             <p className="text-muted-foreground text-sm mb-6">
-              Your {type === "listing" ? "listing" : "update"} has been submitted successfully.
+              Complete your {amount} USDC payment in the NOWPayments checkout window. You can pay with crypto or card.
             </p>
-            <a
-              href={`https://testnet.arcscan.app/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-primary text-sm font-medium hover:underline"
-            >
-              View on Arcscan <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-            <p className="text-xs text-muted-foreground mt-3 font-mono break-all">
-              TX: {txHash}
+
+            <div className="space-y-3">
+              <a
+                href={invoiceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold py-3 px-6 rounded-xl text-base hover:opacity-90 transition-opacity"
+              >
+                <ExternalLink className="h-4 w-4" /> Open Payment Page
+              </a>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  if (orderId) onSuccess(orderId);
+                }}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" /> I've Completed Payment
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-4">
+              Your listing will go live automatically once payment is confirmed (usually 1-5 minutes).
             </p>
+            {orderId && (
+              <p className="text-xs text-muted-foreground mt-2 font-mono break-all">
+                Order: {orderId}
+              </p>
+            )}
           </div>
         ) : (
           <>
@@ -92,16 +135,14 @@ const PaymentModal = ({ type, onSuccess, onClose }: PaymentModalProps) => {
             <div className="space-y-4">
               {isConnected ? (
                 <Button
-                  onClick={handlePay}
-                  disabled={isPending || isConfirming}
+                  onClick={createInvoice}
+                  disabled={loading}
                   className="w-full bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold py-6 rounded-xl text-base"
                 >
-                  {isPending ? (
-                    <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Confirm in Wallet…</>
-                  ) : isConfirming ? (
-                    <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Confirming…</>
+                  {loading ? (
+                    <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Creating Invoice…</>
                   ) : (
-                    <><Wallet className="h-5 w-5 mr-2" /> Pay {amount} USDC</>
+                    <><CreditCard className="h-5 w-5 mr-2" /> Pay {amount} USDC</>
                   )}
                 </Button>
               ) : (
@@ -109,38 +150,17 @@ const PaymentModal = ({ type, onSuccess, onClose }: PaymentModalProps) => {
                   onClick={() => open()}
                   className="w-full bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold py-6 rounded-xl text-base"
                 >
-                  <LogIn className="h-5 w-5 mr-2" /> Sign In to Pay
+                  <LogIn className="h-5 w-5 mr-2" /> Connect Wallet to Pay
                 </Button>
               )}
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-3 text-muted-foreground">or send manually</span>
-                </div>
-              </div>
+              {error && (
+                <p className="text-sm text-destructive text-center">{error}</p>
+              )}
 
               <div className="bg-muted/50 rounded-xl p-4">
-                <p className="text-xs text-muted-foreground mb-2">Send exactly {amount} USDC to:</p>
-                <div className="flex items-center gap-2">
-                  <code className="text-xs text-foreground font-mono break-all flex-1">
-                    {TREASURY_ADDRESS}
-                  </code>
-                  <button
-                    onClick={copyAddress}
-                    className="p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
-                  >
-                    {copied ? (
-                      <CheckCircle2 className="h-4 w-4 text-success" />
-                    ) : (
-                      <Copy className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </button>
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-2">
-                  Network: Arc Testnet (Chain ID: 5042002)
+                <p className="text-xs text-muted-foreground">
+                  💳 Pay with USDC on Base, or use card via NOWPayments checkout. Your listing goes live automatically after payment confirmation.
                 </p>
               </div>
             </div>

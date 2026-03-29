@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import SEO from "@/components/SEO";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -7,13 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { submitPartnerApplication, CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS, NETWORKS } from "@/lib/partners";
-import { CheckCircle2, ArrowRight, ArrowLeft, Upload } from "lucide-react";
+import { CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS, NETWORKS } from "@/lib/partners";
+import { CheckCircle2, ArrowRight, ArrowLeft, Upload, Eye } from "lucide-react";
+import { useAppKitAccount } from "@reown/appkit/react";
+import { useAppKit } from "@reown/appkit/react";
+import { Wallet } from "lucide-react";
 
 const STEPS = [
   { title: "Business Info", description: "Tell us about your business" },
   { title: "Networks", description: "Which chains do you accept USDC on?" },
   { title: "Location", description: "Where are your customers?" },
+  { title: "Preview", description: "Review your listing before payment" },
   { title: "Payment", description: "Pay 10 USDC to list" },
 ];
 
@@ -21,11 +26,15 @@ const PRESENCE_TYPES = ["Online Only", "Physical Locations", "Both"];
 
 const Submit = () => {
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const { address, isConnected } = useAppKitAccount();
+  const { open } = useAppKit();
   const [step, setStep] = useState(0);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(searchParams.get("success") === "true");
   const [showPayment, setShowPayment] = useState(false);
-  const [txHash, setTxHash] = useState("");
+  const [orderId, setOrderId] = useState(searchParams.get("order") || "");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [form, setForm] = useState({
     company_name: "",
     contact_email: "",
@@ -74,8 +83,41 @@ const Submit = () => {
     return true;
   };
 
-  const nextStep = () => {
+  const uploadLogo = async () => {
+    if (!form.logo_file || !address) return null;
+    setUploadingLogo(true);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || `https://${projectId}.supabase.co`;
+      const fd = new FormData();
+      fd.append("file", form.logo_file);
+      fd.append("wallet_address", address);
+      const res = await fetch(`${supabaseUrl}/functions/v1/upload-logo`, {
+        method: "POST",
+        body: fd,
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      setLogoUrl(data.url);
+      return data.url;
+    } catch {
+      toast({ title: "Logo upload failed", variant: "destructive" });
+      return null;
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const nextStep = async () => {
     if (!validateStep()) return;
+    // Upload logo when moving past step 0
+    if (step === 0 && form.logo_file && !logoUrl) {
+      if (!isConnected) {
+        toast({ title: "Please connect wallet to upload logo", variant: "destructive" });
+        return;
+      }
+      await uploadLogo();
+    }
     if (step < STEPS.length - 1) setStep(step + 1);
   };
 
@@ -83,25 +125,21 @@ const Submit = () => {
     if (step > 0) setStep(step - 1);
   };
 
-  const handlePaymentSuccess = async (hash: string) => {
-    setTxHash(hash);
-    setLoading(true);
-    try {
-      await submitPartnerApplication({
-        company_name: form.company_name,
-        contact_email: form.contact_email,
-        website: form.website,
-        description: form.description,
-        categories: form.categories,
-        region: form.region,
-      });
-      setShowPayment(false);
-      setSubmitted(true);
-    } catch {
-      toast({ title: "Submission failed", description: "Payment received but listing failed. Contact hello@usdc.directory with your tx hash.", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
+  const handlePaymentSuccess = (id: string) => {
+    setOrderId(id);
+    setShowPayment(false);
+    setSubmitted(true);
+  };
+
+  const submissionData = {
+    company_name: form.company_name,
+    contact_email: form.contact_email,
+    website: form.website,
+    description: form.description,
+    categories: form.categories,
+    region: form.region,
+    networks: form.networks,
+    logo_url: logoUrl,
   };
 
   if (submitted) {
@@ -114,25 +152,14 @@ const Submit = () => {
             <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="h-10 w-10 text-success" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-3">
-              🎉 Your business is listed!
-            </h1>
+            <h1 className="text-2xl font-bold text-foreground mb-3">🎉 Payment Submitted!</h1>
             <p className="text-muted-foreground mb-4">
-              Payment confirmed. Your listing is now live in the USDC Directory.
+              Your listing will go live automatically once payment is confirmed (usually 1-5 minutes).
             </p>
-            {txHash && (
-              <a
-                href={`https://testnet.arcscan.app/tx/${txHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary text-sm font-medium hover:underline block mb-6"
-              >
-                View transaction on Arcscan →
-              </a>
+            {orderId && (
+              <p className="text-xs text-muted-foreground font-mono break-all mb-6">Order: {orderId}</p>
             )}
-            <a href="/" className="text-primary text-sm font-medium hover:underline">
-              ← Back to Directory
-            </a>
+            <a href="/" className="text-primary text-sm font-medium hover:underline">← Back to Directory</a>
           </div>
         </main>
         <Footer />
@@ -142,18 +169,12 @@ const Submit = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <SEO
-        title="List Your Business — 10 USDC"
-        description="Add your business to the USDC Directory for just 10 USDC. Get discovered by thousands of USDC users worldwide."
-        path="/submit"
-      />
+      <SEO title="List Your Business — 10 USDC" description="Add your business to the USDC Directory for just 10 USDC." path="/submit" />
       <Header />
 
       <section className="bg-gradient-to-b from-primary/5 to-background py-14 px-6">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-foreground mb-3">
-            List Your Business
-          </h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-foreground mb-3">List Your Business</h1>
           <p className="text-muted-foreground text-base max-w-xl mx-auto">
             Get discovered by thousands of USDC users worldwide. <span className="font-semibold text-foreground">Just 10 USDC</span> for a permanent listing.
           </p>
@@ -171,9 +192,7 @@ const Submit = () => {
                 {i < step ? "✓" : i + 1}
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`h-0.5 w-8 sm:w-16 mx-1 transition-colors ${
-                  i < step ? "bg-primary" : "bg-border"
-                }`} />
+                <div className={`h-0.5 w-6 sm:w-12 mx-1 transition-colors ${i < step ? "bg-primary" : "bg-border"}`} />
               )}
             </div>
           ))}
@@ -209,20 +228,17 @@ const Submit = () => {
                   <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card cursor-pointer hover:bg-muted transition-colors text-sm text-muted-foreground">
                     <Upload className="h-4 w-4" />
                     {form.logo_file ? form.logo_file.name : "Upload PNG logo"}
-                    <input
-                      type="file"
-                      accept="image/png"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file && file.type === "image/png") {
-                          setForm({ ...form, logo_file: file });
-                        } else {
-                          toast({ title: "PNG files only", variant: "destructive" });
-                        }
-                      }}
-                    />
+                    <input type="file" accept="image/png" className="hidden" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file && file.type === "image/png") {
+                        setForm({ ...form, logo_file: file });
+                        setLogoUrl(null);
+                      } else {
+                        toast({ title: "PNG files only", variant: "destructive" });
+                      }
+                    }} />
                   </label>
+                  {uploadingLogo && <span className="text-xs text-muted-foreground">Uploading…</span>}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">Recommended: 512×512px, transparent background</p>
               </div>
@@ -230,16 +246,9 @@ const Submit = () => {
                 <label className="block text-sm font-medium text-foreground mb-2">Categories *</label>
                 <div className="flex flex-wrap gap-2">
                   {CATEGORIES.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => toggleCategory(cat)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                        form.categories.includes(cat)
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "border-border text-muted-foreground hover:border-primary/50"
-                      }`}
-                    >
+                    <button key={cat} type="button" onClick={() => toggleCategory(cat)} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      form.categories.includes(cat) ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
+                    }`}>
                       {CATEGORY_EMOJIS[cat] || "📦"} {cat}
                     </button>
                   ))}
@@ -253,16 +262,9 @@ const Submit = () => {
               <p className="text-sm text-muted-foreground">Select all blockchain networks where you accept USDC.</p>
               <div className="grid grid-cols-2 gap-3">
                 {NETWORKS.map((net) => (
-                  <button
-                    key={net}
-                    type="button"
-                    onClick={() => toggleNetwork(net)}
-                    className={`p-4 rounded-xl border text-sm font-medium transition-all ${
-                      form.networks.includes(net)
-                        ? "bg-primary/10 border-primary text-primary"
-                        : "bg-card border-border text-muted-foreground hover:border-primary/40"
-                    }`}
-                  >
+                  <button key={net} type="button" onClick={() => toggleNetwork(net)} className={`p-4 rounded-xl border text-sm font-medium transition-all ${
+                    form.networks.includes(net) ? "bg-primary/10 border-primary text-primary" : "bg-card border-border text-muted-foreground hover:border-primary/40"
+                  }`}>
                     {net}
                   </button>
                 ))}
@@ -276,16 +278,9 @@ const Submit = () => {
                 <label className="block text-sm font-medium text-foreground mb-2">Business Presence</label>
                 <div className="flex flex-wrap gap-2">
                   {PRESENCE_TYPES.map((pt) => (
-                    <button
-                      key={pt}
-                      type="button"
-                      onClick={() => setForm({ ...form, presence_type: pt })}
-                      className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
-                        form.presence_type === pt
-                          ? "bg-primary/10 border-primary text-primary"
-                          : "border-border text-muted-foreground hover:border-primary/40"
-                      }`}
-                    >
+                    <button key={pt} type="button" onClick={() => setForm({ ...form, presence_type: pt })} className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
+                      form.presence_type === pt ? "bg-primary/10 border-primary text-primary" : "border-border text-muted-foreground hover:border-primary/40"
+                    }`}>
                       {pt}
                     </button>
                   ))}
@@ -295,16 +290,9 @@ const Submit = () => {
                 <label className="block text-sm font-medium text-foreground mb-2">Region *</label>
                 <div className="flex flex-wrap gap-2">
                   {REGIONS.map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => setForm({ ...form, region: r })}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                        form.region === r
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "border-border text-muted-foreground hover:border-primary/50"
-                      }`}
-                    >
+                    <button key={r} type="button" onClick={() => setForm({ ...form, region: r })} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      form.region === r ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
+                    }`}>
                       {REGION_FLAGS[r] || "📍"} {r}
                     </button>
                   ))}
@@ -325,18 +313,63 @@ const Submit = () => {
             </div>
           )}
 
+          {/* Preview Step */}
           {step === 3 && (
+            <div className="space-y-6">
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center text-3xl">
+                    {logoUrl ? <img src={logoUrl} alt="" className="w-14 h-14 rounded-lg object-cover" /> : "🏢"}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground">{form.company_name}</h3>
+                    <a href={form.website} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">{form.website}</a>
+                  </div>
+                </div>
+                <p className="text-muted-foreground text-sm mb-4">{form.description}</p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {form.categories.map((cat) => (
+                    <span key={cat} className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium">
+                      {CATEGORY_EMOJIS[cat] || "📦"} {cat}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {form.networks.map((net) => (
+                    <span key={net} className="text-xs bg-muted text-muted-foreground px-2.5 py-1 rounded-full font-medium">⛓ {net}</span>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">📍 {REGION_FLAGS[form.region] || "📍"} {form.region}</p>
+              </div>
+
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
+                <Eye className="h-5 w-5 text-primary mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">This is how your listing will appear. Continue to pay and publish.</p>
+              </div>
+            </div>
+          )}
+
+          {step === 4 && (
             <div className="space-y-6">
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 text-center">
                 <img src="/Circle_USDC_Logo.svg" alt="USDC" className="h-10 w-10 mx-auto mb-3" />
                 <h3 className="text-xl font-bold text-foreground mb-1">10 USDC</h3>
                 <p className="text-sm text-muted-foreground mb-4">One-time listing fee</p>
-                <Button
-                  onClick={() => setShowPayment(true)}
-                  className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold px-8 py-3 rounded-xl text-base"
-                >
-                  Pay & List Your Business
-                </Button>
+                {isConnected ? (
+                  <Button
+                    onClick={() => setShowPayment(true)}
+                    className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold px-8 py-3 rounded-xl text-base"
+                  >
+                    Pay & List Your Business
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => open()}
+                    className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold px-8 py-3 rounded-xl text-base"
+                  >
+                    <Wallet className="h-5 w-5 mr-2" /> Connect Wallet to Pay
+                  </Button>
+                )}
               </div>
               <div className="bg-card border border-border rounded-xl p-4">
                 <h4 className="font-semibold text-foreground text-sm mb-2">What you get:</h4>
@@ -347,22 +380,17 @@ const Submit = () => {
                   <li>✅ Instant approval after payment</li>
                 </ul>
               </div>
-              <p className="text-xs text-muted-foreground text-center">
-                Need help? Contact{" "}
-                <a href="mailto:hello@usdc.directory" className="text-primary underline">hello@usdc.directory</a>
-              </p>
             </div>
           )}
         </div>
 
-        {/* Navigation buttons */}
         <div className="flex items-center justify-between mt-8">
           <Button variant="outline" onClick={prevStep} disabled={step === 0}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
           {step < STEPS.length - 1 && (
-            <Button onClick={nextStep} className="bg-primary text-primary-foreground hover:bg-primary/90">
-              Continue <ArrowRight className="h-4 w-4 ml-1" />
+            <Button onClick={nextStep} disabled={uploadingLogo} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              {uploadingLogo ? "Uploading…" : "Continue"} <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           )}
         </div>
@@ -373,6 +401,7 @@ const Submit = () => {
       {showPayment && (
         <PaymentModal
           type="listing"
+          submissionData={submissionData}
           onSuccess={handlePaymentSuccess}
           onClose={() => setShowPayment(false)}
         />
