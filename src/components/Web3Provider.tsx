@@ -51,12 +51,16 @@ createAppKit({
 
 const queryClient = new QueryClient();
 
-export function Web3Provider({ children }: { children: ReactNode }) {
-  return (
-    <WagmiProvider config={wagmiAdapter.wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    </WagmiProvider>
-  );
-}
+export const Web3Provider = forwardRef<HTMLDivElement, { children: ReactNode }>(
+  ({ children }, _ref) => {
+    return (
+      <WagmiProvider config={wagmiAdapter.wagmiConfig}>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
+      </WagmiProvider>
+    );
+  }
+);
+
+Web3Provider.displayName = "Web3Provider";
