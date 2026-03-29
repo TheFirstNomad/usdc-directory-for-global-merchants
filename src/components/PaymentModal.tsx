@@ -3,8 +3,8 @@ import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from "wa
 import { parseUnits } from "viem";
 import { TREASURY_ADDRESS, LISTING_FEE_DISPLAY, UPDATE_FEE_DISPLAY } from "@/lib/web3";
 import { Button } from "@/components/ui/button";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { CheckCircle2, ExternalLink, Copy, Wallet, Loader2 } from "lucide-react";
+import { useAppKit } from "@reown/appkit/react";
+import { CheckCircle2, ExternalLink, Copy, Wallet, Loader2, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface PaymentModalProps {
@@ -16,6 +16,7 @@ interface PaymentModalProps {
 const PaymentModal = ({ type, onSuccess, onClose }: PaymentModalProps) => {
   const { toast } = useToast();
   const { address, isConnected } = useAccount();
+  const { open } = useAppKit();
   const [copied, setCopied] = useState(false);
 
   const amount = type === "listing" ? LISTING_FEE_DISPLAY : UPDATE_FEE_DISPLAY;
@@ -104,9 +105,12 @@ const PaymentModal = ({ type, onSuccess, onClose }: PaymentModalProps) => {
                   )}
                 </Button>
               ) : (
-                <div className="flex justify-center">
-                  <ConnectButton />
-                </div>
+                <Button
+                  onClick={() => open()}
+                  className="w-full bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold py-6 rounded-xl text-base"
+                >
+                  <LogIn className="h-5 w-5 mr-2" /> Sign In to Pay
+                </Button>
               )}
 
               <div className="relative">

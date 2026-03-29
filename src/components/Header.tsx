@@ -1,8 +1,8 @@
-import { Menu, X, Wallet } from "lucide-react";
+import { Menu, X, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 
 const navLinks = [
   { label: "Directory", href: "/" },
@@ -14,6 +14,16 @@ const navLinks = [
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const { open } = useAppKit();
+  const { address, isConnected } = useAppKitAccount();
+
+  const truncatedAddress = address
+    ? `${address.slice(0, 6)}…${address.slice(-4)}`
+    : "";
+
+  const handleAuth = () => {
+    open(isConnected ? { view: "Account" } : undefined);
+  };
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/40">
@@ -47,24 +57,13 @@ const Header = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <ConnectButton.Custom>
-            {({ account, chain, openConnectModal, openAccountModal, mounted }) => {
-              const connected = mounted && account && chain;
-              return (
-                <button
-                  onClick={connected ? openAccountModal : openConnectModal}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-border bg-card hover:bg-muted transition-colors"
-                >
-                  <Wallet className="h-4 w-4" />
-                  {connected ? (
-                    <span>{account.displayName}</span>
-                  ) : (
-                    <span>Connect Wallet</span>
-                  )}
-                </button>
-              );
-            }}
-          </ConnectButton.Custom>
+          <button
+            onClick={handleAuth}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-border bg-card hover:bg-muted transition-colors"
+          >
+            <LogIn className="h-4 w-4" />
+            <span>{isConnected ? truncatedAddress : "Sign In"}</span>
+          </button>
 
           <Link to="/submit">
             <Button
@@ -104,23 +103,16 @@ const Header = () => {
             </Link>
           ))}
           <div className="pt-3 space-y-2">
-            <ConnectButton.Custom>
-              {({ account, chain, openConnectModal, openAccountModal, mounted }) => {
-                const connected = mounted && account && chain;
-                return (
-                  <button
-                    onClick={() => {
-                      (connected ? openAccountModal : openConnectModal)();
-                      setMobileOpen(false);
-                    }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border border-border bg-card"
-                  >
-                    <Wallet className="h-4 w-4" />
-                    {connected ? account.displayName : "Connect Wallet"}
-                  </button>
-                );
+            <button
+              onClick={() => {
+                handleAuth();
+                setMobileOpen(false);
               }}
-            </ConnectButton.Custom>
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border border-border bg-card"
+            >
+              <LogIn className="h-4 w-4" />
+              {isConnected ? truncatedAddress : "Sign In"}
+            </button>
             <Link to="/submit" onClick={() => setMobileOpen(false)} className="block">
               <Button size="sm" className="w-full bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold rounded-xl">
                 List Your Business
