@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 
 const config = getDefaultConfig({
   appName: "USDC Directory",
-  projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "demo",
+  projectId: "3592c16759a9b6907bc4eb5afd455b15",
   chains: [arcTestnet],
   ssr: false,
 });
