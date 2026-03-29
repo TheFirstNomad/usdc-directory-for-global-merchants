@@ -8,12 +8,13 @@ const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID || "3592c16759a
 
 const arcTestnetNetwork = {
   id: "eip155:5042002",
+  caipNetworkId: "eip155:5042002" as const,
   chainId: 5042002,
   name: "Arc Testnet",
   currency: "USDC",
   explorerUrl: "https://testnet.arcscan.app",
   rpcUrl: "https://rpc.testnet.arc.network",
-  chainNamespace: "eip155",
+  chainNamespace: "eip155" as const,
   nativeCurrency: {
     name: "USDC",
     symbol: "USDC",
@@ -24,7 +25,7 @@ const arcTestnetNetwork = {
       http: ["https://rpc.testnet.arc.network"],
     },
   },
-} as const;
+};
 
 const wagmiAdapter = new WagmiAdapter({
   projectId,
