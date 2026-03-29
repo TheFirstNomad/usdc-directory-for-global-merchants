@@ -17,6 +17,7 @@ const Header = () => {
   const location = useLocation();
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
+  const { theme, toggleTheme } = useTheme();
 
   const truncatedAddress = address
     ? `${address.slice(0, 6)}…${address.slice(-4)}`
