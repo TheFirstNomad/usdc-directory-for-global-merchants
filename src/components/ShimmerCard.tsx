@@ -1,7 +1,8 @@
+import { forwardRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const ShimmerCard = () => (
-  <div className="bg-card rounded-2xl overflow-hidden border border-border">
+const ShimmerCard = forwardRef<HTMLDivElement>((_, ref) => (
+  <div ref={ref} className="bg-card rounded-2xl overflow-hidden border border-border">
     <div className="h-24 bg-muted/50 flex items-center justify-center">
       <Skeleton className="h-16 w-16 rounded-xl" />
     </div>
@@ -17,6 +18,8 @@ const ShimmerCard = () => (
       <Skeleton className="h-9 w-full rounded-lg mt-2" />
     </div>
   </div>
-);
+));
+
+ShimmerCard.displayName = "ShimmerCard";
 
 export default ShimmerCard;
