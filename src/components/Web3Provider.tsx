@@ -27,6 +27,10 @@ createAppKit({
     "--w3m-accent": "hsl(210, 79%, 55%)",
     "--w3m-border-radius-master": "2px",
   },
+  features: {
+    email: false,
+    socials: false,
+  },
 });
 
 const queryClient = new QueryClient();
