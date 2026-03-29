@@ -33,6 +33,7 @@ const App = () => (
             <Route path="/edit/:id" element={<EditListing />} />
             <Route path="/map" element={<MapView />} />
             <Route path="/my-listings" element={<MyListings />} />
+            <Route path="/admin/payments" element={<AdminPayments />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

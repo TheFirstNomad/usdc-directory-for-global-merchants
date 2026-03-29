@@ -21,6 +21,15 @@ const Header = () => {
   const { address, isConnected } = useAppKitAccount();
   const { theme, toggleTheme } = useTheme();
 
+  const isOwner = address?.toLowerCase() === TREASURY_ADDRESS.toLowerCase();
+  const navLinks = useMemo(
+    () =>
+      isOwner
+        ? [...baseNavLinks, { label: "Admin", href: "/admin/payments" }]
+        : baseNavLinks,
+    [isOwner]
+  );
+
   const truncatedAddress = address
     ? `${address.slice(0, 6)}…${address.slice(-4)}`
     : "";
