@@ -134,11 +134,68 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "submissions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      partners_public: {
+        Row: {
+          categories: string[] | null
+          created_at: string | null
+          description: string | null
+          featured: boolean | null
+          id: string | null
+          logo_emoji: string | null
+          logo_url: string | null
+          name: string | null
+          networks: string[] | null
+          region: string | null
+          updated_at: string | null
+          usdc_score: number | null
+          use_cases: string[] | null
+          website: string | null
+        }
+        Insert: {
+          categories?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          id?: string | null
+          logo_emoji?: string | null
+          logo_url?: string | null
+          name?: string | null
+          networks?: string[] | null
+          region?: string | null
+          updated_at?: string | null
+          usdc_score?: number | null
+          use_cases?: string[] | null
+          website?: string | null
+        }
+        Update: {
+          categories?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          id?: string | null
+          logo_emoji?: string | null
+          logo_url?: string | null
+          name?: string | null
+          networks?: string[] | null
+          region?: string | null
+          updated_at?: string | null
+          usdc_score?: number | null
+          use_cases?: string[] | null
+          website?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
