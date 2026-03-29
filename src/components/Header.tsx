@@ -1,8 +1,9 @@
-import { Menu, X, LogIn } from "lucide-react";
+import { Menu, X, Wallet, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
+import { useTheme } from "@/components/ThemeProvider";
 
 const navLinks = [
   { label: "Directory", href: "/" },
@@ -16,6 +17,7 @@ const Header = () => {
   const location = useLocation();
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
+  const { theme, toggleTheme } = useTheme();
 
   const truncatedAddress = address
     ? `${address.slice(0, 6)}…${address.slice(-4)}`
@@ -58,11 +60,19 @@ const Header = () => {
 
         <div className="hidden md:flex items-center gap-3">
           <button
+            onClick={toggleTheme}
+            className="p-2 rounded-xl border border-border bg-card hover:bg-muted transition-colors text-foreground"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+
+          <button
             onClick={handleAuth}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-border bg-card hover:bg-muted transition-colors"
           >
-            <LogIn className="h-4 w-4" />
-            <span>{isConnected ? truncatedAddress : "Sign In"}</span>
+            <Wallet className="h-4 w-4" />
+            <span>{isConnected ? truncatedAddress : "Connect Wallet"}</span>
           </button>
 
           <Link to="/submit">
@@ -104,14 +114,21 @@ const Header = () => {
           ))}
           <div className="pt-3 space-y-2">
             <button
+              onClick={toggleTheme}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border border-border bg-card"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {theme === "dark" ? "Light Mode" : "Dark Mode"}
+            </button>
+            <button
               onClick={() => {
                 handleAuth();
                 setMobileOpen(false);
               }}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border border-border bg-card"
             >
-              <LogIn className="h-4 w-4" />
-              {isConnected ? truncatedAddress : "Sign In"}
+              <Wallet className="h-4 w-4" />
+              {isConnected ? truncatedAddress : "Connect Wallet"}
             </button>
             <Link to="/submit" onClick={() => setMobileOpen(false)} className="block">
               <Button size="sm" className="w-full bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold rounded-xl">
