@@ -50,8 +50,8 @@ const MerchantDetail = () => {
   useEffect(() => {
     if (!id) return;
     supabase
-      .from("partners")
-      .select("*")
+      .from("partners_public" as any)
+      .select("id, name, description, website, logo_url, logo_emoji, categories, region, use_cases, featured, created_at, usdc_score, networks")
       .eq("id", id)
       .single()
       .then(({ data, error }) => {

@@ -17,21 +17,21 @@ export interface Partner {
 
 export async function fetchPartners(): Promise<Partner[]> {
   const { data, error } = await supabase
-    .from("partners")
-    .select("*")
+    .from("partners_public" as any)
+    .select("id, name, description, website, logo_url, logo_emoji, categories, region, use_cases, featured, created_at, usdc_score, networks")
     .order("name", { ascending: true });
 
   if (error) {
     console.error("Error fetching partners:", error);
     return [];
   }
-  return (data as Partner[]) || [];
+  return (data as unknown as Partner[]) || [];
 }
 
 export async function fetchFeaturedPartners(): Promise<Partner[]> {
   const { data, error } = await supabase
-    .from("partners")
-    .select("*")
+    .from("partners_public" as any)
+    .select("id, name, description, website, logo_url, logo_emoji, categories, region, use_cases, featured, created_at, usdc_score, networks")
     .eq("featured", true)
     .order("name", { ascending: true });
 
@@ -39,7 +39,7 @@ export async function fetchFeaturedPartners(): Promise<Partner[]> {
     console.error("Error fetching featured partners:", error);
     return [];
   }
-  return (data as Partner[]) || [];
+  return (data as unknown as Partner[]) || [];
 }
 
 export async function submitPartnerApplication(submission: {
