@@ -1,32 +1,26 @@
 
 
-## Fix: Chain ID double-prefix bug in Reown AppKit
+## Plan: Add dark/light mode toggle + "Connect Wallet" button styling
 
-**Problem**: WalletConnect fails with `"chain eip155:eip155:5042002 should conform to namespace:chainId format"`. The Arc Testnet chain is defined using viem's `defineChain()` and cast as `any` into AppKit, which double-prefixes the namespace.
+### 1. Create ThemeProvider & useTheme hook
+**New file: `src/components/ThemeProvider.tsx`**
+- React context that reads/writes `localStorage` key `"theme"` and toggles the `dark` class on `<html>`
+- Exports `useTheme()` returning `{ theme, setTheme, toggleTheme }`
+- Defaults to dark mode (matching current site aesthetic)
 
-**Root cause**: Reown AppKit expects networks defined with its own helper (`defineChain` from `@reown/appkit/networks`), not viem's `defineChain`. The viem chain object lacks the `caipNetworkId` property, so AppKit tries to auto-generate it incorrectly.
+### 2. Wrap app with ThemeProvider
+**`src/App.tsx`** — Wrap the router with `<ThemeProvider>` inside Web3Provider
 
-### Fix
+### 3. Update Header with theme toggle + wallet button
+**`src/components/Header.tsx`**
+- Add a Sun/Moon icon toggle button (from lucide-react) next to the wallet button
+- Change "Sign In" button to **"Connect Wallet"** with a `Wallet` icon (from lucide-react) instead of `LogIn`, matching the reference image style
+- Apply a subtle border + rounded style matching the reference (rounded-xl, border-border)
+- When connected, show truncated address; when disconnected, show "Connect Wallet"
+- Add the theme toggle to mobile menu as well
 
-**`src/components/Web3Provider.tsx`** — Define the Arc Testnet network using AppKit's expected format directly in this file, instead of importing from `src/lib/web3.ts`:
-
-```ts
-const arcTestnetNetwork = {
-  id: "eip155:5042002",
-  chainId: 5042002,
-  name: "Arc Testnet",
-  currency: "USDC",
-  explorerUrl: "https://testnet.arcscan.app",
-  rpcUrl: "https://rpc.testnet.arc.network",
-  chainNamespace: "eip155",
-} as const;
-```
-
-Pass this object (not the viem chain) to both `WagmiAdapter` and `createAppKit` `networks` arrays. Remove the `as any` casts.
-
-**`src/lib/web3.ts`** — Keep unchanged (still used by wagmi hooks for transactions).
-
-### Technical detail
-- AppKit's network objects need `id` as `"eip155:5042002"` (string CAIP format) and a separate `chainId` as the number
-- The viem chain definition stays for use with wagmi transaction hooks (`useSendTransaction`, etc.)
+### 4. Visual details (matching reference image)
+- "Connect Wallet" button: outlined style with wallet icon, similar prominence to reference
+- Theme toggle: small icon button, Sun in light mode, Moon in dark mode
+- Both buttons in the right section of the header, before "List Your Business"
 
