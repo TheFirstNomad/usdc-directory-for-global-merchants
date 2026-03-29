@@ -14,6 +14,16 @@ const arcTestnetNetwork = {
   explorerUrl: "https://testnet.arcscan.app",
   rpcUrl: "https://rpc.testnet.arc.network",
   chainNamespace: "eip155",
+  nativeCurrency: {
+    name: "USDC",
+    symbol: "USDC",
+    decimals: 6,
+  },
+  rpcUrls: {
+    default: {
+      http: ["https://rpc.testnet.arc.network"],
+    },
+  },
 } as const;
 
 const wagmiAdapter = new WagmiAdapter({
