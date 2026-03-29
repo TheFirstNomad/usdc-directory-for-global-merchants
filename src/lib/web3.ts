@@ -1,25 +1,25 @@
 import { defineChain } from "viem";
 
-export const arcTestnet = defineChain({
-  id: 5042002,
-  name: "Arc Testnet",
+export const baseMainnet = defineChain({
+  id: 8453,
+  name: "Base",
   nativeCurrency: {
-    name: "USDC",
-    symbol: "USDC",
-    decimals: 6,
+    name: "Ether",
+    symbol: "ETH",
+    decimals: 18,
   },
   rpcUrls: {
     default: {
-      http: ["https://rpc.testnet.arc.network"],
+      http: ["https://mainnet.base.org"],
     },
   },
   blockExplorers: {
     default: {
-      name: "Arcscan",
-      url: "https://testnet.arcscan.app",
+      name: "BaseScan",
+      url: "https://basescan.org",
     },
   },
-  testnet: true,
+  testnet: false,
 });
 
 // Treasury wallet — set via env or fallback
@@ -33,3 +33,5 @@ export const UPDATE_FEE = 5_000_000n; // 5 USDC
 
 export const LISTING_FEE_DISPLAY = "10";
 export const UPDATE_FEE_DISPLAY = "5";
+
+export const BASE_EXPLORER_URL = "https://basescan.org";
