@@ -12,16 +12,20 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS } from "@/lib/partners";
 import type { Partner } from "@/lib/partners";
-import { CheckCircle2, ArrowLeft, Pencil } from "lucide-react";
+import { CheckCircle2, ArrowLeft, Pencil, Wallet } from "lucide-react";
+import { useAppKitAccount } from "@reown/appkit/react";
+import { useAppKit } from "@reown/appkit/react";
 
 const EditListing = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const { address, isConnected } = useAppKitAccount();
+  const { open } = useAppKit();
   const [partner, setPartner] = useState<Partner | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPayment, setShowPayment] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [txHash, setTxHash] = useState("");
+  const [orderId, setOrderId] = useState("");
 
   const [form, setForm] = useState({
     description: "",
@@ -72,30 +76,19 @@ const EditListing = () => {
     return true;
   };
 
-  const handlePaymentSuccess = async (hash: string) => {
-    setTxHash(hash);
-    try {
-      const { error } = await supabase
-        .from("submissions")
-        .insert({
-          company_name: partner?.name || "",
-          contact_email: `update-${id}@usdc.directory`,
-          website: form.website,
-          description: form.description,
-          categories: form.categories,
-          region: form.region,
-          status: "update_pending",
-        });
-      if (error) throw error;
-      setShowPayment(false);
-      setSubmitted(true);
-    } catch {
-      toast({
-        title: "Update submission failed",
-        description: "Payment received but update failed. Contact hello@usdc.directory with your tx hash.",
-        variant: "destructive",
-      });
-    }
+  const handlePaymentSuccess = (id: string) => {
+    setOrderId(id);
+    setShowPayment(false);
+    setSubmitted(true);
+  };
+
+  const submissionData = {
+    company_name: partner?.name || "",
+    partner_id: id,
+    website: form.website,
+    description: form.description,
+    categories: form.categories,
+    region: form.region,
   };
 
   if (loading) {
@@ -119,9 +112,7 @@ const EditListing = () => {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-2">Listing Not Found</h1>
             <p className="text-muted-foreground mb-4">This listing doesn't exist or has been removed.</p>
-            <Link to="/">
-              <Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" /> Back to Directory</Button>
-            </Link>
+            <Link to="/"><Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" /> Back to Directory</Button></Link>
           </div>
         </main>
         <Footer />
@@ -139,25 +130,12 @@ const EditListing = () => {
             <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="h-10 w-10 text-success" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-3">
-              ✅ Update Submitted!
-            </h1>
+            <h1 className="text-2xl font-bold text-foreground mb-3">✅ Update Submitted!</h1>
             <p className="text-muted-foreground mb-4">
-              Payment confirmed. Your listing update for <span className="font-semibold text-foreground">{partner.name}</span> will be reviewed and applied shortly.
+              Your update for <span className="font-semibold text-foreground">{partner.name}</span> will be applied once payment is confirmed (1-5 minutes).
             </p>
-            {txHash && (
-              <a
-                href={`https://testnet.arcscan.app/tx/${txHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary text-sm font-medium hover:underline block mb-6"
-              >
-                View transaction on Arcscan →
-              </a>
-            )}
-            <Link to={`/merchant/${id}`} className="text-primary text-sm font-medium hover:underline">
-              ← Back to Listing
-            </Link>
+            {orderId && <p className="text-xs text-muted-foreground font-mono break-all mb-6">Order: {orderId}</p>}
+            <Link to={`/merchant/${id}`} className="text-primary text-sm font-medium hover:underline">← Back to Listing</Link>
           </div>
         </main>
         <Footer />
@@ -167,18 +145,13 @@ const EditListing = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <SEO
-        title={`Edit ${partner.name} — 5 USDC`}
-        description={`Update your listing for ${partner.name} on USDC Directory.`}
-        path={`/edit/${id}`}
-      />
+      <SEO title={`Edit ${partner.name} — 5 USDC`} description={`Update your listing for ${partner.name} on USDC Directory.`} path={`/edit/${id}`} />
       <Header />
 
       <section className="bg-gradient-to-b from-primary/5 to-background py-14 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-3xl md:text-4xl font-extrabold text-foreground mb-3">
-            <Pencil className="inline h-7 w-7 mr-2 -mt-1" />
-            Edit: {partner.name}
+            <Pencil className="inline h-7 w-7 mr-2 -mt-1" /> Edit: {partner.name}
           </h1>
           <p className="text-muted-foreground text-base max-w-xl mx-auto">
             Update your listing details. <span className="font-semibold text-foreground">5 USDC</span> update fee applies.
@@ -191,92 +164,58 @@ const EditListing = () => {
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">Business Name</label>
             <Input value={partner.name} disabled className="opacity-60" />
-            <p className="text-xs text-muted-foreground mt-1">Name cannot be changed. Contact hello@usdc.directory for name changes.</p>
+            <p className="text-xs text-muted-foreground mt-1">Name cannot be changed.</p>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">Website *</label>
-            <Input
-              type="url"
-              value={form.website}
-              onChange={(e) => setForm({ ...form, website: e.target.value })}
-              placeholder="https://yourcompany.com"
-              maxLength={255}
-            />
+            <Input type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://yourcompany.com" maxLength={255} />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">Description *</label>
-            <Textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="Describe what your business does…"
-              rows={4}
-              maxLength={1000}
-            />
+            <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe what your business does…" rows={4} maxLength={1000} />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">Categories *</label>
             <div className="flex flex-wrap gap-2">
               {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => toggleCategory(cat)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                    form.categories.includes(cat)
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "border-border text-muted-foreground hover:border-primary/50"
-                  }`}
-                >
-                  {CATEGORY_EMOJIS[cat] || "📦"} {cat}
-                </button>
+                <button key={cat} type="button" onClick={() => toggleCategory(cat)} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  form.categories.includes(cat) ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
+                }`}>{CATEGORY_EMOJIS[cat] || "📦"} {cat}</button>
               ))}
             </div>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">Region *</label>
             <div className="flex flex-wrap gap-2">
               {REGIONS.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setForm({ ...form, region: r })}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                    form.region === r
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "border-border text-muted-foreground hover:border-primary/50"
-                  }`}
-                >
-                  {REGION_FLAGS[r] || "📍"} {r}
-                </button>
+                <button key={r} type="button" onClick={() => setForm({ ...form, region: r })} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  form.region === r ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
+                }`}>{REGION_FLAGS[r] || "📍"} {r}</button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Payment CTA */}
         <div className="mt-10 bg-primary/5 border border-primary/20 rounded-xl p-6 text-center">
           <img src="/Circle_USDC_Logo.svg" alt="USDC" className="h-10 w-10 mx-auto mb-3" />
           <h3 className="text-xl font-bold text-foreground mb-1">5 USDC</h3>
           <p className="text-sm text-muted-foreground mb-4">One-time update fee</p>
-          <Button
-            onClick={() => {
-              if (!validate()) return;
-              setShowPayment(true);
-            }}
-            className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold px-8 py-3 rounded-xl text-base"
-          >
-            Pay & Update Listing
-          </Button>
+          {isConnected ? (
+            <Button
+              onClick={() => { if (!validate()) return; setShowPayment(true); }}
+              className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold px-8 py-3 rounded-xl text-base"
+            >
+              Pay & Update Listing
+            </Button>
+          ) : (
+            <Button
+              onClick={() => open()}
+              className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold px-8 py-3 rounded-xl text-base"
+            >
+              <Wallet className="h-5 w-5 mr-2" /> Connect Wallet to Pay
+            </Button>
+          )}
         </div>
-
-        <p className="text-xs text-muted-foreground text-center mt-4">
-          Need help? Contact{" "}
-          <a href="mailto:hello@usdc.directory" className="text-primary underline">hello@usdc.directory</a>
-        </p>
       </main>
 
       <Footer />
@@ -284,6 +223,7 @@ const EditListing = () => {
       {showPayment && (
         <PaymentModal
           type="update"
+          submissionData={submissionData}
           onSuccess={handlePaymentSuccess}
           onClose={() => setShowPayment(false)}
         />

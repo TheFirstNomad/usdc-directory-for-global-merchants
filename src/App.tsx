@@ -13,6 +13,7 @@ import Insights from "./pages/Insights.tsx";
 import MerchantDetail from "./pages/MerchantDetail.tsx";
 import EditListing from "./pages/EditListing.tsx";
 import MapView from "./pages/MapView.tsx";
+import MyListings from "./pages/MyListings.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const App = forwardRef<HTMLDivElement>((_, _ref) => (
@@ -31,6 +32,7 @@ const App = forwardRef<HTMLDivElement>((_, _ref) => (
             <Route path="/merchant/:id" element={<MerchantDetail />} />
             <Route path="/edit/:id" element={<EditListing />} />
             <Route path="/map" element={<MapView />} />
+            <Route path="/my-listings" element={<MyListings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
