@@ -33,10 +33,7 @@ const MyListings = () => {
 
     const fetchMyListings = async () => {
       const { data, error } = await supabase
-        .from("partners")
-        .select("id, name, description, logo_url, logo_emoji, categories")
-        .filter("wallet_address", "eq", address.toLowerCase())
-        .order("created_at", { ascending: false });
+        .rpc("get_my_listings", { _wallet_address: address.toLowerCase() });
 
       if (!error && data) {
         setListings(data as ListingItem[]);
