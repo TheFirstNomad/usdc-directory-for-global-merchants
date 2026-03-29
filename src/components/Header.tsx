@@ -1,11 +1,12 @@
 import { Menu, X, Wallet, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useTheme } from "@/components/ThemeProvider";
+import { TREASURY_ADDRESS } from "@/lib/web3";
 
-const navLinks = [
+const baseNavLinks = [
   { label: "Directory", href: "/" },
   { label: "Map", href: "/map" },
   { label: "My Listings", href: "/my-listings" },
@@ -19,6 +20,15 @@ const Header = () => {
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const { theme, toggleTheme } = useTheme();
+
+  const isOwner = address?.toLowerCase() === TREASURY_ADDRESS.toLowerCase();
+  const navLinks = useMemo(
+    () =>
+      isOwner
+        ? [...baseNavLinks, { label: "Admin", href: "/admin/payments" }]
+        : baseNavLinks,
+    [isOwner]
+  );
 
   const truncatedAddress = address
     ? `${address.slice(0, 6)}…${address.slice(-4)}`

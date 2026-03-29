@@ -13,6 +13,7 @@ import MerchantDetail from "./pages/MerchantDetail.tsx";
 import EditListing from "./pages/EditListing.tsx";
 import MapView from "./pages/MapView.tsx";
 import MyListings from "./pages/MyListings.tsx";
+import AdminPayments from "./pages/AdminPayments.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const App = () => (
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/edit/:id" element={<EditListing />} />
             <Route path="/map" element={<MapView />} />
             <Route path="/my-listings" element={<MyListings />} />
+            <Route path="/admin/payments" element={<AdminPayments />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
