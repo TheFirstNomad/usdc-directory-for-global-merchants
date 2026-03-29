@@ -1,8 +1,9 @@
-import { Menu, X, LogIn } from "lucide-react";
+import { Menu, X, Wallet, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
+import { useTheme } from "@/components/ThemeProvider";
 
 const navLinks = [
   { label: "Directory", href: "/" },
