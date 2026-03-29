@@ -36,6 +36,7 @@ const App = forwardRef<HTMLDivElement>((_, _ref) => (
         </BrowserRouter>
       </TooltipProvider>
     </Web3Provider>
+    </ThemeProvider>
   </HelmetProvider>
 ));
 

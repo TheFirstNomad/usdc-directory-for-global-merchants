@@ -114,14 +114,21 @@ const Header = () => {
           ))}
           <div className="pt-3 space-y-2">
             <button
+              onClick={toggleTheme}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border border-border bg-card"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {theme === "dark" ? "Light Mode" : "Dark Mode"}
+            </button>
+            <button
               onClick={() => {
                 handleAuth();
                 setMobileOpen(false);
               }}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border border-border bg-card"
             >
-              <LogIn className="h-4 w-4" />
-              {isConnected ? truncatedAddress : "Sign In"}
+              <Wallet className="h-4 w-4" />
+              {isConnected ? truncatedAddress : "Connect Wallet"}
             </button>
             <Link to="/submit" onClick={() => setMobileOpen(false)} className="block">
               <Button size="sm" className="w-full bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold rounded-xl">
