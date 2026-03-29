@@ -198,7 +198,19 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_my_listings: {
+        Args: { _wallet_address: string }
+        Returns: {
+          categories: string[]
+          description: string
+          id: string
+          logo_emoji: string
+          logo_url: string
+          name: string
+          region: string
+          website: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
