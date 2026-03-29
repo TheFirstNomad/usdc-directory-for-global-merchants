@@ -16,7 +16,7 @@ import MapView from "./pages/MapView.tsx";
 import MyListings from "./pages/MyListings.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
-const App = forwardRef<HTMLDivElement>((_, _ref) => (
+const App = () => (
   <HelmetProvider>
     <ThemeProvider>
     <Web3Provider>
@@ -40,8 +40,6 @@ const App = forwardRef<HTMLDivElement>((_, _ref) => (
     </Web3Provider>
     </ThemeProvider>
   </HelmetProvider>
-));
-
-App.displayName = "App";
+);
 
 export default App;
