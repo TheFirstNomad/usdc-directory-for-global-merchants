@@ -128,7 +128,7 @@ const Header = () => {
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border border-border bg-card"
             >
               <Wallet className="h-4 w-4" />
-              {isConnected ? truncatedAddress : "Connect Wallet"}
+              {isConnected ? truncatedAddress : "Connect"}
             </button>
             <Link to="/submit" onClick={() => setMobileOpen(false)} className="block">
               <Button size="sm" className="w-full bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold rounded-xl">
