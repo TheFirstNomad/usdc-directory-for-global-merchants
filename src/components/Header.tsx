@@ -72,7 +72,7 @@ const Header = () => {
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-border bg-card hover:bg-muted transition-colors"
           >
             <Wallet className="h-4 w-4" />
-            <span>{isConnected ? truncatedAddress : "Connect Wallet"}</span>
+            <span>{isConnected ? truncatedAddress : "Connect"}</span>
           </button>
 
           <Link to="/submit">
