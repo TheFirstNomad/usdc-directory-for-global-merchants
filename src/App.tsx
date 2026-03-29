@@ -17,6 +17,7 @@ import NotFound from "./pages/NotFound.tsx";
 
 const App = forwardRef<HTMLDivElement>((_, _ref) => (
   <HelmetProvider>
+    <ThemeProvider>
     <Web3Provider>
       <TooltipProvider>
         <Toaster />
