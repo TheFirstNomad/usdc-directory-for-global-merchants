@@ -34,7 +34,7 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
       style={{ animationDelay: `${Math.min(index * 30, 500)}ms` }}
     >
       <Link to={`/merchant/${partner.id}`} className="flex flex-col h-full">
-        <div className="h-24 flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted/20 p-6 relative">
+        <div className="h-36 flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted/20 p-6 relative">
           {partner.categories?.includes("AI Agents") && (
             <div className="absolute top-3 right-3 text-[10px] font-bold bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full flex items-center gap-1">
               🤖 AI Agent
@@ -48,7 +48,7 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
           <img
             src={logoUrl}
             alt={`${partner.name} logo`}
-            className="h-16 w-16 object-contain rounded-xl bg-card p-1.5 shadow-sm group-hover:scale-110 transition-transform duration-500"
+            className="h-24 w-24 object-contain rounded-xl bg-card p-2 shadow-md group-hover:scale-110 transition-transform duration-500"
             loading="lazy"
             onError={(e) => {
               e.currentTarget.src = "https://cryptologos.cc/logos/usd-coin-usdc-logo.png";
