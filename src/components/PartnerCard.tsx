@@ -19,6 +19,7 @@ const categoryColors: Record<string, string> = {
   "Retail & Shops": "bg-lime-500/10 text-lime-400",
   "P2P Traders & Individuals": "bg-teal-500/10 text-teal-400",
   "Services & Freelancers": "bg-purple-500/10 text-purple-400",
+  "AI Agents": "bg-cyan-500/10 text-cyan-400",
 };
 
 const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) => {
