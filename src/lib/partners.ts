@@ -89,6 +89,7 @@ export const CATEGORY_EMOJIS: Record<string, string> = {
   "Retail & Shops": "🛒",
   "P2P Traders & Individuals": "👤",
   "Services & Freelancers": "💼",
+  "AI Agents": "🤖",
 };
 
 export const REGIONS = [
