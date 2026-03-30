@@ -42,17 +42,6 @@ export async function fetchFeaturedPartners(): Promise<Partner[]> {
   return (data as unknown as Partner[]) || [];
 }
 
-export async function submitPartnerApplication(submission: {
-  company_name: string;
-  contact_email: string;
-  website: string;
-  description: string;
-  categories: string[];
-  region: string;
-}) {
-  const { error } = await supabase.from("submissions").insert(submission);
-  if (error) throw error;
-}
 
 export const CATEGORIES = [
   "Payments",
