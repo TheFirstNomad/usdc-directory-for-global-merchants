@@ -125,7 +125,7 @@ serve(async (req) => {
           logo_url: sub.logo_url || null,
           logo_emoji: isAIAgent ? "🤖" : "🏢",
           networks: sub.networks || [],
-          payment_status: "paid",
+          payment_status: "completed",
           payment_id: String(payment_id),
           featured: false,
           usdc_score: 0,
