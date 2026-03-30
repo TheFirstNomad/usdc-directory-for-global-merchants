@@ -97,7 +97,7 @@ serve(async (req) => {
             website: sub.website,
             categories: sub.categories,
             region: sub.region,
-            payment_status: "paid",
+            payment_status: "completed",
             updated_at: new Date().toISOString(),
           }),
         });
