@@ -1,49 +1,67 @@
 
 
-# Admin Payment Monitor Dashboard
+# Autonomous AI Agent Self-Listing Experience
 
 ## Overview
-Build a protected `/admin/payments` page that displays payment activity from the `submissions` table, gated to your owner wallet address (`0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c`).
+Build a single-page, zero-friction listing flow at `/submit/ai-agent` for autonomous AI agents, plus homepage promotion, a new "AI Agents" category, and admin/listing visibility updates.
 
-## Architecture
+## Changes
 
-Since the `submissions` table has RLS blocking all reads from the client, we need a secure edge function to fetch payment data server-side using the service role key, with wallet-based authorization.
+### 1. Add "AI Agents" category (`src/lib/partners.ts`)
+- Add `"AI Agents"` to `CATEGORIES` array with emoji `"🤖"`
+- Add to `CATEGORY_EMOJIS`: `"AI Agents": "🤖"`
 
-```text
-┌─────────────┐     ┌──────────────────────┐     ┌──────────────┐
-│  Admin Page  │────▶│  admin-payments EF   │────▶│ submissions  │
-│  (React)     │     │  (wallet auth check) │     │   table      │
-└─────────────┘     └──────────────────────┘     └──────────────┘
-```
+### 2. Create `/submit/ai-agent` page (`src/pages/SubmitAIAgent.tsx`)
+Single-page form — no steps, no wizard. Fields:
+- **Agent Name / Handle** (required, text input)
+- **Agent Wallet or Contract Address (any chain)** (required, text input)
+- **One-sentence description** (required, text input)
+- **Logo upload** (optional, reuses existing `upload-logo` edge function)
 
-## Steps
+Flow:
+- Connect wallet → fill form → click "Pay 10 USDC & List" → opens PaymentModal with `type="listing"`
+- Submission data sent to `create-nowpayments-invoice` with `categories: ["AI Agents"]`, `region: "Global"`, `networks: []`, and a flag field (e.g. `contact_email: "ai-agent@autonomous"`) to identify AI agent listings
+- On success → show confirmation with order ID
+- Bottom note: "Agents can also submit programmatically via POST to /api/submit-ai-agent (same fields + wallet signature)."
+- Reuses existing `PaymentModal` component and NOWPayments flow
 
-### 1. Create `admin-payments` edge function
-- Accepts the caller's wallet address as a header or query param
-- Validates it matches the hardcoded owner address
-- Queries `submissions` table via service role for all records with `payment_status != 'pending'` from last 60 days
-- Returns payment list + summary stats (total revenue today, this month, total paid, pending count)
+### 3. Create programmatic API edge function (`supabase/functions/submit-ai-agent/index.ts`)
+- Accepts POST with JSON body: `{ agent_name, wallet_address, description, logo_url? }`
+- No auth required (public endpoint)
+- Validates inputs, creates submission record, creates NOWPayments invoice
+- Returns `{ invoice_url, invoice_id, order_id }` — agent pays via the invoice URL
+- Webhook handles the rest (instant listing on payment confirmation)
 
-### 2. Create `/admin/payments` page (`src/pages/AdminPayments.tsx`)
-- **Access gate**: Only renders content when connected wallet matches the owner/treasury address; otherwise shows "Unauthorized"
-- **Summary cards** at top: Revenue Today, Revenue This Month, Total Paid Listings, Pending Payments
-- **Data table** with columns: Date, Company Name, Amount (USDC), Payment Status (badge), Payment ID, Wallet Address
-- Search input + status filter dropdown (All / Pending / Confirmed / Failed)
-- Refresh button + auto-refresh every 30 seconds via `setInterval`
-- Loading skeletons, error toast, empty state
-- Matches existing dark UI style (shadcn Card, Table, Badge, Input, Select)
+### 4. Update webhook for AI Agent badge (`supabase/functions/nowpayments-webhook/index.ts`)
+- When creating a new partner from submission, check if `contact_email` contains `"ai-agent@autonomous"` or categories include `"AI Agents"`
+- If so, set `logo_emoji: "🤖"`, `featured: false`, and add `"AI Agents"` to categories
+- The "Autonomous AI Agent" verified badge will be rendered on the card/detail page based on the `"AI Agents"` category
 
-### 3. Update routing (`src/App.tsx`)
-- Add route: `<Route path="/admin/payments" element={<AdminPayments />} />`
+### 5. Add route (`src/App.tsx`)
+- `<Route path="/submit/ai-agent" element={<SubmitAIAgent />} />`
 
-### 4. Update navigation (`src/components/Header.tsx`)
-- Conditionally add "Admin" nav link when `address?.toLowerCase() === TREASURY_ADDRESS.toLowerCase()`
-- Both desktop and mobile nav
+### 6. Homepage AI Agent banner (`src/pages/Index.tsx`)
+- Add a prominent banner section between HeroSection and the main content:
+  - "🤖 The Home for Autonomous AI Agents"
+  - "List yourself in seconds — any chain, any wallet"
+  - CTA button linking to `/submit/ai-agent`
 
-### Technical Details
-- Owner wallet check uses `TREASURY_ADDRESS` from `src/lib/web3.ts`
-- Edge function hardcodes the same owner address for server-side validation
-- Amount display: listing = 10 USDC, update = 5 USDC (derived from submission context)
-- Payment statuses from NOWPayments: `awaiting_payment`, `confirming`, `confirmed`, `sending`, `finished`, `failed`, `expired`
-- The page URL will be: `https://usdc-directory.lovable.app/admin/payments`
+### 7. PartnerCard AI Agent badge (`src/components/PartnerCard.tsx`)
+- If `partner.categories.includes("AI Agents")`, show a "🤖 Autonomous AI Agent" verified badge (similar to the existing "⭐ Featured" badge)
+
+### 8. Admin dashboard flag (`src/pages/AdminPayments.tsx`)
+- In the table, show a "🤖 AI Agent" badge next to company name when submission categories include "AI Agents"
+
+### 9. My Listings update (`src/pages/MyListings.tsx`)
+- Show "🤖 AI Agent" indicator on listings that have the AI Agents category
+
+### 10. Header update (`src/components/Header.tsx`)
+- Add "AI Agents" link to nav pointing to `/?category=AI+Agents` or keep implicit via the category filter
+
+## Technical Details
+- The AI agent marker uses `contact_email: "ai-agent@autonomous"` as a convention to identify agent submissions in the webhook, avoiding schema changes
+- No database migration needed — uses existing `submissions` and `partners` tables as-is
+- Payment is exactly 10 USDC via existing NOWPayments flow
+- Instant approval happens via the existing webhook: payment confirmed → partner created → visible on directory
+- The programmatic API endpoint mirrors `create-nowpayments-invoice` but with simplified AI-agent-specific fields
 
