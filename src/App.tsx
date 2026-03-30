@@ -14,6 +14,7 @@ import EditListing from "./pages/EditListing.tsx";
 import MapView from "./pages/MapView.tsx";
 import MyListings from "./pages/MyListings.tsx";
 import AdminPayments from "./pages/AdminPayments.tsx";
+import SubmitAIAgent from "./pages/SubmitAIAgent.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const App = () => (
