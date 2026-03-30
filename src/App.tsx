@@ -15,6 +15,7 @@ import MapView from "./pages/MapView.tsx";
 import MyListings from "./pages/MyListings.tsx";
 import AdminPayments from "./pages/AdminPayments.tsx";
 import SubmitAIAgent from "./pages/SubmitAIAgent.tsx";
+import AIAgents from "./pages/AIAgents.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const App = () => (
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/submit" element={<Submit />} />
             <Route path="/submit/ai-agent" element={<SubmitAIAgent />} />
+            <Route path="/ai-agents" element={<AIAgents />} />
             <Route path="/insights" element={<Insights />} />
             <Route path="/merchant/:id" element={<MerchantDetail />} />
             <Route path="/edit/:id" element={<EditListing />} />
