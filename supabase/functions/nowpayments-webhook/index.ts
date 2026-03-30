@@ -109,16 +109,21 @@ serve(async (req) => {
           body: JSON.stringify({ status: "completed", payment_status: "finished" }),
         });
       } else {
-        // This is a new listing - create partner
+      // This is a new listing - create partner
+        const isAIAgent = sub.contact_email === "ai-agent@autonomous" ||
+          (sub.categories && sub.categories.includes("AI Agents"));
+
         const partnerPayload = {
           name: sub.company_name,
           description: sub.description,
           website: sub.website,
-          categories: sub.categories,
+          categories: isAIAgent
+            ? (sub.categories?.includes("AI Agents") ? sub.categories : [...(sub.categories || []), "AI Agents"])
+            : sub.categories,
           region: sub.region || "Global",
           wallet_address: sub.wallet_address,
           logo_url: sub.logo_url || null,
-          logo_emoji: "🏢",
+          logo_emoji: isAIAgent ? "🤖" : "🏢",
           networks: sub.networks || [],
           payment_status: "paid",
           payment_id: String(payment_id),

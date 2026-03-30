@@ -8,6 +8,7 @@ import { TREASURY_ADDRESS } from "@/lib/web3";
 
 const baseNavLinks = [
   { label: "Directory", href: "/" },
+  { label: "AI Agents", href: "/submit/ai-agent" },
   { label: "Map", href: "/map" },
   { label: "My Listings", href: "/my-listings" },
   { label: "About USDC", href: "/about" },

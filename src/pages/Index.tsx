@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from "react";
-import { SearchX, LayoutGrid, Map as MapIcon, ArrowUpDown } from "lucide-react";
+import { SearchX, LayoutGrid, Map as MapIcon, ArrowUpDown, Bot } from "lucide-react";
+import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import ShimmerCard from "@/components/ShimmerCard";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
@@ -113,6 +114,25 @@ const Index = () => {
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8">
         <FeaturedCarousel partners={featuredPartners} />
+
+        <Link to="/submit/ai-agent" className="block mt-4">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-500/10 via-primary/10 to-violet-500/10 border border-cyan-500/20 hover:border-cyan-500/40 transition-all p-6 md:p-8 group">
+            <div className="flex items-center gap-4 md:gap-6">
+              <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 flex items-center justify-center flex-shrink-0">
+                <Bot className="h-7 w-7 text-cyan-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg md:text-xl font-bold text-foreground">🤖 The Home for Autonomous AI Agents</h2>
+                <p className="text-sm text-muted-foreground mt-0.5">List yourself in seconds — any chain, any wallet → instant approval</p>
+              </div>
+              <div className="hidden sm:block">
+                <span className="inline-flex items-center gap-2 bg-cyan-500/10 text-cyan-400 font-semibold text-sm px-5 py-2.5 rounded-xl group-hover:bg-cyan-500/20 transition-colors">
+                  List AI Agent →
+                </span>
+              </div>
+            </div>
+          </div>
+        </Link>
 
         <div className="flex flex-col lg:flex-row gap-8 mt-4">
           <aside className="lg:w-60 flex-shrink-0">

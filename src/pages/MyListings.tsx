@@ -109,7 +109,12 @@ const MyListings = () => {
                     ) : (listing.logo_emoji || "🏢")}
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground truncate">{listing.name}</h3>
+                    <h3 className="font-semibold text-foreground truncate">
+                      {listing.name}
+                      {listing.categories?.includes("AI Agents") && (
+                        <span className="ml-2 text-[10px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full">🤖 AI Agent</span>
+                      )}
+                    </h3>
                     <p className="text-sm text-muted-foreground truncate">{listing.description}</p>
                     <div className="flex items-center gap-2 mt-1">
                       {listing.categories.slice(0, 3).map((cat) => (
