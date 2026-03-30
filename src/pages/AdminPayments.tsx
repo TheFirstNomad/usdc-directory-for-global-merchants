@@ -249,7 +249,12 @@ const AdminPayments = () => {
                             {new Date(s.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </span>
                         </TableCell>
-                        <TableCell className="font-medium">{s.company_name}</TableCell>
+                        <TableCell className="font-medium">
+                          {s.company_name}
+                          {(s.contact_email === "ai-agent@autonomous" || s.categories?.includes("AI Agents")) && (
+                            <Badge variant="outline" className="ml-2 text-[10px] border-cyan-500/30 text-cyan-400">🤖 AI Agent</Badge>
+                          )}
+                        </TableCell>
                         <TableCell>{LISTING_FEE_DISPLAY} USDC</TableCell>
                         <TableCell>
                           <Badge
