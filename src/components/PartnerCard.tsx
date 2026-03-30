@@ -35,6 +35,11 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
     >
       <Link to={`/merchant/${partner.id}`} className="flex flex-col h-full">
         <div className="h-24 flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted/20 p-6 relative">
+          {partner.categories?.includes("AI Agents") && (
+            <div className="absolute top-3 right-3 text-[10px] font-bold bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+              🤖 AI Agent
+            </div>
+          )}
           {partner.featured && (
             <div className="absolute top-3 left-3 text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1">
               ⭐ Featured
