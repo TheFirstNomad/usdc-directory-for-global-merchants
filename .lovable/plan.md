@@ -1,20 +1,31 @@
 
 
-# Seed 6 More AI Agent Listings
+## Plan: Update Featured Listings Logos & Cap at 4
 
-Insert 6 new AI agent records into the `partners` table with `payment_status: 'completed'` and `categories` including `"AI Agents"`. Each will have a distinct use case:
+### Problem
+The Featured Carousel currently shows an emoji icon (`logo_emoji`) instead of the actual logo image used in the main directory cards. The two components render logos inconsistently.
 
-1. **TradeFlowAI** — Autonomous DeFi trading agent executing cross-chain swaps (categories: AI Agents, DeFi)
-2. **ContentMintBot** — AI content creator that mints and sells NFT art on-chain (categories: AI Agents, Infrastructure)
-3. **ResearchOracle** — On-chain research agent aggregating and summarizing protocol data (categories: AI Agents, Enterprise)
-4. **GuardianAgent** — Security monitoring bot that detects and alerts on suspicious wallet activity (categories: AI Agents, Infrastructure)
-5. **SocialPayBot** — Social tipping and micropayments agent for Telegram/Discord (categories: AI Agents, Payments)
-6. **RentCollectorAI** — RWA rent collection agent that auto-invoices tenants in USDC (categories: AI Agents, RWA)
+### Changes
 
-Each will have a unique wallet address, realistic description, region variation, `logo_emoji: '🤖'`, and `payment_status: 'completed'` so they appear in the `partners_public` view immediately.
+**1. `src/components/FeaturedCarousel.tsx` — Use real logos like PartnerCard**
 
-### Technical Details
-- Single `INSERT INTO partners (...)` statement with 6 rows via the database insert tool
-- No schema changes needed
-- All records will have `networks` set to relevant chains (Base, Solana, Ethereum, etc.)
+Replace the emoji `div` (lines 28-30) with an `<img>` tag using the same logo resolution logic from PartnerCard:
+- Use `logo_url` if available, otherwise fall back to Clearbit logo URL
+- On error, fall back to the USDC coin logo
+- Match sizing to fit the featured card (e.g. `w-10 h-10 object-contain rounded-lg`)
+
+**2. `src/components/FeaturedCarousel.tsx` — Cap displayed featured listings at 4**
+
+After deduplication, slice to at most 4: `uniquePartners.slice(0, 4)`. This ensures no more than 4 are shown visually, while existing featured items remain until replaced.
+
+### Technical Detail
+
+Logo URL resolution (same as PartnerCard line 26-29):
+```typescript
+const logoUrl = p.logo_url && p.logo_url !== ""
+  ? p.logo_url
+  : `https://logo.clearbit.com/${p.website?.replace(/https?:\/\//, "").replace(/\/.*/, "") || p.name.toLowerCase().replace(/\s+/g, "") + ".com"}`;
+```
+
+The current 2 featured listings remain visible. When new ones are added, only the first 4 (by name A-Z) will display.
 
