@@ -69,11 +69,10 @@ const HeroSection = ({
 
       <div className="relative z-10 max-w-3xl mx-auto text-center px-4 sm:px-6">
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-foreground mb-5 leading-[1.08] tracking-tight">
-          The #1 Directory for Humans, Businesses &amp; Autonomous AI Agents{" "}
+          The #1 Directory for the Global{" "}
           <span className="bg-gradient-to-r from-primary via-[hsl(210,90%,55%)] to-[hsl(275,80%,55%)] bg-clip-text text-transparent">
-            Spending USDC
-          </span>{" "}
-          Worldwide
+            USDC Economy
+          </span>
         </h1>
 
         <p className="text-muted-foreground text-base sm:text-lg mb-10 max-w-xl mx-auto leading-relaxed">
