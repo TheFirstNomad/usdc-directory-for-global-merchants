@@ -51,7 +51,7 @@ const MerchantDetail = () => {
     if (!id) return;
     supabase
       .from("partners_public" as any)
-      .select("id, name, description, website, logo_url, logo_emoji, categories, region, use_cases, featured, created_at, usdc_score, networks, usdc_address")
+      .select("id, name, description, website, logo_url, logo_emoji, categories, region, use_cases, featured, created_at, usdc_score, networks")
       .eq("id", id)
       .single()
       .then(({ data, error }) => {
@@ -239,7 +239,7 @@ const MerchantDetail = () => {
                 </Button>
               )}
 
-              {/* Pay with USDC - always visible (your revenue) */}
+              {/* Pay with USDC - always visible */}
               <Button
                 variant="outline"
                 className="w-full border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground font-semibold"
