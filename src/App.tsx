@@ -39,6 +39,7 @@ const App = () => (
             <Route path="/map" element={<MapView />} />
             <Route path="/my-listings" element={<MyListings />} />
             <Route path="/admin/payments" element={<AdminPayments />} />
+            <Route path="/admin/featured" element={<AdminFeatured />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
