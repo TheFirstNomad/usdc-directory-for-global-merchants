@@ -273,8 +273,7 @@ const AdminPayments = () => {
                       <TableHead>Status</TableHead>
                       <TableHead>Payment ID</TableHead>
                       <TableHead>Wallet</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                      <TableHead className="w-[50px]"></TableHead>
                   <TableBody>
                     {filtered.map((s) => (
                       <TableRow key={s.id}>
