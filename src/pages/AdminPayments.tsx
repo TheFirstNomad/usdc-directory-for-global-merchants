@@ -14,7 +14,12 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ShieldAlert, RefreshCw, DollarSign, Clock, CheckCircle, AlertTriangle, Inbox, Star } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ShieldAlert, RefreshCw, DollarSign, Clock, CheckCircle, AlertTriangle, Inbox, Star, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -96,6 +101,28 @@ const AdminPayments = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const handleDelete = useCallback(async (id: string) => {
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/admin-payments`,
+        {
+          method: "DELETE",
+          headers: {
+            "x-wallet-address": address!,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id }),
+        }
+      );
+      if (!res.ok) throw new Error("Failed to delete");
+      setSubmissions((prev) => prev.filter((s) => s.id !== id));
+      toast({ title: "Deleted", description: "Submission removed" });
+    } catch {
+      toast({ title: "Error", description: "Failed to delete submission", variant: "destructive" });
+    }
+  }, [address, toast]);
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -246,6 +273,7 @@ const AdminPayments = () => {
                       <TableHead>Status</TableHead>
                       <TableHead>Payment ID</TableHead>
                       <TableHead>Wallet</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -278,6 +306,32 @@ const AdminPayments = () => {
                           {s.wallet_address
                             ? `${s.wallet_address.slice(0, 6)}…${s.wallet_address.slice(-4)}`
                             : "—"}
+                        </TableCell>
+                        <TableCell>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete submission?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently remove <strong>{s.company_name}</strong> from the submissions table. This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(s.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </TableCell>
                       </TableRow>
                     ))}

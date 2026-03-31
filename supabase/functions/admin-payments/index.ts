@@ -28,6 +28,36 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // DELETE handler
+    if (req.method === "DELETE") {
+      const { id } = await req.json();
+      if (!id || typeof id !== "string") {
+        return new Response(JSON.stringify({ error: "Missing submission id" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { error: delError } = await supabase
+        .from("submissions")
+        .delete()
+        .eq("id", id);
+
+      if (delError) {
+        console.error("Delete error:", delError);
+        return new Response(JSON.stringify({ error: "Failed to delete submission" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // GET handler
     const sixtyDaysAgo = new Date();
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
