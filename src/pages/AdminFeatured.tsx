@@ -12,7 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ShieldAlert, RefreshCw, Star, Loader2 } from "lucide-react";
+import { ShieldAlert, RefreshCw, Star, Loader2, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 interface PartnerRow {
