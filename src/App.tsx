@@ -16,6 +16,7 @@ import MyListings from "./pages/MyListings.tsx";
 import AdminPayments from "./pages/AdminPayments.tsx";
 import SubmitAIAgent from "./pages/SubmitAIAgent.tsx";
 import AIAgents from "./pages/AIAgents.tsx";
+import AdminFeatured from "./pages/AdminFeatured.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const App = () => (
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/map" element={<MapView />} />
             <Route path="/my-listings" element={<MyListings />} />
             <Route path="/admin/payments" element={<AdminPayments />} />
+            <Route path="/admin/featured" element={<AdminFeatured />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
