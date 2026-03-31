@@ -47,6 +47,14 @@ const MerchantDetail = () => {
   const [paymentPending, setPaymentPending] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Seeded agents - Visit Site + fake payment toast are hidden/improved for these only
+  const seededNames = new Set([
+    "ContentMintBot", "GuardianAgent", "RentCollectorAI", "BridgeMind",
+    "InvoiceBot", "PayBot3000", "ResearchOracle", "SocialPayBot",
+    "TradeFlowAI", "SolSwapAgent", "YieldScout",
+    // Add any new seeded agents here
+  ]);
+
   useEffect(() => {
     if (!id) return;
     supabase
@@ -64,11 +72,16 @@ const MerchantDetail = () => {
     setPaymentPending(true);
     setTimeout(() => {
       setPaymentPending(false);
+
+      const isSeeded = partner && seededNames.has(partner.name);
+
       toast({
-        title: "✅ USDC Payment Sent!",
-        description: `Demo payment of 10.00 USDC to ${partner?.name} completed on Base testnet.`,
+        title: isSeeded ? "Demo Mode" : "✅ USDC Payment Sent!",
+        description: isSeeded 
+          ? "Real USDC payments coming soon for this seeded agent!" 
+          : `Demo payment of 10.00 USDC to ${partner?.name} completed on Base testnet.`,
       });
-    }, 2000);
+    }, 1500);
   };
 
   const handleCopyAddress = () => {
@@ -222,13 +235,14 @@ const MerchantDetail = () => {
 
           {/* Sidebar */}
           <div className="space-y-4">
-            {/* Actions - Seeded agents stay visible but fake buttons are hidden */}
+            {/* Actions */}
             <div className="bg-card border border-border rounded-xl p-5 space-y-3">
-              {/* Visit Site - only real websites */}
+              {/* Visit Site - hidden for seeded agents */}
               {partner?.website && 
                partner.website.startsWith('http') && 
                !partner.website.includes('demo') && 
-               !partner.website.includes('placeholder') && (
+               !partner.website.includes('placeholder') && 
+               !seededNames.has(partner.name) && (
                 <Button
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
                   asChild
@@ -259,7 +273,7 @@ const MerchantDetail = () => {
                 )}
               </Button>
 
-              {/* Copy USDC Address - only real 0x addresses */}
+              {/* Copy USDC Address - hidden for seeded agents */}
               {partner?.usdc_address && 
                partner.usdc_address.startsWith('0x') && 
                partner.usdc_address.length > 40 && (
