@@ -51,7 +51,7 @@ const MerchantDetail = () => {
     if (!id) return;
     supabase
       .from("partners_public" as any)
-      .select("id, name, description, website, logo_url, logo_emoji, categories, region, use_cases, featured, created_at, usdc_score, networks")
+      .select("id, name, description, website, logo_url, logo_emoji, categories, region, use_cases, featured, created_at, usdc_score, networks, usdc_address")
       .eq("id", id)
       .single()
       .then(({ data, error }) => {
@@ -72,7 +72,8 @@ const MerchantDetail = () => {
   };
 
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText("0x1234...demo");
+    if (!partner?.usdc_address) return;
+    navigator.clipboard.writeText(partner.usdc_address);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -221,17 +222,24 @@ const MerchantDetail = () => {
 
           {/* Sidebar */}
           <div className="space-y-4">
-            {/* Actions */}
+            {/* Actions - Seeded agents stay visible but fake buttons are hidden */}
             <div className="bg-card border border-border rounded-xl p-5 space-y-3">
-              <Button
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
-                asChild
-              >
-                <a href={partner.website || "#"} target="_blank" rel="noopener noreferrer">
-                  Visit Site <ExternalLink className="ml-2 h-4 w-4" />
-                </a>
-              </Button>
+              {/* Visit Site - only real websites */}
+              {partner?.website && 
+               partner.website.startsWith('http') && 
+               !partner.website.includes('demo') && 
+               !partner.website.includes('placeholder') && (
+                <Button
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+                  asChild
+                >
+                  <a href={partner.website} target="_blank" rel="noopener noreferrer">
+                    Visit Site <ExternalLink className="ml-2 h-4 w-4" />
+                  </a>
+                </Button>
+              )}
 
+              {/* Pay with USDC - always visible (your revenue) */}
               <Button
                 variant="outline"
                 className="w-full border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground font-semibold"
@@ -251,18 +259,23 @@ const MerchantDetail = () => {
                 )}
               </Button>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-muted-foreground"
-                onClick={handleCopyAddress}
-              >
-                {copied ? (
-                  <><Check className="h-3.5 w-3.5 mr-1.5" /> Copied!</>
-                ) : (
-                  <><Copy className="h-3.5 w-3.5 mr-1.5" /> Copy USDC Address</>
-                )}
-              </Button>
+              {/* Copy USDC Address - only real 0x addresses */}
+              {partner?.usdc_address && 
+               partner.usdc_address.startsWith('0x') && 
+               partner.usdc_address.length > 40 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-muted-foreground"
+                  onClick={handleCopyAddress}
+                >
+                  {copied ? (
+                    <><Check className="h-3.5 w-3.5 mr-1.5" /> Copied!</>
+                  ) : (
+                    <><Copy className="h-3.5 w-3.5 mr-1.5" /> Copy USDC Address</>
+                  )}
+                </Button>
+              )}
             </div>
 
             {/* Score card */}
