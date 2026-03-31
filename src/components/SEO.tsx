@@ -23,7 +23,7 @@ const SEO = ({
 }: SEOProps) => {
   const fullTitle = title
     ? `${title} | ${SITE_NAME}`
-    : `${SITE_NAME} | Global Merchants Accepting USDC`;
+    : `${SITE_NAME} | The #1 Directory for the Global USDC Economy`;
   const url = `${SITE_URL}${path}`;
   const defaultJsonLd = {
     "@context": "https://schema.org",
