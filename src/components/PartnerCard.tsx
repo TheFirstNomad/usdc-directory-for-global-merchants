@@ -37,12 +37,12 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
         <div className="h-36 flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted/20 p-6 relative">
           {partner.categories?.includes("AI Agents") && (
             <div className="absolute top-3 right-3 text-[10px] font-bold bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full flex items-center gap-1">
-              🤖 AI Agent
+              AI Agent
             </div>
           )}
           {partner.featured && (
             <div className="absolute top-3 left-3 text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1">
-              ⭐ Featured
+              Featured
             </div>
           )}
           <img
@@ -67,7 +67,7 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
           </div>
 
           <div className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
-            <span>{REGION_FLAGS[partner.region] || "🌍"}</span>
+            <span>{REGION_FLAGS[partner.region] || "World"}</span>
             <span>{partner.region}</span>
             {partner.usdc_score && partner.usdc_score > 0 && (
               <>
@@ -92,17 +92,23 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
             ))}
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all font-medium text-xs"
-            asChild
-            onClick={(e: React.MouseEvent) => e.stopPropagation()}
-          >
-            <a href={partner.website || "#"} target="_blank" rel="noopener noreferrer">
-              Visit <ExternalLink className="ml-1 h-3 w-3" />
-            </a>
-          </Button>
+          {/* Visit button - only shown for REAL websites (seeded agents stay visible but hide fake Visit button) */}
+          {partner?.website && 
+           partner.website.startsWith('http') && 
+           !partner.website.includes('demo') && 
+           !partner.website.includes('placeholder') && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all font-medium text-xs"
+              asChild
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            >
+              <a href={partner.website} target="_blank" rel="noopener noreferrer">
+                Visit <ExternalLink className="ml-1 h-3 w-3" />
+              </a>
+            </Button>
+          )}
         </div>
       </Link>
     </div>
