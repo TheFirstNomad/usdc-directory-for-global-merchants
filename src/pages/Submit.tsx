@@ -207,7 +207,7 @@ const Submit = () => {
           {step === 0 && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Company Name *</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Business Name *</label>
                 <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="Your company name" maxLength={100} />
               </div>
               <div>
