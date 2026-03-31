@@ -26,7 +26,7 @@ const AIAgents = () => {
 
   const aiAgents = useMemo(() => {
     const agents = partners.filter((p) =>
-      p.categories?.some((c) => c === "AI Agents")
+      p.categories?.some((c) => c === "AI Agents" || c === "AI Agents & Automation")
     );
     // dedupe
     return Array.from(

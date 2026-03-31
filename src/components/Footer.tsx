@@ -25,7 +25,7 @@ const Footer = () => {
             <div>
               <h4 className="font-semibold text-foreground mb-3">Directory</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="/" className="hover:text-foreground transition-colors">Browse Merchants</a></li>
+                <li><a href="/" className="hover:text-foreground transition-colors">Browse Listings</a></li>
                 <li><a href="/submit" className="hover:text-foreground transition-colors">List Your Business</a></li>
                 <li><a href="/insights" className="hover:text-foreground transition-colors">Insights</a></li>
                 <li><a href="/map" className="hover:text-foreground transition-colors">Map View</a></li>
@@ -34,7 +34,6 @@ const Footer = () => {
             <div>
               <h4 className="font-semibold text-foreground mb-3">Contact</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="/about" className="hover:text-foreground transition-colors">About USDC</a></li>
                 <li>
                   <a href="mailto:hello@usdc.directory" className="hover:text-foreground transition-colors">
                     hello@usdc.directory
@@ -48,9 +47,6 @@ const Footer = () => {
         <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
             © 2026 USDC Directory. All rights reserved.
-          </p>
-          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-            Built on Arc • Powered by Circle USDC
           </p>
         </div>
       </div>
