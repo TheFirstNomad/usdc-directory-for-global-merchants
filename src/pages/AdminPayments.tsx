@@ -274,6 +274,8 @@ const AdminPayments = () => {
                       <TableHead>Payment ID</TableHead>
                       <TableHead>Wallet</TableHead>
                       <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
                   <TableBody>
                     {filtered.map((s) => (
                       <TableRow key={s.id}>
@@ -304,6 +306,32 @@ const AdminPayments = () => {
                           {s.wallet_address
                             ? `${s.wallet_address.slice(0, 6)}…${s.wallet_address.slice(-4)}`
                             : "—"}
+                        </TableCell>
+                        <TableCell>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete submission?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently remove <strong>{s.company_name}</strong> from the submissions table. This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(s.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </TableCell>
                       </TableRow>
                     ))}
