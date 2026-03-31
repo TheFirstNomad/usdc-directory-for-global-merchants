@@ -24,6 +24,60 @@
     <!-- Extra pro touches -->
     <meta name="theme-color" content="#4B0082" />
     <link rel="canonical" href="https://usdc.directory" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "name": "USDC Directory",
+          "url": "https://usdc.directory",
+          "description": "Discover trusted merchants, B2B services, and AI-driven platforms accepting USDC worldwide.",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://usdc.directory/?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "Organization",
+          "name": "USDC Directory",
+          "url": "https://usdc.directory",
+          "logo": "https://usdc.directory/Circle_USDC_Logo.svg",
+          "description": "The #1 directory for the global USDC economy — connecting merchants, B2B services, and AI-driven platforms.",
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "hello@usdc.directory",
+            "contactType": "customer support"
+          },
+          "sameAs": []
+        },
+        {
+          "@type": "ItemList",
+          "name": "USDC Directory Categories",
+          "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Retail & E-commerce"},
+            {"@type": "ListItem", "position": 2, "name": "Payments & Remittances"},
+            {"@type": "ListItem", "position": 3, "name": "Finance & DeFi"},
+            {"@type": "ListItem", "position": 4, "name": "AI Agents & Automation"},
+            {"@type": "ListItem", "position": 5, "name": "Content & Media"},
+            {"@type": "ListItem", "position": 6, "name": "Gaming & Entertainment"},
+            {"@type": "ListItem", "position": 7, "name": "Travel & Hospitality"},
+            {"@type": "ListItem", "position": 8, "name": "Food & Beverage"},
+            {"@type": "ListItem", "position": 9, "name": "Services & Freelancers"},
+            {"@type": "ListItem", "position": 10, "name": "Real-World Assets (RWA)"},
+            {"@type": "ListItem", "position": 11, "name": "Infrastructure & Tools"},
+            {"@type": "ListItem", "position": 12, "name": "Charity & Social Good"}
+          ]
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -11,7 +11,7 @@ interface SEOProps {
 const SITE_URL = "https://usdc.directory";
 const SITE_NAME = "USDC Directory";
 const DEFAULT_DESCRIPTION =
-  "The #1 global directory of trusted merchants, exchanges, and protocols accepting USDC — Circle's regulated digital dollar. Offered for licensing or acquisition.";
+  "Discover trusted merchants, B2B services, and AI-driven platforms accepting USDC worldwide. List your entity for just 10 USDC.";
 const OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 const SEO = ({
@@ -23,7 +23,7 @@ const SEO = ({
 }: SEOProps) => {
   const fullTitle = title
     ? `${title} | ${SITE_NAME}`
-    : `${SITE_NAME} | Global Merchants Accepting USDC`;
+    : `${SITE_NAME} | The #1 Directory for the Global USDC Economy`;
   const url = `${SITE_URL}${path}`;
   const defaultJsonLd = {
     "@context": "https://schema.org",
