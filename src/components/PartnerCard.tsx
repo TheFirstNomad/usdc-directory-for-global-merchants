@@ -1,6 +1,6 @@
 import { Partner, REGION_FLAGS, CATEGORY_EMOJIS } from "@/lib/partners";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, BadgeCheck } from "lucide-react";
+import { BadgeCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const categoryColors: Record<string, string> = {
@@ -92,23 +92,7 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
             ))}
           </div>
 
-          {/* Visit button - only shown for REAL websites (seeded agents stay visible but hide fake Visit button) */}
-          {partner?.website && 
-           partner.website.startsWith('http') && 
-           !partner.website.includes('demo') && 
-           !partner.website.includes('placeholder') && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all font-medium text-xs"
-              asChild
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            >
-              <a href={partner.website} target="_blank" rel="noopener noreferrer">
-                Visit <ExternalLink className="ml-1 h-3 w-3" />
-              </a>
-            </Button>
-          )}
+          {/* No Visit button on cards anymore - users click the card to go to detail page */}
         </div>
       </Link>
     </div>
