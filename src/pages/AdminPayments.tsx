@@ -14,7 +14,8 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ShieldAlert, RefreshCw, DollarSign, Clock, CheckCircle, AlertTriangle, Inbox } from "lucide-react";
+import { ShieldAlert, RefreshCw, DollarSign, Clock, CheckCircle, AlertTriangle, Inbox, Star } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 interface Submission {
@@ -147,16 +148,23 @@ const AdminPayments = () => {
               Last updated: {lastRefresh.toLocaleTimeString()}
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchData}
-            disabled={loading}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/admin/featured" className="gap-2">
+                <Star className="h-4 w-4" /> Featured
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchData}
+              disabled={loading}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards */}
