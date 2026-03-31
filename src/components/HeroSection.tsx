@@ -68,15 +68,8 @@ const HeroSection = ({
       <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full bg-primary/[0.08] blur-[140px] pointer-events-none" />
 
       <div className="relative z-10 max-w-3xl mx-auto text-center px-4 sm:px-6">
-        <div className="inline-flex items-center gap-2.5 bg-primary/10 border border-primary/20 rounded-full px-5 py-2 mb-7">
-          <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-          <span className="text-primary text-xs font-bold tracking-wide uppercase">
-            <AnimatedCounter target={partnerCount} /> Verified Partners • Updated Today
-          </span>
-        </div>
-
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-foreground mb-5 leading-[1.08] tracking-tight">
-          The #1 Everyday Directory for{" "}
+          The #1 Directory for Humans, Businesses &amp; Autonomous AI Agents{" "}
           <span className="bg-gradient-to-r from-primary via-[hsl(210,90%,55%)] to-[hsl(275,80%,55%)] bg-clip-text text-transparent">
             Spending USDC
           </span>{" "}

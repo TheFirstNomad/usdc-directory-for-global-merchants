@@ -223,24 +223,25 @@ const Submit = () => {
                 <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Briefly describe what your business does…" rows={3} maxLength={1000} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Logo (PNG only)</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Logo (PNG, JPG, JPEG, SVG, WebP recommended)</label>
                 <div className="flex items-center gap-3">
                   <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card cursor-pointer hover:bg-muted transition-colors text-sm text-muted-foreground">
                     <Upload className="h-4 w-4" />
-                    {form.logo_file ? form.logo_file.name : "Upload PNG logo"}
-                    <input type="file" accept="image/png" className="hidden" onChange={(e) => {
+                    {form.logo_file ? form.logo_file.name : "Upload logo"}
+                    <input type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp" className="hidden" onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file && file.type === "image/png") {
+                      const allowedTypes = ["image/png", "image/jpeg", "image/svg+xml", "image/webp"];
+                      if (file && allowedTypes.includes(file.type)) {
                         setForm({ ...form, logo_file: file });
                         setLogoUrl(null);
                       } else {
-                        toast({ title: "PNG files only", variant: "destructive" });
+                        toast({ title: "Please upload a PNG, JPG, SVG, or WebP image", variant: "destructive" });
                       }
                     }} />
                   </label>
                   {uploadingLogo && <span className="text-xs text-muted-foreground">Uploading…</span>}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Recommended: 512×512px, transparent background</p>
+                <p className="text-xs text-muted-foreground mt-1">Recommended: 512×512px or larger, transparent background preferred</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Categories *</label>

@@ -48,9 +48,6 @@ const Footer = () => {
           <p className="text-xs text-muted-foreground">
             © 2026 USDC Directory. All rights reserved.
           </p>
-          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-            Built on Arc • Powered by Circle USDC
-          </p>
         </div>
       </div>
     </footer>

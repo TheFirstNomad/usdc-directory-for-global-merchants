@@ -111,7 +111,7 @@ const MyListings = () => {
                   <div className="min-w-0">
                     <h3 className="font-semibold text-foreground truncate">
                       {listing.name}
-                      {listing.categories?.includes("AI Agents") && (
+                      {(listing.categories?.includes("AI Agents") || listing.categories?.includes("AI Agents & Automation")) && (
                         <span className="ml-2 text-[10px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full">🤖 AI Agent</span>
                       )}
                     </h3>

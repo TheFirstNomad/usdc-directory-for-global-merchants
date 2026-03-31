@@ -251,7 +251,7 @@ const AdminPayments = () => {
                         </TableCell>
                         <TableCell className="font-medium">
                           {s.company_name}
-                          {(s.contact_email === "ai-agent@autonomous" || s.categories?.includes("AI Agents")) && (
+                          {(s.contact_email === "ai-agent@autonomous" || s.categories?.includes("AI Agents") || s.categories?.includes("AI Agents & Automation")) && (
                             <Badge variant="outline" className="ml-2 text-[10px] border-cyan-500/30 text-cyan-400">🤖 AI Agent</Badge>
                           )}
                         </TableCell>

@@ -14,7 +14,7 @@ const FeaturedCarousel = ({ partners }: { partners: Partner[] }) => {
 
   return (
     <section className="py-8">
-      <h2 className="text-lg font-bold text-foreground mb-4">Featured Partners</h2>
+      <h2 className="text-lg font-bold text-foreground mb-4">Featured Listings</h2>
       <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
         {uniquePartners.map((p) => (
           <a
