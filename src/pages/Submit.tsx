@@ -215,7 +215,7 @@ const Submit = () => {
                 <Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} placeholder="you@company.com" maxLength={255} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Website *</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Website</label>
                 <Input type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://yourcompany.com" maxLength={255} />
               </div>
               <div>
