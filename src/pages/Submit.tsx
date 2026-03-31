@@ -67,7 +67,7 @@ const Submit = () => {
 
   const validateStep = (): boolean => {
     if (step === 0) {
-      if (!form.company_name || !form.contact_email || !form.website || !form.description) {
+      if (!form.company_name || !form.contact_email || !form.description) {
         toast({ title: "Please fill in all required fields", variant: "destructive" });
         return false;
       }
