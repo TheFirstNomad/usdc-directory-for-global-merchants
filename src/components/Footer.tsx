@@ -25,7 +25,7 @@ const Footer = () => {
             <div>
               <h4 className="font-semibold text-foreground mb-3">Directory</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="/" className="hover:text-foreground transition-colors">Browse Merchants</a></li>
+                <li><a href="/" className="hover:text-foreground transition-colors">Browse Listings</a></li>
                 <li><a href="/submit" className="hover:text-foreground transition-colors">List Your Business</a></li>
                 <li><a href="/insights" className="hover:text-foreground transition-colors">Insights</a></li>
                 <li><a href="/map" className="hover:text-foreground transition-colors">Map View</a></li>
