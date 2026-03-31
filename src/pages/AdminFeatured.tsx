@@ -147,6 +147,9 @@ const AdminFeatured = () => {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <div className="flex items-center justify-between">
           <div>
+            <Button variant="ghost" size="sm" asChild className="mb-1 -ml-2 gap-1 text-muted-foreground">
+              <Link to="/admin/payments"><ArrowLeft className="h-4 w-4" /> Payments</Link>
+            </Button>
             <h1 className="text-2xl font-bold text-foreground">Featured Management</h1>
             <p className="text-sm text-muted-foreground">
               {featuredCount}/4 featured slots used
