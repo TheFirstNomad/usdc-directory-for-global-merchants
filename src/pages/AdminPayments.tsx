@@ -102,6 +102,28 @@ const AdminPayments = () => {
     fetchData();
   }, [fetchData]);
 
+  const handleDelete = useCallback(async (id: string) => {
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/admin-payments`,
+        {
+          method: "DELETE",
+          headers: {
+            "x-wallet-address": address!,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id }),
+        }
+      );
+      if (!res.ok) throw new Error("Failed to delete");
+      setSubmissions((prev) => prev.filter((s) => s.id !== id));
+      toast({ title: "Deleted", description: "Submission removed" });
+    } catch {
+      toast({ title: "Error", description: "Failed to delete submission", variant: "destructive" });
+    }
+  }, [address, toast]);
+
   // Auto-refresh every 30 seconds
   useEffect(() => {
     if (!isOwner) return;
