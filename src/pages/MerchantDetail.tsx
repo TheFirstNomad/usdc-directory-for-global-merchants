@@ -47,7 +47,7 @@ const MerchantDetail = () => {
   const [paymentPending, setPaymentPending] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Seeded agents - Visit Site + fake payment toast are hidden/improved for these only
+  // Seeded agents - both Visit Site and Pay with USDC are hidden
   const seededNames = new Set([
     "ContentMintBot", "GuardianAgent", "RentCollectorAI", "BridgeMind",
     "InvoiceBot", "PayBot3000", "ResearchOracle", "SocialPayBot",
@@ -67,22 +67,6 @@ const MerchantDetail = () => {
         setLoading(false);
       });
   }, [id]);
-
-  const handlePayDemo = () => {
-    setPaymentPending(true);
-    setTimeout(() => {
-      setPaymentPending(false);
-
-      const isSeeded = partner && seededNames.has(partner.name);
-
-      toast({
-        title: isSeeded ? "Demo Mode" : "✅ USDC Payment Sent!",
-        description: isSeeded 
-          ? "Real USDC payments coming soon for this seeded agent!" 
-          : `Demo payment of 10.00 USDC to ${partner?.name} completed on Base testnet.`,
-      });
-    }, 1500);
-  };
 
   const handleCopyAddress = () => {
     if (!partner?.usdc_address) return;
@@ -136,6 +120,8 @@ const MerchantDetail = () => {
       </div>
     );
   }
+
+  const isSeeded = seededNames.has(partner.name);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -235,14 +221,12 @@ const MerchantDetail = () => {
 
           {/* Sidebar */}
           <div className="space-y-4">
-            {/* Actions */}
+            {/* Actions - both Visit and Pay hidden for seeded agents */}
             <div className="bg-card border border-border rounded-xl p-5 space-y-3">
-              {/* Visit Site - hidden for seeded agents */}
-              {partner?.website && 
+              {/* Visit Site - hidden for seeded */}
+              {!isSeeded && partner?.website && 
                partner.website.startsWith('http') && 
-               !partner.website.includes('demo') && 
-               !partner.website.includes('placeholder') && 
-               !seededNames.has(partner.name) && (
+               !partner.website.includes('demo') && (
                 <Button
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
                   asChild
@@ -253,28 +237,23 @@ const MerchantDetail = () => {
                 </Button>
               )}
 
-              {/* Pay with USDC - always visible */}
-              <Button
-                variant="outline"
-                className="w-full border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground font-semibold"
-                onClick={handlePayDemo}
-                disabled={paymentPending}
-              >
-                {paymentPending ? (
-                  <>
-                    <div className="h-4 w-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    Processing…
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-4 w-4 mr-2" />
-                    Pay with USDC
-                  </>
-                )}
-              </Button>
+              {/* Pay with USDC - hidden for seeded */}
+              {!isSeeded && (
+                <Button
+                  variant="outline"
+                  className="w-full border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground font-semibold"
+                  onClick={() => {
+                    // You can keep a simple toast or remove completely later
+                    alert("Real USDC payments will be enabled soon for verified listings!");
+                  }}
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Pay with USDC
+                </Button>
+              )}
 
-              {/* Copy USDC Address - hidden for seeded agents */}
-              {partner?.usdc_address && 
+              {/* Copy USDC Address - hidden for seeded */}
+              {!isSeeded && partner?.usdc_address && 
                partner.usdc_address.startsWith('0x') && 
                partner.usdc_address.length > 40 && (
                 <Button
@@ -313,33 +292,4 @@ const MerchantDetail = () => {
                   </div>
                   <div className="text-xs text-muted-foreground">
                     <p className="font-medium text-foreground mb-0.5">
-                      {score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Basic"}
-                    </p>
-                    Proprietary score based on verification, chain support, and ecosystem activity.
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Claim listing */}
-            <div className="bg-gradient-to-br from-primary/5 to-transparent border border-border rounded-xl p-5">
-              <h3 className="font-semibold text-foreground mb-2 text-sm">Own this business?</h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                Claim and manage your listing. Verified owners get priority placement.
-              </p>
-              <Link to={`/edit/${id}`}>
-                <Button variant="outline" size="sm" className="w-full text-xs">
-                  Edit This Listing — 5 USDC
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </motion.div>
-      </main>
-
-      <Footer />
-    </div>
-  );
-};
-
-export default MerchantDetail;
+                      {score >= 80 ? "Excellent" : score >=
