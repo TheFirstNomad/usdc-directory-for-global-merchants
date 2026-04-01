@@ -92,21 +92,39 @@ const Swap = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [slippage] = useState(0.5);
 
-  // Fetch balances
-  const payTokenData = TOKENS[payToken];
-  const receiveTokenData = TOKENS[receiveToken];
-
-  const { data: payBalance } = useBalance({
+  // Fetch native ETH balance
+  const { data: nativeBalance } = useBalance({
     address: address as `0x${string}` | undefined,
-    token: payTokenData.address === "native" ? undefined : payTokenData.address as `0x${string}`,
     query: { enabled: isConnected && !!address },
   });
 
-  const { data: receiveBalance } = useBalance({
-    address: address as `0x${string}` | undefined,
-    token: receiveTokenData.address === "native" ? undefined : receiveTokenData.address as `0x${string}`,
-    query: { enabled: isConnected && !!address },
+  // ERC20 balanceOf ABI
+  const erc20BalanceAbi = [{ name: "balanceOf", type: "function", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ name: "", type: "uint256" }] }] as const;
+
+  const { data: payErc20Balance } = useReadContract({
+    address: payTokenData.address === "native" ? undefined : payTokenData.address as `0x${string}`,
+    abi: erc20BalanceAbi,
+    functionName: "balanceOf",
+    args: address ? [address as `0x${string}`] : undefined,
+    query: { enabled: isConnected && !!address && payTokenData.address !== "native" },
   });
+
+  const { data: receiveErc20Balance } = useReadContract({
+    address: receiveTokenData.address === "native" ? undefined : receiveTokenData.address as `0x${string}`,
+    abi: erc20BalanceAbi,
+    functionName: "balanceOf",
+    args: address ? [address as `0x${string}`] : undefined,
+    query: { enabled: isConnected && !!address && receiveTokenData.address !== "native" },
+  });
+
+  // Format balances
+  const payBalanceFormatted = payTokenData.address === "native"
+    ? (nativeBalance ? formatUnits(nativeBalance.value, nativeBalance.decimals) : null)
+    : (payErc20Balance != null ? formatUnits(payErc20Balance as bigint, payTokenData.decimals) : null);
+
+  const receiveBalanceFormatted = receiveTokenData.address === "native"
+    ? (nativeBalance ? formatUnits(nativeBalance.value, nativeBalance.decimals) : null)
+    : (receiveErc20Balance != null ? formatUnits(receiveErc20Balance as bigint, receiveTokenData.decimals) : null);
 
   const payRate = MOCK_RATES[payToken] || 1;
   const receiveRate = MOCK_RATES[receiveToken] || 1;
