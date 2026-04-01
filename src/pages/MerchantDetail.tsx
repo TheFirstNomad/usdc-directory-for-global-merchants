@@ -69,10 +69,7 @@ const MerchantDetail = () => {
   }, [id]);
 
   const handleCopyAddress = () => {
-    if (!partner?.usdc_address) return;
-    navigator.clipboard.writeText(partner.usdc_address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    return;
   };
 
   const logoUrl = partner?.logo_url && partner.logo_url !== ""
@@ -252,23 +249,6 @@ const MerchantDetail = () => {
                 </Button>
               )}
 
-              {/* Copy USDC Address - hidden for seeded */}
-              {!isSeeded && partner?.usdc_address && 
-               partner.usdc_address.startsWith('0x') && 
-               partner.usdc_address.length > 40 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full text-muted-foreground"
-                  onClick={handleCopyAddress}
-                >
-                  {copied ? (
-                    <><Check className="h-3.5 w-3.5 mr-1.5" /> Copied!</>
-                  ) : (
-                    <><Copy className="h-3.5 w-3.5 mr-1.5" /> Copy USDC Address</>
-                  )}
-                </Button>
-              )}
             </div>
 
             {/* Score card */}
@@ -292,4 +272,37 @@ const MerchantDetail = () => {
                   </div>
                   <div className="text-xs text-muted-foreground">
                     <p className="font-medium text-foreground mb-0.5">
-                      {score >= 80 ? "Excellent" : score >=
+                      {score >= 80 ? "Excellent" : score >= 60 ? "Good" : "Building"}
+                    </p>
+                    <p>Integration strength across the USDC ecosystem.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Info */}
+            <div className="bg-card border border-border rounded-xl p-5">
+              <h3 className="font-semibold text-foreground mb-3 text-sm">Details</h3>
+              <dl className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Region</dt>
+                  <dd className="text-foreground font-medium">{partner.region || "Global"}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Listed</dt>
+                  <dd className="text-foreground font-medium">
+                    {new Date(partner.created_at).toLocaleDateString()}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </motion.div>
+      </main>
+
+      <Footer />
+    </div>
+  );
+};
+
+export default MerchantDetail;
