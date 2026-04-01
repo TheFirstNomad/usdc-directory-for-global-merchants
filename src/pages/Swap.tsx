@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { ArrowDownUp, ChevronDown, ChevronUp, Wallet, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
-import { useBalance } from "wagmi";
+import { useBalance, useReadContract } from "wagmi";
+import { formatUnits } from "viem";
 
 // Base Mainnet token addresses
 const TOKENS: Record<string, { symbol: string; name: string; address: `0x${string}` | "native"; decimals: number; logoUrl: string }> = {
