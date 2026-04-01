@@ -292,4 +292,37 @@ const MerchantDetail = () => {
                   </div>
                   <div className="text-xs text-muted-foreground">
                     <p className="font-medium text-foreground mb-0.5">
-                      {score >= 80 ? "Excellent" : score >=
+                      {score >= 80 ? "Excellent" : score >= 60 ? "Good" : "Building"}
+                    </p>
+                    <p>Integration strength across the USDC ecosystem.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Info */}
+            <div className="bg-card border border-border rounded-xl p-5">
+              <h3 className="font-semibold text-foreground mb-3 text-sm">Details</h3>
+              <dl className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Region</dt>
+                  <dd className="text-foreground font-medium">{partner.region || "Global"}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Listed</dt>
+                  <dd className="text-foreground font-medium">
+                    {new Date(partner.created_at).toLocaleDateString()}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </motion.div>
+      </main>
+
+      <Footer />
+    </div>
+  );
+};
+
+export default MerchantDetail;
