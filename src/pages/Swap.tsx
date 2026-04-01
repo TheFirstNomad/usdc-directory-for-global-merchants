@@ -92,6 +92,9 @@ const Swap = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [slippage] = useState(0.5);
 
+  const payTokenData = TOKENS[payToken];
+  const receiveTokenData = TOKENS[receiveToken];
+
   // Fetch native ETH balance
   const { data: nativeBalance } = useBalance({
     address: address as `0x${string}` | undefined,
@@ -133,7 +136,6 @@ const Swap = () => {
   const payFiat = payAmountNum * payRate;
   const receiveFiat = receiveAmount * receiveRate;
 
-  // Price impact mock (< 0.01% for most pairs)
   const priceImpact = payAmountNum > 10000 ? 0.15 : payAmountNum > 1000 ? 0.05 : 0.01;
   const priceImpactColor =
     priceImpact > 0.1 ? "text-yellow-400" : "text-green-400";
@@ -145,8 +147,8 @@ const Swap = () => {
   }, [payToken, receiveToken, receiveAmount]);
 
   const handleMax = () => {
-    if (payBalance) {
-      setPayAmount(payBalance.formatted);
+    if (payBalanceFormatted) {
+      setPayAmount(payBalanceFormatted);
     }
   };
 
