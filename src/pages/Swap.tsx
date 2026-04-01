@@ -258,10 +258,10 @@ const Swap = () => {
             <div className="rounded-xl bg-muted/30 border border-border/50 p-4 mt-1">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-muted-foreground">You Receive</span>
-                {isConnected && receiveBalance && (
+                {isConnected && receiveBalanceFormatted && (
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Wallet className="h-3 w-3" />
-                    <span>{parseFloat(receiveBalance.formatted).toFixed(4)}</span>
+                    <span>{parseFloat(receiveBalanceFormatted).toFixed(4)}</span>
                   </div>
                 )}
               </div>
