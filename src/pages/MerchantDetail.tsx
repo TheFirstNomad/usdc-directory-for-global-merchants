@@ -69,10 +69,7 @@ const MerchantDetail = () => {
   }, [id]);
 
   const handleCopyAddress = () => {
-    if (!partner?.usdc_address) return;
-    navigator.clipboard.writeText(partner.usdc_address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    return;
   };
 
   const logoUrl = partner?.logo_url && partner.logo_url !== ""
