@@ -249,23 +249,6 @@ const MerchantDetail = () => {
                 </Button>
               )}
 
-              {/* Copy USDC Address - hidden for seeded */}
-              {!isSeeded && partner?.usdc_address && 
-               partner.usdc_address.startsWith('0x') && 
-               partner.usdc_address.length > 40 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full text-muted-foreground"
-                  onClick={handleCopyAddress}
-                >
-                  {copied ? (
-                    <><Check className="h-3.5 w-3.5 mr-1.5" /> Copied!</>
-                  ) : (
-                    <><Copy className="h-3.5 w-3.5 mr-1.5" /> Copy USDC Address</>
-                  )}
-                </Button>
-              )}
             </div>
 
             {/* Score card */}
