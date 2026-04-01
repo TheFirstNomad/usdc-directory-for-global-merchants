@@ -206,10 +206,10 @@ const Swap = () => {
             <div className="rounded-xl bg-muted/30 border border-border/50 p-4 mb-1">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-muted-foreground">You Pay</span>
-                {isConnected && payBalance && (
+                {isConnected && payBalanceFormatted && (
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Wallet className="h-3 w-3" />
-                    <span>{parseFloat(payBalance.formatted).toFixed(4)}</span>
+                    <span>{parseFloat(payBalanceFormatted).toFixed(4)}</span>
                     <button
                       onClick={handleMax}
                       className="text-primary font-semibold hover:underline ml-1"
