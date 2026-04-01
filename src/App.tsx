@@ -34,6 +34,7 @@ const App = () => (
             <Route path="/submit" element={<Submit />} />
             <Route path="/submit/ai-agent" element={<SubmitAIAgent />} />
             <Route path="/ai-agents" element={<AIAgents />} />
+            <Route path="/swap" element={<Swap />} />
             <Route path="/insights" element={<Insights />} />
             <Route path="/merchant/:id" element={<MerchantDetail />} />
             <Route path="/edit/:id" element={<EditListing />} />
