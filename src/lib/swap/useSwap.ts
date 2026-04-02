@@ -127,7 +127,7 @@ export function useSwap({
         args: [deadline, calls],
         value: isNativeIn ? amountInParsed : undefined,
         chainId: 8453,
-      });
+      } as any);
 
       setTxHash(hash);
       if (publicClient) {
