@@ -66,7 +66,7 @@ export function useSwap({
         functionName: "approve",
         args: [UNISWAP_V3_ROUTER as `0x${string}`, amountInParsed],
         chainId: 8453,
-      });
+      } as any);
       if (publicClient) {
         await publicClient.waitForTransactionReceipt({ hash });
       }
