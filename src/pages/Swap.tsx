@@ -1,165 +1,148 @@
 import { useState, useCallback } from "react";
-import { ArrowDownUp, ChevronDown, ChevronUp, Wallet, Info } from "lucide-react";
+import {
+  ArrowDownUp, ChevronDown, ChevronUp, Wallet, Info,
+  ExternalLink, AlertTriangle, Droplets, Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
-import { useBalance, useReadContract } from "wagmi";
+import { useBalance, useReadContract, useChainId, useSwitchChain } from "wagmi";
 import { formatUnits } from "viem";
 
-// Base Mainnet token addresses
-const TOKENS: Record<string, { symbol: string; name: string; address: `0x${string}` | "native"; decimals: number; logoUrl: string }> = {
-  ETH: { symbol: "ETH", name: "Ethereum", address: "native", decimals: 18, logoUrl: "https://cryptologos.cc/logos/ethereum-eth-logo.png" },
-  USDC: { symbol: "USDC", name: "USD Coin", address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6, logoUrl: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png" },
-  WETH: { symbol: "WETH", name: "Wrapped Ether", address: "0x4200000000000000000000000000000000000006", decimals: 18, logoUrl: "https://cryptologos.cc/logos/ethereum-eth-logo.png" },
-  DAI: { symbol: "DAI", name: "Dai Stablecoin", address: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb", decimals: 18, logoUrl: "https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png" },
-  cbBTC: { symbol: "cbBTC", name: "Coinbase BTC", address: "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf", decimals: 8, logoUrl: "https://cryptologos.cc/logos/bitcoin-btc-logo.png" },
-};
-
-const POPULAR_PAIRS = [
-  { from: "ETH", to: "USDC" },
-  { from: "cbBTC", to: "USDC" },
-  { from: "DAI", to: "USDC" },
-  { from: "WETH", to: "USDC" },
-];
-
-// Mock price rates (Phase 3 will use real quotes)
-const MOCK_RATES: Record<string, number> = {
-  ETH: 3450,
-  USDC: 1,
-  WETH: 3450,
-  DAI: 1,
-  cbBTC: 96500,
-};
-
-const TokenSelector = ({
-  token,
-  onSelect,
-  excludeToken,
-}: {
-  token: string;
-  onSelect: (t: string) => void;
-  excludeToken: string;
-}) => {
-  const [open, setOpen] = useState(false);
-  const t = TOKENS[token];
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-      >
-        <img src={t.logoUrl} alt={t.symbol} className="w-6 h-6 rounded-full" />
-        <span className="font-semibold text-foreground">{t.symbol}</span>
-        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-      </button>
-      {open && (
-        <div className="absolute z-50 mt-2 w-48 rounded-xl border border-border bg-card shadow-xl py-2">
-          {Object.values(TOKENS)
-            .filter((tk) => tk.symbol !== excludeToken)
-            .map((tk) => (
-              <button
-                key={tk.symbol}
-                onClick={() => {
-                  onSelect(tk.symbol);
-                  setOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors ${
-                  tk.symbol === token ? "bg-primary/10 text-primary" : "text-foreground"
-                }`}
-              >
-                <img src={tk.logoUrl} alt={tk.symbol} className="w-5 h-5 rounded-full" />
-                <div className="text-left">
-                  <div className="font-medium">{tk.symbol}</div>
-                  <div className="text-xs text-muted-foreground">{tk.name}</div>
-                </div>
-              </button>
-            ))}
-        </div>
-      )}
-    </div>
-  );
-};
+import ChainSelector from "@/components/swap/ChainSelector";
+import TokenSearchModal from "@/components/swap/TokenSearchModal";
+import { TOKENS_BY_CHAIN, POPULAR_PAIRS, type TokenInfo } from "@/lib/swap/tokens";
+import { CHAINS, type SupportedChainId } from "@/lib/swap/chains";
+import { ERC20_ABI } from "@/lib/swap/contracts";
+import { useQuote } from "@/lib/swap/useQuote";
+import { useSwap } from "@/lib/swap/useSwap";
 
 const Swap = () => {
   const { open: openWallet } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
-  const [payToken, setPayToken] = useState("ETH");
-  const [receiveToken, setReceiveToken] = useState("USDC");
+  const walletChainId = useChainId();
+  const { switchChain } = useSwitchChain();
+
+  const [selectedChainId, setSelectedChainId] = useState<SupportedChainId>(8453);
+  const tokens = TOKENS_BY_CHAIN[selectedChainId] ?? [];
+  const [payToken, setPayToken] = useState<TokenInfo>(tokens[0]);
+  const [receiveToken, setReceiveToken] = useState<TokenInfo>(tokens[1] ?? tokens[0]);
   const [payAmount, setPayAmount] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [slippage] = useState(0.5);
+  const [tokenModalOpen, setTokenModalOpen] = useState<"pay" | "receive" | null>(null);
 
-  const payTokenData = TOKENS[payToken];
-  const receiveTokenData = TOKENS[receiveToken];
+  const chainConfig = CHAINS[selectedChainId];
+  const popularPairs = POPULAR_PAIRS[selectedChainId] ?? [];
+  const isArcTestnet = selectedChainId === 5042002;
+  const wrongChain = isConnected && walletChainId !== selectedChainId;
 
-  // Fetch native ETH balance
+  /* ── chain switch ── */
+  const handleChainChange = useCallback((id: SupportedChainId) => {
+    setSelectedChainId(id);
+    const t = TOKENS_BY_CHAIN[id] ?? [];
+    setPayToken(t[0]);
+    setReceiveToken(t[1] ?? t[0]);
+    setPayAmount("");
+  }, []);
+
+  /* ── balances ── */
   const { data: nativeBalance } = useBalance({
     address: address as `0x${string}` | undefined,
+    chainId: selectedChainId,
     query: { enabled: isConnected && !!address },
   });
 
-  // ERC20 balanceOf ABI
-  const erc20BalanceAbi = [{ name: "balanceOf", type: "function", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ name: "", type: "uint256" }] }] as const;
-
-  const { data: payErc20Balance } = useReadContract({
-    address: payTokenData.address === "native" ? undefined : payTokenData.address as `0x${string}`,
-    abi: erc20BalanceAbi,
+  const { data: payErc20Bal } = useReadContract({
+    address: payToken.address === "native" ? undefined : (payToken.address as `0x${string}`),
+    abi: ERC20_ABI,
     functionName: "balanceOf",
     args: address ? [address as `0x${string}`] : undefined,
-    query: { enabled: isConnected && !!address && payTokenData.address !== "native" },
+    chainId: selectedChainId,
+    query: { enabled: isConnected && !!address && payToken.address !== "native" },
   });
 
-  const { data: receiveErc20Balance } = useReadContract({
-    address: receiveTokenData.address === "native" ? undefined : receiveTokenData.address as `0x${string}`,
-    abi: erc20BalanceAbi,
+  const { data: recErc20Bal } = useReadContract({
+    address: receiveToken.address === "native" ? undefined : (receiveToken.address as `0x${string}`),
+    abi: ERC20_ABI,
     functionName: "balanceOf",
     args: address ? [address as `0x${string}`] : undefined,
-    query: { enabled: isConnected && !!address && receiveTokenData.address !== "native" },
+    chainId: selectedChainId,
+    query: { enabled: isConnected && !!address && receiveToken.address !== "native" },
   });
 
-  // Format balances
-  const payBalanceFormatted = payTokenData.address === "native"
-    ? (nativeBalance ? formatUnits(nativeBalance.value, nativeBalance.decimals) : null)
-    : (payErc20Balance != null ? formatUnits(payErc20Balance as bigint, payTokenData.decimals) : null);
+  const payBalance =
+    payToken.address === "native"
+      ? nativeBalance ? formatUnits(nativeBalance.value, nativeBalance.decimals) : null
+      : payErc20Bal != null ? formatUnits(payErc20Bal as bigint, payToken.decimals) : null;
 
-  const receiveBalanceFormatted = receiveTokenData.address === "native"
-    ? (nativeBalance ? formatUnits(nativeBalance.value, nativeBalance.decimals) : null)
-    : (receiveErc20Balance != null ? formatUnits(receiveErc20Balance as bigint, receiveTokenData.decimals) : null);
+  const receiveBalance =
+    receiveToken.address === "native"
+      ? nativeBalance ? formatUnits(nativeBalance.value, nativeBalance.decimals) : null
+      : recErc20Bal != null ? formatUnits(recErc20Bal as bigint, receiveToken.decimals) : null;
 
-  const payRate = MOCK_RATES[payToken] || 1;
-  const receiveRate = MOCK_RATES[receiveToken] || 1;
+  /* ── quote ── */
+  const { amountOut, isLoading: quoteLoading, error: quoteError, poolFee } = useQuote({
+    tokenIn: payToken,
+    tokenOut: receiveToken,
+    amountIn: payAmount,
+    chainId: selectedChainId,
+  });
+
+  const receiveAmount = amountOut ? formatUnits(amountOut, receiveToken.decimals) : "";
+  const receiveAmountNum = parseFloat(receiveAmount) || 0;
   const payAmountNum = parseFloat(payAmount) || 0;
-  const receiveAmount = payAmountNum > 0 ? ((payAmountNum * payRate) / receiveRate) : 0;
-  const payFiat = payAmountNum * payRate;
-  const receiveFiat = receiveAmount * receiveRate;
 
-  const priceImpact = payAmountNum > 10000 ? 0.15 : payAmountNum > 1000 ? 0.05 : 0.01;
-  const priceImpactColor =
-    priceImpact > 0.1 ? "text-yellow-400" : "text-green-400";
+  const amountOutMin =
+    amountOut ? (amountOut * BigInt(Math.floor((1 - slippage / 100) * 10000))) / 10000n : null;
+  const minReceived = amountOutMin ? formatUnits(amountOutMin, receiveToken.decimals) : "";
 
+  const priceRate =
+    receiveAmountNum > 0 && payAmountNum > 0 ? receiveAmountNum / payAmountNum : null;
+
+  /* ── swap execution ── */
+  const { swapState, txHash, errorMessage, needsApproval, approve, swap, reset } = useSwap({
+    tokenIn: payToken,
+    tokenOut: receiveToken,
+    amountIn: payAmount,
+    amountOutMin,
+    chainId: selectedChainId,
+    userAddress: address as `0x${string}` | undefined,
+    slippage,
+  });
+
+  /* ── handlers ── */
   const handleReverse = useCallback(() => {
     setPayToken(receiveToken);
     setReceiveToken(payToken);
-    setPayAmount(receiveAmount > 0 ? receiveAmount.toFixed(6).replace(/\.?0+$/, "") : "");
+    setPayAmount(receiveAmount || "");
   }, [payToken, receiveToken, receiveAmount]);
 
-  const handleMax = () => {
-    if (payBalanceFormatted) {
-      setPayAmount(payBalanceFormatted);
-    }
-  };
+  const handleMax = () => { if (payBalance) setPayAmount(payBalance); };
 
   const handlePairClick = (from: string, to: string) => {
-    setPayToken(from);
-    setReceiveToken(to);
+    const f = tokens.find((t) => t.symbol === from);
+    const r = tokens.find((t) => t.symbol === to);
+    if (f) setPayToken(f);
+    if (r) setReceiveToken(r);
     setPayAmount("");
   };
 
-  const minReceived = receiveAmount * (1 - slippage / 100);
+  const handleTokenSelect = (token: TokenInfo) => {
+    if (tokenModalOpen === "pay") {
+      if (token.symbol === receiveToken.symbol) setReceiveToken(payToken);
+      setPayToken(token);
+    } else {
+      if (token.symbol === payToken.symbol) setPayToken(receiveToken);
+      setReceiveToken(token);
+    }
+  };
 
+  const swapDisabled = payAmountNum <= 0 || !amountOut || wrongChain || isArcTestnet;
+
+  /* ── render ── */
   return (
     <>
       <SEO
@@ -170,24 +153,67 @@ const Swap = () => {
         <Header />
 
         <main className="flex-1 flex flex-col items-center justify-center px-4 py-12">
-          {/* Popular pairs */}
-          <div className="flex flex-wrap gap-2 mb-6 justify-center">
-            {POPULAR_PAIRS.map((pair) => (
-              <button
-                key={`${pair.from}-${pair.to}`}
-                onClick={() => handlePairClick(pair.from, pair.to)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  payToken === pair.from && receiveToken === pair.to
-                    ? "border-primary bg-primary/15 text-primary"
-                    : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                }`}
-              >
-                {pair.from}/{pair.to}
-              </button>
-            ))}
+          {/* Chain selector */}
+          <div className="mb-6">
+            <ChainSelector chainId={selectedChainId} onChange={handleChainChange} />
           </div>
 
-          {/* Swap card */}
+          {/* Testnet banner */}
+          {isArcTestnet && (
+            <div className="w-full max-w-[440px] mb-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-yellow-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-yellow-300">Testnet Mode</p>
+                <p className="text-xs text-yellow-400/70 mt-0.5">
+                  All funds and swaps have no real value. Use only test USDC from the Circle faucet.
+                </p>
+                <a
+                  href="https://faucet.circle.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 mt-2 px-3 py-1.5 rounded-lg bg-yellow-500/20 text-yellow-300 text-xs font-medium hover:bg-yellow-500/30 transition-colors"
+                >
+                  <Droplets className="h-3 w-3" />
+                  Get Test USDC
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Popular pairs */}
+          {popularPairs.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-6 justify-center">
+              {popularPairs.map((p) => (
+                <button
+                  key={`${p.from}-${p.to}`}
+                  onClick={() => handlePairClick(p.from, p.to)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    payToken.symbol === p.from && receiveToken.symbol === p.to
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  }`}
+                >
+                  {p.from}/{p.to}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Wrong-chain prompt */}
+          {wrongChain && (
+            <div className="w-full max-w-[440px] mb-4">
+              <Button
+                onClick={() => switchChain({ chainId: selectedChainId })}
+                variant="outline"
+                className="w-full border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10"
+              >
+                Switch wallet to {chainConfig.name}
+              </Button>
+            </div>
+          )}
+
+          {/* ─── Swap Card ─── */}
           <div className="w-full max-w-[440px] rounded-2xl border border-border bg-card p-4 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-lg font-bold text-foreground">Swap</h1>
@@ -206,14 +232,11 @@ const Swap = () => {
             <div className="rounded-xl bg-muted/30 border border-border/50 p-4 mb-1">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-muted-foreground">You Pay</span>
-                {isConnected && payBalanceFormatted && (
+                {isConnected && payBalance && (
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Wallet className="h-3 w-3" />
-                    <span>{parseFloat(payBalanceFormatted).toFixed(4)}</span>
-                    <button
-                      onClick={handleMax}
-                      className="text-primary font-semibold hover:underline ml-1"
-                    >
+                    <span>{parseFloat(payBalance).toFixed(4)}</span>
+                    <button onClick={handleMax} className="text-primary font-semibold hover:underline ml-1">
                       Max
                     </button>
                   </div>
@@ -228,23 +251,22 @@ const Swap = () => {
                   onChange={(e) => {
                     const v = e.target.value.replace(/[^0-9.]/g, "");
                     if (v.split(".").length <= 2) setPayAmount(v);
+                    if (swapState !== "idle") reset();
                   }}
                   className="flex-1 bg-transparent text-2xl font-semibold text-foreground outline-none placeholder:text-muted-foreground/40 min-w-0"
                 />
-                <TokenSelector
-                  token={payToken}
-                  onSelect={setPayToken}
-                  excludeToken={receiveToken}
-                />
+                <button
+                  onClick={() => setTokenModalOpen("pay")}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <img src={payToken.logoUrl} alt={payToken.symbol} className="w-6 h-6 rounded-full" />
+                  <span className="font-semibold text-foreground">{payToken.symbol}</span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </button>
               </div>
-              {payAmountNum > 0 && (
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  ≈ ${payFiat.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              )}
             </div>
 
-            {/* Reverse button */}
+            {/* Reverse */}
             <div className="flex justify-center -my-3 relative z-10">
               <button
                 onClick={handleReverse}
@@ -258,44 +280,71 @@ const Swap = () => {
             <div className="rounded-xl bg-muted/30 border border-border/50 p-4 mt-1">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-muted-foreground">You Receive</span>
-                {isConnected && receiveBalanceFormatted && (
+                {isConnected && receiveBalance && (
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Wallet className="h-3 w-3" />
-                    <span>{parseFloat(receiveBalanceFormatted).toFixed(4)}</span>
+                    <span>{parseFloat(receiveBalance).toFixed(4)}</span>
                   </div>
                 )}
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-2xl font-semibold text-foreground">
-                    {receiveAmount > 0
-                      ? receiveAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })
-                      : "0"}
-                  </p>
+                  {quoteLoading ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      <span className="text-lg text-muted-foreground">Fetching quote…</span>
+                    </div>
+                  ) : (
+                    <p className="text-2xl font-semibold text-foreground">
+                      {receiveAmountNum > 0
+                        ? parseFloat(receiveAmount).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 6,
+                          })
+                        : "0"}
+                    </p>
+                  )}
                 </div>
-                <TokenSelector
-                  token={receiveToken}
-                  onSelect={setReceiveToken}
-                  excludeToken={payToken}
-                />
+                <button
+                  onClick={() => setTokenModalOpen("receive")}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <img src={receiveToken.logoUrl} alt={receiveToken.symbol} className="w-6 h-6 rounded-full" />
+                  <span className="font-semibold text-foreground">{receiveToken.symbol}</span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </button>
               </div>
-              <div className="flex items-center justify-between mt-1.5">
-                {receiveAmount > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    ≈ ${receiveFiat.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                )}
-                {receiveAmount > 0 && (
-                  <p className={`text-xs font-medium ${priceImpactColor}`}>
-                    ~{priceImpact}% impact
-                  </p>
-                )}
-              </div>
+              {quoteError && payAmountNum > 0 && (
+                <p className="text-xs text-red-400 mt-1.5">No liquidity found for this pair</p>
+              )}
             </div>
 
-            {/* Swap / Connect button */}
-            <div className="mt-4">
-              {!isConnected ? (
+            {/* ── Action buttons ── */}
+            <div className="mt-4 space-y-2">
+              {swapState === "success" && txHash ? (
+                <div className="text-center space-y-2">
+                  <p className="text-sm font-medium text-green-400">Swap successful! 🎉</p>
+                  <a
+                    href={`${chainConfig.explorer}/tx/${txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    View on {chainConfig.shortName === "Base" ? "BaseScan" : "ArcScan"}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                  <Button onClick={reset} variant="outline" className="w-full mt-2">
+                    New Swap
+                  </Button>
+                </div>
+              ) : swapState === "error" ? (
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-red-400">{errorMessage || "Swap failed"}</p>
+                  <Button onClick={reset} variant="outline" className="w-full">
+                    Try Again
+                  </Button>
+                </div>
+              ) : !isConnected ? (
                 <Button
                   onClick={() => openWallet()}
                   className="w-full h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground hover:opacity-90 transition-opacity"
@@ -303,23 +352,51 @@ const Swap = () => {
                   <Wallet className="h-5 w-5 mr-2" />
                   Connect Wallet
                 </Button>
+              ) : isArcTestnet ? (
+                <Button disabled className="w-full h-12 text-base font-semibold rounded-xl opacity-40">
+                  Swaps on Arc Testnet — Coming Soon
+                </Button>
+              ) : needsApproval ? (
+                <Button
+                  onClick={approve}
+                  disabled={swapState === "approving"}
+                  className="w-full h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground hover:opacity-90 transition-opacity"
+                >
+                  {swapState === "approving" ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" /> Approving…
+                    </>
+                  ) : (
+                    `Approve ${payToken.symbol}`
+                  )}
+                </Button>
               ) : (
                 <Button
-                  disabled={payAmountNum <= 0}
+                  onClick={swap}
+                  disabled={swapDisabled || swapState === "swapping"}
                   className="w-full h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40"
                 >
-                  {payAmountNum <= 0 ? "Enter Amount" : "Swap"}
+                  {swapState === "swapping" ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" /> Swapping…
+                    </>
+                  ) : payAmountNum <= 0 ? (
+                    "Enter Amount"
+                  ) : !amountOut ? (
+                    "Fetching Quote…"
+                  ) : (
+                    "Swap"
+                  )}
                 </Button>
               )}
             </div>
 
-            {/* Fee text */}
             <p className="text-center text-xs text-muted-foreground mt-3">
-              Fees on Base • Low slippage
+              {isArcTestnet ? "Arc Testnet • No real value" : "Fees on Base • Low slippage"}
             </p>
 
             {/* Collapsible details */}
-            {receiveAmount > 0 && (
+            {receiveAmountNum > 0 && !isArcTestnet && (
               <div className="mt-3 border-t border-border/50 pt-3">
                 <button
                   onClick={() => setDetailsOpen(!detailsOpen)}
@@ -327,9 +404,15 @@ const Swap = () => {
                 >
                   <span className="flex items-center gap-1">
                     <Info className="h-3 w-3" />
-                    1 {payToken} ≈ {(payRate / receiveRate).toLocaleString(undefined, { maximumFractionDigits: 4 })} {receiveToken}
+                    1 {payToken.symbol} ≈{" "}
+                    {priceRate ? priceRate.toLocaleString(undefined, { maximumFractionDigits: 8 }) : "—"}{" "}
+                    {receiveToken.symbol}
                   </span>
-                  {detailsOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  {detailsOpen ? (
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  )}
                 </button>
                 {detailsOpen && (
                   <div className="mt-2 space-y-1.5 text-xs text-muted-foreground">
@@ -340,16 +423,29 @@ const Swap = () => {
                     <div className="flex justify-between">
                       <span>Minimum Received</span>
                       <span className="text-foreground">
-                        {minReceived.toLocaleString(undefined, { maximumFractionDigits: 6 })} {receiveToken}
+                        {parseFloat(minReceived).toLocaleString(undefined, {
+                          maximumFractionDigits: 6,
+                        })}{" "}
+                        {receiveToken.symbol}
                       </span>
                     </div>
                     <div className="flex justify-between">
+                      <span>Pool Fee</span>
+                      <span className="text-foreground">{poolFee / 10000}%</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span>Route</span>
-                      <span className="text-foreground">{payToken} → {receiveToken}</span>
+                      <span className="text-foreground">
+                        {payToken.symbol} → {receiveToken.symbol}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Network</span>
-                      <span className="text-foreground">Base Mainnet</span>
+                      <span className="text-foreground">{chainConfig.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>DEX</span>
+                      <span className="text-foreground">{chainConfig.dexName}</span>
                     </div>
                   </div>
                 )}
@@ -360,6 +456,15 @@ const Swap = () => {
 
         <Footer />
       </div>
+
+      {/* Token search modal */}
+      <TokenSearchModal
+        open={tokenModalOpen !== null}
+        onClose={() => setTokenModalOpen(null)}
+        onSelect={handleTokenSelect}
+        excludeSymbol={tokenModalOpen === "pay" ? receiveToken.symbol : payToken.symbol}
+        chainId={selectedChainId}
+      />
     </>
   );
 };
