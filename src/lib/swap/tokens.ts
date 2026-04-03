@@ -64,3 +64,16 @@ export const POPULAR_PAIRS: Record<number, { from: string; to: string }[]> = {
   ],
   5042002: [],
 };
+
+/** Build a human-readable route string */
+export function getRouteDisplay(tokenIn: TokenInfo, tokenOut: TokenInfo): string {
+  const isNativeIn = tokenIn.address === "native" && tokenIn.symbol === "ETH";
+  if (isNativeIn) {
+    return `ETH → WETH → ${tokenOut.symbol}`;
+  }
+  const isNativeOut = tokenOut.address === "native" && tokenOut.symbol === "ETH";
+  if (isNativeOut) {
+    return `${tokenIn.symbol} → WETH → ETH`;
+  }
+  return `${tokenIn.symbol} → ${tokenOut.symbol}`;
+}
