@@ -17,10 +17,10 @@ export const CHAINS: Record<SupportedChainId, {
   },
   5042002: {
     name: "Arc Testnet",
-    shortName: "Arc",
+    shortName: "Arc Testnet",
     explorer: "https://testnet.arcscan.app",
     isTestnet: true,
     faucetUrl: "https://faucet.circle.com",
-    dexName: "Arc DEX",
+    dexName: "Curve Router NG",
   },
 };
