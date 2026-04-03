@@ -150,16 +150,12 @@ const Swap = () => {
     slippage,
   });
 
-  /* watch for success */
+  /* watch for success — open modal */
   const handleSwap = useCallback(async () => {
     await swap();
-  }, [swap]);
-
-  /* open success modal when txHash appears */
-  const prevSwapState = swapState;
-  if (prevSwapState === "success" && txHash && !showSuccess) {
+    // swap() resolves after success, so we show the modal
     setShowSuccess(true);
-  }
+  }, [swap]);
 
   /* ── handlers ── */
   const handleReverse = useCallback(() => {
