@@ -421,9 +421,9 @@ const Swap = () => {
                 >
                   Switch to {chainConfig.shortName}
                 </Button>
-              ) : isArcTestnet && tokens.length < 2 ? (
-                <Button disabled className="w-full h-13 text-base font-semibold rounded-xl opacity-40">
-                  No trading pairs on Arc Testnet yet
+              ) : isArcTestnet ? (
+                <Button disabled className="w-full h-13 text-base font-semibold rounded-xl opacity-50">
+                  DEX Routing Coming Soon
                 </Button>
               ) : needsApproval ? (
                 <Button

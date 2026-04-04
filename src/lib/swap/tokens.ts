@@ -63,7 +63,9 @@ export const POPULAR_PAIRS: Record<number, { from: string; to: string }[]> = {
     { from: "DAI", to: "USDC" },
     { from: "WETH", to: "USDC" },
   ],
-  5042002: [],
+  5042002: [
+    { from: "USDC", to: "EURC" },
+  ],
 };
 
 /** Build a human-readable route string */
