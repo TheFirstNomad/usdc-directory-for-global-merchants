@@ -25,7 +25,7 @@ import { useSwap } from "@/lib/swap/useSwap";
 /* rough fiat prices for display */
 const FIAT_PRICES: Record<string, number> = {
   ETH: 3450, WETH: 3450, USDC: 1, DAI: 1, USDbC: 1,
-  cbBTC: 96500, AERO: 0.75, DEGEN: 0.008,
+  cbBTC: 96500, AERO: 0.75, DEGEN: 0.008, EURC: 1.08,
 };
 const fiat = (symbol: string, amount: number) => {
   const p = FIAT_PRICES[symbol];
