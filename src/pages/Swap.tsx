@@ -185,7 +185,7 @@ const Swap = () => {
   };
 
   const insufficientBalance = payBalance !== null && payAmountNum > 0 && payAmountNum > parseFloat(payBalance);
-  const swapDisabled = payAmountNum <= 0 || !amountOut || wrongChain || insufficientBalance;
+  const swapDisabled = isArcTestnet || payAmountNum <= 0 || !amountOut || wrongChain || insufficientBalance;
 
   /* ── render ── */
   return (
