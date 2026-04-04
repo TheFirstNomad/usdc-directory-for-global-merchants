@@ -32,7 +32,7 @@ createAppKit({
     name: "USDC Directory",
     description: "Discover businesses that accept USDC payments",
     url: typeof window !== "undefined" ? window.location.origin : "https://usdc-directory.lovable.app",
-    icons: ["/Circle_USDC_Logo.svg"],
+    icons: ["/usdc-directory-logo.png"],
   },
   themeMode: "dark",
   themeVariables: {

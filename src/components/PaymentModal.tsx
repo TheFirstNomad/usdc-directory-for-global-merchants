@@ -123,7 +123,7 @@ const PaymentModal = ({ type, submissionData, onSuccess, onClose }: PaymentModal
         ) : (
           <>
             <div className="text-center mb-8">
-              <img src="/Circle_USDC_Logo.svg" alt="USDC" className="h-12 w-12 mx-auto mb-4" />
+              <img src="/usdc-directory-logo.png" alt="USDC" className="h-12 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-foreground mb-1">
                 Pay {amount} USDC
               </h2>
