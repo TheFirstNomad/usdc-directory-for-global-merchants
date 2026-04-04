@@ -20,6 +20,7 @@ export const BASE_TOKENS: TokenInfo[] = [
 
 export const ARC_TESTNET_TOKENS: TokenInfo[] = [
   { symbol: "USDC", name: "USDC (Native Gas)", address: "native", decimals: 6, logoUrl: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png", isStable: true },
+  { symbol: "EURC", name: "Euro Coin", address: "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a", decimals: 6, logoUrl: "https://cryptologos.cc/logos/euro-coin-eurc-logo.png", isStable: true },
 ];
 
 export const TOKENS_BY_CHAIN: Record<number, TokenInfo[]> = {
