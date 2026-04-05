@@ -5,6 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useTheme } from "@/components/ThemeProvider";
 import { TREASURY_ADDRESS } from "@/lib/web3";
+import Logo from "@/components/Logo";
 
 const baseNavLinks = [
   { label: "Directory", href: "/" },

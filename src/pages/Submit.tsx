@@ -354,7 +354,7 @@ const Submit = () => {
           {step === 4 && (
             <div className="space-y-6">
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 text-center">
-                <img src="/usdc-directory-logo.png" alt="USDC" className="h-10 mx-auto mb-3" />
+                <Logo size={40} className="mx-auto mb-3" />
                 <h3 className="text-xl font-bold text-foreground mb-1">10 USDC</h3>
                 <p className="text-sm text-muted-foreground mb-4">One-time listing fee</p>
                 {isConnected ? (
