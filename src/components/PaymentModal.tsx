@@ -5,6 +5,7 @@ import { LISTING_FEE_DISPLAY, UPDATE_FEE_DISPLAY } from "@/lib/web3";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, ExternalLink, Loader2, LogIn, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import Logo from "@/components/Logo";
 
 interface PaymentModalProps {
   type: "listing" | "update";
@@ -123,7 +124,7 @@ const PaymentModal = ({ type, submissionData, onSuccess, onClose }: PaymentModal
         ) : (
           <>
             <div className="text-center mb-8">
-              <img src="/usdc-directory-logo.png" alt="USDC" className="h-12 mx-auto mb-4" />
+              <Logo size={48} className="mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-foreground mb-1">
                 Pay {amount} USDC
               </h2>

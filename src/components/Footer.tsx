@@ -1,3 +1,5 @@
+import Logo from "@/components/Logo";
+
 const Footer = () => {
   return (
     <footer className="bg-card/50 border-t border-border py-10 px-6">
@@ -5,7 +7,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row items-start justify-between gap-10">
           <div className="max-w-md">
             <div className="flex items-center gap-3 mb-4">
-              <img src="/usdc-directory-logo.png" alt="USDC Directory" className="h-9 flex-shrink-0" />
+              <Logo size={36} className="flex-shrink-0" />
               <div className="flex flex-col">
                 <span className="font-bold text-2xl tracking-tighter bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] bg-clip-text text-transparent">
                   USDC
