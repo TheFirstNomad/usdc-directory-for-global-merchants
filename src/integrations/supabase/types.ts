@@ -211,6 +211,10 @@ export type Database = {
           website: string
         }[]
       }
+      is_listing_owner: {
+        Args: { _listing_id: string; _wallet_address: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
