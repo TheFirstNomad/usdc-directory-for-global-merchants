@@ -35,6 +35,8 @@ const EditListing = () => {
     region: "Global",
   });
 
+  const [notOwner, setNotOwner] = useState(false);
+
   useEffect(() => {
     if (!id) return;
     supabase
@@ -56,6 +58,19 @@ const EditListing = () => {
         setLoading(false);
       });
   }, [id]);
+
+  // Verify ownership when wallet connects
+  useEffect(() => {
+    if (!id || !isConnected || !address) {
+      setNotOwner(false);
+      return;
+    }
+    supabase
+      .rpc("is_listing_owner", { _listing_id: id, _wallet_address: address.toLowerCase() })
+      .then(({ data }) => {
+        setNotOwner(data === false);
+      });
+  }, [id, isConnected, address]);
 
   const toggleCategory = (cat: string) =>
     setForm((f) => ({
