@@ -13,6 +13,7 @@ import { CheckCircle2, ArrowRight, ArrowLeft, Upload, Eye } from "lucide-react";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { useAppKit } from "@reown/appkit/react";
 import { Wallet } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const STEPS = [
   { title: "Business Info", description: "Tell us about your business" },
