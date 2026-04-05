@@ -212,12 +212,16 @@ const Submit = () => {
                 <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="Your company name" maxLength={100} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Contact Email *</label>
-                <Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} placeholder="you@company.com" maxLength={255} />
+                <label className="block text-sm font-medium text-foreground mb-1.5">Contact Email</label>
+                <Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} placeholder="you@company.com (optional)" maxLength={255} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">Website</label>
-                <Input type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://yourcompany.com" maxLength={255} />
+                <Input type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://yourcompany.com (optional)" maxLength={255} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Country / Region</label>
+                <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="e.g. Uganda, United States (optional)" maxLength={100} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">Description *</label>
