@@ -1,3 +1,5 @@
+import Logo from "@/components/Logo";
+
 const Footer = () => {
   return (
     <footer className="bg-card/50 border-t border-border py-10 px-6">
