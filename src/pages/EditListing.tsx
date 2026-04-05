@@ -120,6 +120,22 @@ const EditListing = () => {
     );
   }
 
+  if (notOwner) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-2">Unauthorized</h1>
+            <p className="text-muted-foreground mb-4">You can only edit listings you created. Connect the wallet used to submit this listing.</p>
+            <Link to="/"><Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" /> Back to Directory</Button></Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (!partner) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
