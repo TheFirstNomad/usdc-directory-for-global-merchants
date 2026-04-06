@@ -1,3 +1,4 @@
+// Token configuration for swap interface — uses local icons from /public/tokens/
 export interface TokenInfo {
   symbol: string;
   name: string;
@@ -8,19 +9,19 @@ export interface TokenInfo {
 }
 
 export const BASE_TOKENS: TokenInfo[] = [
-  { symbol: "ETH", name: "Ethereum", address: "native", decimals: 18, logoUrl: "https://cryptologos.cc/logos/ethereum-eth-logo.png" },
-  { symbol: "USDC", name: "USD Coin", address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6, logoUrl: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png", isStable: true },
-  { symbol: "WETH", name: "Wrapped Ether", address: "0x4200000000000000000000000000000000000006", decimals: 18, logoUrl: "https://cryptologos.cc/logos/ethereum-eth-logo.png" },
-  { symbol: "DAI", name: "Dai Stablecoin", address: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb", decimals: 18, logoUrl: "https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png", isStable: true },
-  { symbol: "cbBTC", name: "Coinbase BTC", address: "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf", decimals: 8, logoUrl: "https://cryptologos.cc/logos/bitcoin-btc-logo.png" },
-  { symbol: "USDbC", name: "USD Base Coin", address: "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6Cb", decimals: 6, logoUrl: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png", isStable: true },
-  { symbol: "AERO", name: "Aerodrome", address: "0x940181a94A35A4569E4529A3CDfB74e38FD98631", decimals: 18, logoUrl: "https://basescan.org/token/images/aerodrome_32.png" },
-  { symbol: "DEGEN", name: "Degen", address: "0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed", decimals: 18, logoUrl: "https://basescan.org/token/images/daboredegen_32.png" },
+  { symbol: "ETH", name: "Ethereum", address: "native", decimals: 18, logoUrl: "/tokens/eth.png" },
+  { symbol: "USDC", name: "USD Coin", address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6, logoUrl: "/tokens/usdc.png", isStable: true },
+  { symbol: "WETH", name: "Wrapped Ether", address: "0x4200000000000000000000000000000000000006", decimals: 18, logoUrl: "/tokens/weth.png" },
+  { symbol: "DAI", name: "Dai Stablecoin", address: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb", decimals: 18, logoUrl: "/tokens/dai.png", isStable: true },
+  { symbol: "cbBTC", name: "Coinbase BTC", address: "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf", decimals: 8, logoUrl: "/tokens/btc.png" },
+  { symbol: "USDbC", name: "USD Base Coin", address: "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6Cb", decimals: 6, logoUrl: "/tokens/usdbc.png", isStable: true },
+  { symbol: "AERO", name: "Aerodrome", address: "0x940181a94A35A4569E4529A3CDfB74e38FD98631", decimals: 18, logoUrl: "/tokens/eth.png" },
+  { symbol: "DEGEN", name: "Degen", address: "0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed", decimals: 18, logoUrl: "/tokens/eth.png" },
 ];
 
 export const ARC_TESTNET_TOKENS: TokenInfo[] = [
-  { symbol: "USDC", name: "USDC (Native Gas)", address: "native", decimals: 6, logoUrl: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png", isStable: true },
-  { symbol: "EURC", name: "Euro Coin", address: "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a", decimals: 6, logoUrl: "https://cryptologos.cc/logos/euro-coin-eurc-logo.png", isStable: true },
+  { symbol: "USDC", name: "USDC (Native Gas)", address: "native", decimals: 6, logoUrl: "/tokens/usdc.png", isStable: true },
+  { symbol: "EURC", name: "Euro Coin", address: "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a", decimals: 6, logoUrl: "/tokens/eurc.png", isStable: true },
 ];
 
 export const TOKENS_BY_CHAIN: Record<number, TokenInfo[]> = {
