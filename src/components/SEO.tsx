@@ -12,7 +12,8 @@ const SITE_URL = "https://usdc.directory";
 const SITE_NAME = "USDC Directory";
 const DEFAULT_DESCRIPTION =
   "Discover trusted merchants, B2B services, and AI-driven platforms accepting USDC worldwide. List your entity for just 10 USDC.";
-const OG_IMAGE = `${SITE_URL}/og-image.png`;
+// OG image uses the main site logo
+const OG_IMAGE = `${SITE_URL}/usdc-directory-logo.png`;
 
 const SEO = ({
   title,

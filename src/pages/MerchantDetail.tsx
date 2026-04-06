@@ -234,20 +234,7 @@ const MerchantDetail = () => {
                 </Button>
               )}
 
-              {/* Pay with USDC - hidden for seeded */}
-              {!isSeeded && (
-                <Button
-                  variant="outline"
-                  className="w-full border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground font-semibold"
-                  onClick={() => {
-                    // You can keep a simple toast or remove completely later
-                    alert("Real USDC payments will be enabled soon for verified listings!");
-                  }}
-                >
-                  <Zap className="h-4 w-4 mr-2" />
-                  Pay with USDC
-                </Button>
-              )}
+              {/* Pay with USDC button removed per owner request */}
 
             </div>
 
