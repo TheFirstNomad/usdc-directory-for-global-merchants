@@ -18,6 +18,7 @@ import SubmitAIAgent from "./pages/SubmitAIAgent.tsx";
 import AIAgents from "./pages/AIAgents.tsx";
 import Swap from "./pages/Swap.tsx";
 import AdminFeatured from "./pages/AdminFeatured.tsx";
+import AdminListings from "./pages/AdminListings.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const App = () => (
