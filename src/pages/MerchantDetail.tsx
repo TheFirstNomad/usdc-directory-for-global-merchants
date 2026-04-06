@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BadgeCheck, ExternalLink, ArrowLeft, Copy, Check, Zap } from "lucide-react";
+import { BadgeCheck, ExternalLink, ArrowLeft, Copy, Check } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
