@@ -18,6 +18,7 @@ import SubmitAIAgent from "./pages/SubmitAIAgent.tsx";
 import AIAgents from "./pages/AIAgents.tsx";
 import Swap from "./pages/Swap.tsx";
 import AdminFeatured from "./pages/AdminFeatured.tsx";
+import AdminListings from "./pages/AdminListings.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const App = () => (
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/my-listings" element={<MyListings />} />
             <Route path="/admin/payments" element={<AdminPayments />} />
             <Route path="/admin/featured" element={<AdminFeatured />} />
+            <Route path="/admin/listings" element={<AdminListings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

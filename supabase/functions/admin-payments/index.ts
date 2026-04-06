@@ -38,6 +38,17 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Delete the submission and its associated partner (if any)
+      const { data: sub } = await supabase
+        .from("submissions")
+        .select("partner_id")
+        .eq("id", id)
+        .single();
+
+      if (sub?.partner_id) {
+        await supabase.from("partners").delete().eq("id", sub.partner_id);
+      }
+
       const { error: delError } = await supabase
         .from("submissions")
         .delete()

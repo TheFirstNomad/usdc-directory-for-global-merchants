@@ -28,7 +28,7 @@ const Header = () => {
   const navLinks = useMemo(
     () =>
       isOwner
-        ? [...baseNavLinks, { label: "Admin", href: "/admin/payments" }]
+        ? [...baseNavLinks, { label: "Admin", href: "/admin/listings" }]
         : baseNavLinks,
     [isOwner]
   );
