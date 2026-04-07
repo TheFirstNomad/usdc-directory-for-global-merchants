@@ -229,7 +229,6 @@ const EditListing = () => {
         </div>
 
         <div className="mt-10 bg-primary/5 border border-primary/20 rounded-xl p-6 text-center">
-          <Logo size={40} className="mx-auto mb-3" />
           <h3 className="text-xl font-bold text-foreground mb-1">5 USDC</h3>
           <p className="text-sm text-muted-foreground mb-4">One-time update fee</p>
           {isConnected ? (
