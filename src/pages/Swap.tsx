@@ -4,9 +4,11 @@ import {
   ExternalLink, AlertTriangle, Droplets, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
+import LiquidityPanel from "@/components/swap/LiquidityPanel";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useBalance, useReadContract, useChainId, useSwitchChain } from "wagmi";
 import { formatUnits } from "viem";
@@ -40,6 +42,7 @@ const Swap = () => {
   const { switchChain } = useSwitchChain();
 
   const [selectedChainId, setSelectedChainId] = useState<SupportedChainId>(8453);
+  const [activeTab, setActiveTab] = useState("swap");
   const tokens = TOKENS_BY_CHAIN[selectedChainId] ?? [];
   const [payToken, setPayToken] = useState<TokenInfo>(tokens[0]);
   const [receiveToken, setReceiveToken] = useState<TokenInfo>(tokens[1] ?? tokens[0]);
@@ -198,9 +201,25 @@ const Swap = () => {
 
         <main className="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:py-12">
           {/* Chain selector */}
-          <div className="mb-6">
+          <div className="mb-6 flex items-center gap-4">
             <ChainSelector chainId={selectedChainId} onChange={handleChainChange} />
           </div>
+
+          {/* Top-level Swap / Liquidity tabs (Liquidity only on Arc) */}
+          {isArcTestnet && (
+            <div className="w-full max-w-[460px] mb-5">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="w-full">
+                  <TabsTrigger value="swap" className="flex-1 gap-1.5">
+                    <ArrowDownUp className="h-3.5 w-3.5" /> Swap
+                  </TabsTrigger>
+                  <TabsTrigger value="liquidity" className="flex-1 gap-1.5">
+                    <Droplets className="h-3.5 w-3.5" /> Liquidity
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          )}
 
           {/* Testnet banner */}
           {isArcTestnet && (
@@ -224,7 +243,13 @@ const Swap = () => {
               </div>
             </div>
           )}
+          {/* ── Liquidity Tab ── */}
+          {isArcTestnet && activeTab === "liquidity" && (
+            <LiquidityPanel />
+          )}
 
+          {/* ── Swap Tab ── */}
+          {(!isArcTestnet || activeTab === "swap") && (<>
           {/* Popular pairs */}
           {popularPairs.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-5 justify-center">
@@ -499,6 +524,12 @@ const Swap = () => {
                       <span>Pool Fee</span>
                       <span className="text-foreground">{poolFee / 10000}%</span>
                     </div>
+                    {isArcTestnet && (
+                      <div className="flex justify-between">
+                        <span>Platform Fee</span>
+                        <span className="text-foreground">1%</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span>Route</span>
                       <span className="text-foreground font-mono text-[11px]">{routeDisplay}</span>
@@ -516,6 +547,7 @@ const Swap = () => {
               </div>
             )}
           </div>
+          </>)}
         </main>
 
         <Footer />
