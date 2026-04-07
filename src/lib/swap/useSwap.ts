@@ -1,9 +1,13 @@
 import { useState, useCallback } from "react";
 import { useWriteContract, useReadContract, usePublicClient } from "wagmi";
-import { parseUnits, encodeFunctionData } from "viem";
-import { UNISWAP_V3_ROUTER, SWAP_ROUTER_ABI, ERC20_ABI } from "./contracts";
+import { parseUnits } from "viem";
+import {
+  UNISWAP_V3_ROUTER, SWAP_ROUTER_ABI, ERC20_ABI,
+  ARC_V2_ROUTER, V2_ROUTER_ABI,
+} from "./contracts";
 import type { TokenInfo } from "./tokens";
-import { WETH_ADDRESS, getPoolFee } from "./tokens";
+import { WETH_ADDRESS, ARC_WRAPPED_NATIVE, getPoolFee } from "./tokens";
+import { encodeFunctionData } from "viem";
 
 export type SwapState = "idle" | "approving" | "swapping" | "success" | "error";
 
@@ -30,9 +34,18 @@ export function useSwap({
   const publicClient = usePublicClient({ chainId });
   const { writeContractAsync } = useWriteContract();
 
+  const isBase = chainId === 8453;
+  const isArc = chainId === 5042002;
   const isNativeIn = tokenIn?.address === "native";
   const isNativeOut = tokenOut?.address === "native";
-  const actualTokenIn = isNativeIn ? WETH_ADDRESS : (tokenIn?.address as `0x${string}`);
+
+  // Router address based on chain
+  const routerAddress = isArc ? ARC_V2_ROUTER : UNISWAP_V3_ROUTER;
+
+  // Resolve actual token addresses for on-chain calls
+  const actualTokenIn = isNativeIn
+    ? (isArc ? ARC_WRAPPED_NATIVE : WETH_ADDRESS)
+    : (tokenIn?.address as `0x${string}`);
 
   const amountInParsed = (() => {
     try {
@@ -43,13 +56,14 @@ export function useSwap({
     }
   })();
 
-  // Check ERC20 allowance
+  // Check ERC20 allowance (against the correct router)
   const { data: allowance } = useReadContract({
     address: actualTokenIn,
     abi: ERC20_ABI,
     functionName: "allowance",
-    args: userAddress ? [userAddress, UNISWAP_V3_ROUTER as `0x${string}`] : undefined,
-    query: { enabled: !isNativeIn && !!userAddress && chainId === 8453 },
+    args: userAddress ? [userAddress, routerAddress as `0x${string}`] : undefined,
+    query: { enabled: !isNativeIn && !!userAddress && (isBase || isArc) },
+    chainId,
   });
 
   const needsApproval =
@@ -64,8 +78,8 @@ export function useSwap({
         address: actualTokenIn,
         abi: ERC20_ABI,
         functionName: "approve",
-        args: [UNISWAP_V3_ROUTER as `0x${string}`, amountInParsed],
-        chainId: 8453,
+        args: [routerAddress as `0x${string}`, amountInParsed],
+        chainId,
       } as any);
       if (publicClient) {
         await publicClient.waitForTransactionReceipt({ hash });
@@ -75,7 +89,7 @@ export function useSwap({
       setSwapState("error");
       setErrorMessage(err?.shortMessage || err?.message || "Approval failed");
     }
-  }, [tokenIn, isNativeIn, userAddress, actualTokenIn, amountInParsed, writeContractAsync, publicClient]);
+  }, [tokenIn, isNativeIn, userAddress, actualTokenIn, amountInParsed, writeContractAsync, publicClient, routerAddress, chainId]);
 
   const swap = useCallback(async () => {
     if (!tokenIn || !tokenOut || !userAddress || amountInParsed <= 0n || !amountOutMin) return;
@@ -83,15 +97,60 @@ export function useSwap({
     setErrorMessage("");
 
     try {
-      const poolFee = getPoolFee(tokenIn.symbol, tokenOut.symbol);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
-      const actualOut = isNativeOut ? WETH_ADDRESS : (tokenOut.address as `0x${string}`);
 
-      const swapCalldata = encodeFunctionData({
-        abi: SWAP_ROUTER_ABI,
-        functionName: "exactInputSingle",
-        args: [
-          {
+      if (isArc) {
+        // ── Uniswap V2 swap on Arc Testnet ──
+        const wrappedIn = isNativeIn ? ARC_WRAPPED_NATIVE : (tokenIn.address as `0x${string}`);
+        const wrappedOut = isNativeOut ? ARC_WRAPPED_NATIVE : (tokenOut.address as `0x${string}`);
+        const path: `0x${string}`[] = [wrappedIn, wrappedOut];
+
+        let hash: `0x${string}`;
+
+        if (isNativeIn) {
+          // swapExactETHForTokens (native USDC → ERC20)
+          hash = await writeContractAsync({
+            address: ARC_V2_ROUTER as `0x${string}`,
+            abi: V2_ROUTER_ABI,
+            functionName: "swapExactETHForTokens",
+            args: [amountOutMin, path, userAddress, deadline],
+            value: amountInParsed,
+            chainId: 5042002,
+          } as any);
+        } else if (isNativeOut) {
+          // swapExactTokensForETH (ERC20 → native USDC)
+          hash = await writeContractAsync({
+            address: ARC_V2_ROUTER as `0x${string}`,
+            abi: V2_ROUTER_ABI,
+            functionName: "swapExactTokensForETH",
+            args: [amountInParsed, amountOutMin, path, userAddress, deadline],
+            chainId: 5042002,
+          } as any);
+        } else {
+          // swapExactTokensForTokens (ERC20 → ERC20)
+          hash = await writeContractAsync({
+            address: ARC_V2_ROUTER as `0x${string}`,
+            abi: V2_ROUTER_ABI,
+            functionName: "swapExactTokensForTokens",
+            args: [amountInParsed, amountOutMin, path, userAddress, deadline],
+            chainId: 5042002,
+          } as any);
+        }
+
+        setTxHash(hash);
+        if (publicClient) {
+          await publicClient.waitForTransactionReceipt({ hash });
+        }
+        setSwapState("success");
+      } else {
+        // ── Uniswap V3 swap on Base ──
+        const poolFee = getPoolFee(tokenIn.symbol, tokenOut.symbol);
+        const actualOut = isNativeOut ? WETH_ADDRESS : (tokenOut.address as `0x${string}`);
+
+        const swapCalldata = encodeFunctionData({
+          abi: SWAP_ROUTER_ABI,
+          functionName: "exactInputSingle",
+          args: [{
             tokenIn: isNativeIn ? WETH_ADDRESS : (tokenIn.address as `0x${string}`),
             tokenOut: actualOut,
             fee: poolFee,
@@ -99,46 +158,46 @@ export function useSwap({
             amountIn: amountInParsed,
             amountOutMinimum: amountOutMin,
             sqrtPriceLimitX96: 0n,
-          },
-        ],
-      });
+          }],
+        });
 
-      const calls: `0x${string}`[] = [swapCalldata];
+        const calls: `0x${string}`[] = [swapCalldata];
 
-      if (isNativeIn) {
-        calls.push(
-          encodeFunctionData({ abi: SWAP_ROUTER_ABI, functionName: "refundETH", args: [] })
-        );
+        if (isNativeIn) {
+          calls.push(
+            encodeFunctionData({ abi: SWAP_ROUTER_ABI, functionName: "refundETH", args: [] })
+          );
+        }
+        if (isNativeOut) {
+          calls.push(
+            encodeFunctionData({
+              abi: SWAP_ROUTER_ABI,
+              functionName: "unwrapWETH9",
+              args: [amountOutMin, userAddress],
+            })
+          );
+        }
+
+        const hash = await writeContractAsync({
+          address: UNISWAP_V3_ROUTER as `0x${string}`,
+          abi: SWAP_ROUTER_ABI,
+          functionName: "multicall",
+          args: [deadline, calls],
+          value: isNativeIn ? amountInParsed : undefined,
+          chainId: 8453,
+        } as any);
+
+        setTxHash(hash);
+        if (publicClient) {
+          await publicClient.waitForTransactionReceipt({ hash });
+        }
+        setSwapState("success");
       }
-      if (isNativeOut) {
-        calls.push(
-          encodeFunctionData({
-            abi: SWAP_ROUTER_ABI,
-            functionName: "unwrapWETH9",
-            args: [amountOutMin, userAddress],
-          })
-        );
-      }
-
-      const hash = await writeContractAsync({
-        address: UNISWAP_V3_ROUTER as `0x${string}`,
-        abi: SWAP_ROUTER_ABI,
-        functionName: "multicall",
-        args: [deadline, calls],
-        value: isNativeIn ? amountInParsed : undefined,
-        chainId: 8453,
-      } as any);
-
-      setTxHash(hash);
-      if (publicClient) {
-        await publicClient.waitForTransactionReceipt({ hash });
-      }
-      setSwapState("success");
     } catch (err: any) {
       setSwapState("error");
       setErrorMessage(err?.shortMessage || err?.message || "Swap failed");
     }
-  }, [tokenIn, tokenOut, userAddress, amountInParsed, amountOutMin, isNativeIn, isNativeOut, writeContractAsync, publicClient]);
+  }, [tokenIn, tokenOut, userAddress, amountInParsed, amountOutMin, isNativeIn, isNativeOut, isArc, writeContractAsync, publicClient]);
 
   const reset = useCallback(() => {
     setSwapState("idle");

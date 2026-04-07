@@ -99,13 +99,12 @@ const Swap = () => {
       : recErc20Bal != null ? formatUnits(recErc20Bal as bigint, receiveToken.decimals) : null;
 
   /* ── quote ── */
-  const quoteEnabled = !isArcTestnet;
   const { amountOut, isLoading: quoteLoading, error: quoteError, poolFee } = useQuote({
     tokenIn: payToken,
     tokenOut: receiveToken,
     amountIn: payAmount,
     chainId: selectedChainId,
-    enabled: quoteEnabled,
+    enabled: true,
   });
 
   const receiveAmount = amountOut ? formatUnits(amountOut, receiveToken.decimals) : "";
@@ -135,8 +134,8 @@ const Swap = () => {
       : "text-red-400";
 
   const routeDisplay = useMemo(
-    () => getRouteDisplay(payToken, receiveToken),
-    [payToken, receiveToken]
+    () => getRouteDisplay(payToken, receiveToken, selectedChainId),
+    [payToken, receiveToken, selectedChainId]
   );
 
   /* ── swap execution ── */
@@ -185,7 +184,7 @@ const Swap = () => {
   };
 
   const insufficientBalance = payBalance !== null && payAmountNum > 0 && payAmountNum > parseFloat(payBalance);
-  const swapDisabled = isArcTestnet || payAmountNum <= 0 || !amountOut || wrongChain || insufficientBalance;
+  const swapDisabled = payAmountNum <= 0 || !amountOut || wrongChain || insufficientBalance;
 
   /* ── render ── */
   return (
@@ -265,7 +264,7 @@ const Swap = () => {
             <div className="flex items-center justify-between mb-5">
               <h1 className="text-lg font-bold text-foreground">Swap</h1>
               <div className="flex items-center gap-1">
-                <QuoteTimer active={!!amountOut && payAmountNum > 0 && !isArcTestnet} />
+                <QuoteTimer active={!!amountOut && payAmountNum > 0} />
                 <SlippagePopover value={slippage} onChange={setSlippage} />
                 {isConnected && (
                   <button
@@ -421,10 +420,6 @@ const Swap = () => {
                 >
                   Switch to {chainConfig.shortName}
                 </Button>
-              ) : isArcTestnet ? (
-                <Button disabled className="w-full h-13 text-base font-semibold rounded-xl opacity-50">
-                  DEX Routing Coming Soon
-                </Button>
               ) : needsApproval ? (
                 <Button
                   onClick={approve}
@@ -449,7 +444,7 @@ const Swap = () => {
                     `Insufficient ${payToken.symbol}`
                   ) : payAmountNum <= 0 ? (
                     "Enter Amount"
-                  ) : !amountOut && !isArcTestnet ? (
+                  ) : !amountOut ? (
                     "Fetching Quote…"
                   ) : (
                     "Swap"
