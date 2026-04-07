@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAppKitAccount } from "@reown/appkit/react";
+import { useSignMessage } from "wagmi";
 import { TREASURY_ADDRESS, LISTING_FEE_DISPLAY } from "@/lib/web3";
+import { getAdminAuthHeaders } from "@/lib/adminAuth";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
@@ -60,6 +62,7 @@ const statusColors: Record<string, string> = {
 
 const AdminPayments = () => {
   const { address, isConnected } = useAppKitAccount();
+  const { signMessageAsync } = useSignMessage();
   const { toast } = useToast();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -72,19 +75,20 @@ const AdminPayments = () => {
     isConnected &&
     address?.toLowerCase() === TREASURY_ADDRESS.toLowerCase();
 
+  const getHeaders = useCallback(async () => {
+    if (!address) throw new Error("No wallet connected");
+    return getAdminAuthHeaders(address, signMessageAsync);
+  }, [address, signMessageAsync]);
+
   const fetchData = useCallback(async () => {
     if (!isOwner || !address) return;
     setLoading(true);
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const headers = await getHeaders();
       const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/admin-payments`,
-        {
-          headers: {
-            "x-wallet-address": address,
-            "Content-Type": "application/json",
-          },
-        }
+        { headers }
       );
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
@@ -96,7 +100,7 @@ const AdminPayments = () => {
     } finally {
       setLoading(false);
     }
-  }, [isOwner, address, toast]);
+  }, [isOwner, address, toast, getHeaders]);
 
   useEffect(() => {
     fetchData();
@@ -105,14 +109,12 @@ const AdminPayments = () => {
   const handleDelete = useCallback(async (id: string) => {
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const headers = await getHeaders();
       const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/admin-payments`,
         {
           method: "DELETE",
-          headers: {
-            "x-wallet-address": address!,
-            "Content-Type": "application/json",
-          },
+          headers,
           body: JSON.stringify({ id }),
         }
       );
@@ -122,9 +124,8 @@ const AdminPayments = () => {
     } catch {
       toast({ title: "Error", description: "Failed to delete submission", variant: "destructive" });
     }
-  }, [address, toast]);
+  }, [toast, getHeaders]);
 
-  // Auto-refresh every 30 seconds
   useEffect(() => {
     if (!isOwner) return;
     const interval = setInterval(fetchData, 30_000);
@@ -194,7 +195,6 @@ const AdminPayments = () => {
           </div>
         </div>
 
-        {/* Summary Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <SummaryCard
             title="Revenue Today"
@@ -222,7 +222,6 @@ const AdminPayments = () => {
           />
         </div>
 
-        {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3">
           <Input
             placeholder="Search by company, payment ID, or listing ID…"
@@ -248,7 +247,6 @@ const AdminPayments = () => {
           </Select>
         </div>
 
-        {/* Table */}
         <Card>
           <CardContent className="p-0">
             {loading ? (
