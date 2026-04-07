@@ -321,7 +321,7 @@ const AdminListings = () => {
             <DialogTitle>Edit Listing</DialogTitle>
           </DialogHeader>
           {editPartner && (
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               <div>
                 <label className="text-sm font-medium text-foreground">Business Name</label>
                 <Input
@@ -350,6 +350,28 @@ const AdminListings = () => {
                   value={editPartner.region || ""}
                   onChange={(e) => setEditPartner({ ...editPartner, region: e.target.value })}
                 />
+              </div>
+              {/* Categories multi-select */}
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Categories</label>
+                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto border border-border rounded-lg p-3">
+                  {ALL_CATEGORIES.map((cat) => (
+                    <label key={cat} className="flex items-center gap-2 cursor-pointer text-xs">
+                      <input
+                        type="checkbox"
+                        checked={editPartner.categories.includes(cat)}
+                        onChange={() => {
+                          const cats = editPartner.categories.includes(cat)
+                            ? editPartner.categories.filter((c) => c !== cat)
+                            : [...editPartner.categories, cat];
+                          setEditPartner({ ...editPartner, categories: cats });
+                        }}
+                        className="w-3.5 h-3.5 rounded accent-primary"
+                      />
+                      <span className="text-muted-foreground">{cat}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
           )}
