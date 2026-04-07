@@ -57,13 +57,6 @@ const MerchantDetail = () => {
   const [paymentPending, setPaymentPending] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Seeded agents - both Visit Site and Pay with USDC are hidden
-  const seededNames = new Set([
-    "ContentMintBot", "GuardianAgent", "RentCollectorAI", "BridgeMind",
-    "InvoiceBot", "PayBot3000", "ResearchOracle", "SocialPayBot",
-    "TradeFlowAI", "SolSwapAgent", "YieldScout",
-    // Add any new seeded agents here
-  ]);
 
   useEffect(() => {
     if (!id) return;
