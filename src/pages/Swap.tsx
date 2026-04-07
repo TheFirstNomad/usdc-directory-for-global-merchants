@@ -249,6 +249,9 @@ const Swap = () => {
             <LiquidityPanel />
           )}
 
+          {/* Pool Analytics — show on Arc Testnet for both tabs */}
+          {isArcTestnet && <PoolAnalytics />}
+
           {/* ── Swap Tab ── */}
           {(!isArcTestnet || activeTab === "swap") && (<>
           {/* Popular pairs */}
