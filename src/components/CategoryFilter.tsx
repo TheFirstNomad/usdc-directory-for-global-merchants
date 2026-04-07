@@ -57,24 +57,6 @@ const CategoryFilter = ({
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-xl p-5">
-        <h3 className="font-semibold text-card-foreground mb-3 text-sm">⛓️ Networks</h3>
-        <div className="space-y-1.5">
-          {NETWORKS.map((net) => (
-            <label key={net} className="flex items-center gap-2.5 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={selectedNetworks.includes(net)}
-                onChange={() => onToggleNetwork(net)}
-                className="w-4 h-4 rounded border-border text-primary accent-primary"
-              />
-              <span className="text-sm text-muted-foreground group-hover:text-card-foreground transition-colors">
-                {net}
-              </span>
-            </label>
-          ))}
-        </div>
-      </div>
 
       <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 text-center">
         <p className="text-sm font-medium text-foreground mb-2">Accept USDC?</p>
