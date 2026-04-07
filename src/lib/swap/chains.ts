@@ -21,6 +21,6 @@ export const CHAINS: Record<SupportedChainId, {
     explorer: "https://testnet.arcscan.app",
     isTestnet: true,
     faucetUrl: "https://faucet.circle.com",
-    dexName: "Curve Router NG",
+    dexName: "Uniswap V2",
   },
 };

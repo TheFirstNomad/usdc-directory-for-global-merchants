@@ -2,6 +2,10 @@
 export const UNISWAP_V3_ROUTER = "0x2626664c2603336E57B271c5C0b26F421741e481" as const;
 export const UNISWAP_V3_QUOTER_V2 = "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a" as const;
 
+// Uniswap V2 on Arc Testnet
+export const ARC_V2_FACTORY = "0x92DDf5D9b498761144852B3Aea4Ac8FFfabD7aDF" as const;
+export const ARC_V2_ROUTER = "0x11fA07A71a09740217Eb08BF0Dc87a80D433F8ea" as const;
+
 export const ERC20_ABI = [
   {
     name: "balanceOf",
@@ -29,6 +33,13 @@ export const ERC20_ABI = [
       { name: "amount", type: "uint256" },
     ],
     outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    name: "decimals",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint8" }],
   },
 ] as const;
 
@@ -108,5 +119,85 @@ export const SWAP_ROUTER_ABI = [
     stateMutability: "payable",
     inputs: [],
     outputs: [],
+  },
+] as const;
+
+// Uniswap V2 Router ABI (subset needed for swaps)
+export const V2_ROUTER_ABI = [
+  {
+    name: "WETH",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    name: "getAmountsOut",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "amountIn", type: "uint256" },
+      { name: "path", type: "address[]" },
+    ],
+    outputs: [{ name: "amounts", type: "uint256[]" }],
+  },
+  {
+    name: "swapExactTokensForTokens",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "amountIn", type: "uint256" },
+      { name: "amountOutMin", type: "uint256" },
+      { name: "path", type: "address[]" },
+      { name: "to", type: "address" },
+      { name: "deadline", type: "uint256" },
+    ],
+    outputs: [{ name: "amounts", type: "uint256[]" }],
+  },
+  {
+    name: "swapExactETHForTokens",
+    type: "function",
+    stateMutability: "payable",
+    inputs: [
+      { name: "amountOutMin", type: "uint256" },
+      { name: "path", type: "address[]" },
+      { name: "to", type: "address" },
+      { name: "deadline", type: "uint256" },
+    ],
+    outputs: [{ name: "amounts", type: "uint256[]" }],
+  },
+  {
+    name: "swapExactTokensForETH",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "amountIn", type: "uint256" },
+      { name: "amountOutMin", type: "uint256" },
+      { name: "path", type: "address[]" },
+      { name: "to", type: "address" },
+      { name: "deadline", type: "uint256" },
+    ],
+    outputs: [{ name: "amounts", type: "uint256[]" }],
+  },
+  {
+    name: "factory",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+] as const;
+
+// Uniswap V2 Factory ABI (for pair lookups)
+export const V2_FACTORY_ABI = [
+  {
+    name: "getPair",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "tokenA", type: "address" },
+      { name: "tokenB", type: "address" },
+    ],
+    outputs: [{ name: "pair", type: "address" }],
   },
 ] as const;
