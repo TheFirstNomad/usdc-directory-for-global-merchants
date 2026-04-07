@@ -25,6 +25,7 @@ import {
 import { ShieldAlert, RefreshCw, Pencil, Trash2, Loader2, Star, DollarSign, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { CATEGORIES as ALL_CATEGORIES } from "@/lib/partners";
 
 interface PartnerRow {
   id: string;
@@ -91,32 +92,42 @@ const AdminListings = () => {
     }
   }, [address, toast]);
 
+  // Updated: send all fields including categories to edge function
   const handleSave = useCallback(async () => {
     if (!editPartner || !address) return;
     setSaving(true);
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const payload = {
+        id: editPartner.id,
+        name: editPartner.name,
+        description: editPartner.description,
+        website: editPartner.website,
+        categories: editPartner.categories,
+        region: editPartner.region,
+      };
+      console.log("[AdminListings] Saving listing:", payload);
       const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/admin-listings`,
         {
           method: "PUT",
           headers: { "x-wallet-address": address, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: editPartner.id,
-            name: editPartner.name,
-            description: editPartner.description,
-            website: editPartner.website,
-            region: editPartner.region,
-          }),
+          body: JSON.stringify(payload),
         }
       );
-      if (!res.ok) throw new Error("Failed to update");
+      const body = await res.json();
+      if (!res.ok) {
+        console.error("[AdminListings] Update failed:", body);
+        throw new Error(body.error || "Failed to update");
+      }
+      console.log("[AdminListings] Update success:", body);
       setPartners((prev) =>
         prev.map((p) => (p.id === editPartner.id ? { ...p, ...editPartner } : p))
       );
       setEditPartner(null);
       toast({ title: "Updated", description: "Listing saved" });
-    } catch {
+    } catch (err) {
+      console.error("[AdminListings] Save error:", err);
       toast({ title: "Error", description: "Failed to update listing", variant: "destructive" });
     } finally {
       setSaving(false);
@@ -311,7 +322,7 @@ const AdminListings = () => {
             <DialogTitle>Edit Listing</DialogTitle>
           </DialogHeader>
           {editPartner && (
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               <div>
                 <label className="text-sm font-medium text-foreground">Business Name</label>
                 <Input
@@ -340,6 +351,28 @@ const AdminListings = () => {
                   value={editPartner.region || ""}
                   onChange={(e) => setEditPartner({ ...editPartner, region: e.target.value })}
                 />
+              </div>
+              {/* Categories multi-select */}
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Categories</label>
+                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto border border-border rounded-lg p-3">
+                  {ALL_CATEGORIES.map((cat) => (
+                    <label key={cat} className="flex items-center gap-2 cursor-pointer text-xs">
+                      <input
+                        type="checkbox"
+                        checked={editPartner.categories.includes(cat)}
+                        onChange={() => {
+                          const cats = editPartner.categories.includes(cat)
+                            ? editPartner.categories.filter((c) => c !== cat)
+                            : [...editPartner.categories, cat];
+                          setEditPartner({ ...editPartner, categories: cats });
+                        }}
+                        className="w-3.5 h-3.5 rounded accent-primary"
+                      />
+                      <span className="text-muted-foreground">{cat}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
           )}
