@@ -243,7 +243,13 @@ const Swap = () => {
               </div>
             </div>
           )}
+          {/* ── Liquidity Tab ── */}
+          {isArcTestnet && activeTab === "liquidity" && (
+            <LiquidityPanel />
+          )}
 
+          {/* ── Swap Tab ── */}
+          {(!isArcTestnet || activeTab === "swap") && (<>
           {/* Popular pairs */}
           {popularPairs.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-5 justify-center">
