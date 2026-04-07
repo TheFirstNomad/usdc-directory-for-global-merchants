@@ -22,8 +22,26 @@ serve(async (req) => {
       });
     }
 
-    if (!file.type.startsWith("image/")) {
-      return new Response(JSON.stringify({ error: "Only image files allowed" }), {
+    const allowedTypes = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"];
+    if (!allowedTypes.includes(file.type)) {
+      return new Response(JSON.stringify({ error: "Only PNG, JPEG, GIF, WebP, or SVG images allowed" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Max 2MB file size
+    const MAX_SIZE = 2 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      return new Response(JSON.stringify({ error: "File too large. Maximum size is 2MB" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate wallet_address format
+    if (walletAddress.length > 256) {
+      return new Response(JSON.stringify({ error: "Invalid wallet address" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -32,8 +50,11 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    const ext = file.name.split(".").pop() || "png";
-    const fileName = `${walletAddress.toLowerCase()}-${Date.now()}.${ext}`;
+    const rawExt = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const allowedExts = ["png", "jpg", "jpeg", "gif", "webp", "svg"];
+    const ext = allowedExts.includes(rawExt) ? rawExt : "png";
+    const safeWallet = walletAddress.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const fileName = `${safeWallet}-${Date.now()}.${ext}`;
 
     const arrayBuffer = await file.arrayBuffer();
 
