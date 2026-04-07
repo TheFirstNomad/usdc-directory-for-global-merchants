@@ -100,10 +100,9 @@ const LiquidityPanel = () => {
   const handleAmountAChange = useCallback((val: string) => {
     const v = val.replace(/[^0-9.]/g, "");
     if (v.split(".").length <= 2) setAmountA(v);
-    if (priceAB && parseFloat(v) > 0) {
-      setAmountB((parseFloat(v) * priceAB).toFixed(6));
-    } else {
-      setAmountB("");
+    if (priceAB) {
+      if (parseFloat(v) > 0) setAmountB((parseFloat(v) * priceAB).toFixed(6));
+      else setAmountB("");
     }
   }, [priceAB]);
 
