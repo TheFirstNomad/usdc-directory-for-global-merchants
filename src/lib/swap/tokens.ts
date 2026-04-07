@@ -33,7 +33,7 @@ export const WETH_ADDRESS: `0x${string}` = "0x4200000000000000000000000000000000
 
 // Wrapped native token on Arc Testnet (WUSDC — the wrapped form of the native USDC gas token)
 // This is the WETH equivalent on Arc since the native currency is USDC
-export const ARC_WRAPPED_NATIVE: `0x${string}` = "0x02950460c8f5f8f8f8f8f8f8f8f8f8f8f8f8f8f8";
+export const ARC_WRAPPED_NATIVE: `0x${string}` = "0x3600000000000000000000000000000000000000";
 
 // Platform fee wallet (1% on swaps/liquidity removal)
 export const PLATFORM_FEE_BPS = 100; // 1%
