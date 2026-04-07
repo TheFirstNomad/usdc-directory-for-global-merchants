@@ -2,6 +2,8 @@ import { CheckCircle2, ExternalLink, X, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
+export type SuccessMode = "swap" | "add-liquidity" | "remove-liquidity";
+
 const SuccessModal = ({
   open,
   txHash,
@@ -11,6 +13,7 @@ const SuccessModal = ({
   payAmount,
   receiveSymbol,
   receiveAmount,
+  mode = "swap",
   onClose,
 }: {
   open: boolean;
@@ -21,6 +24,7 @@ const SuccessModal = ({
   payAmount: string;
   receiveSymbol: string;
   receiveAmount: string;
+  mode?: SuccessMode;
   onClose: () => void;
 }) => {
   const [copied, setCopied] = useState(false);
@@ -45,7 +49,9 @@ const SuccessModal = ({
           <div className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4">
             <CheckCircle2 className="h-9 w-9 text-green-400" />
           </div>
-          <h3 className="text-xl font-bold text-foreground mb-1">Swap Successful!</h3>
+          <h3 className="text-xl font-bold text-foreground mb-1">
+            {mode === "add-liquidity" ? "Liquidity Added!" : mode === "remove-liquidity" ? "Liquidity Removed!" : "Swap Successful!"}
+          </h3>
           <p className="text-sm text-muted-foreground mb-5">
             {payAmount} {paySymbol} → {receiveAmount} {receiveSymbol}
           </p>
@@ -74,7 +80,7 @@ const SuccessModal = ({
             </Button>
           </a>
           <Button onClick={onClose} className="w-full mt-2 bg-primary hover:bg-primary/90">
-            New Swap
+            {mode === "swap" ? "New Swap" : "Done"}
           </Button>
         </div>
       </div>
