@@ -12,7 +12,7 @@ const ZERO = "0x0000000000000000000000000000000000000000" as `0x${string}`;
 const USDC = ARC_TESTNET_TOKENS[0];
 const EURC = ARC_TESTNET_TOKENS[1];
 
-const usdcAddr = "0x02950460c8f5f8f8f8f8f8f8f8f8f8f8f8f8f8f8" as `0x${string}`; // wrapped native
+const usdcAddr = "0x3600000000000000000000000000000000000000" as `0x${string}`; // wrapped native
 const eurcAddr = EURC.address as `0x${string}`;
 
 /** Rough fiat prices for TVL calc */
