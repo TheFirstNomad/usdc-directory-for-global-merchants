@@ -420,10 +420,6 @@ const Swap = () => {
                 >
                   Switch to {chainConfig.shortName}
                 </Button>
-              ) : isArcTestnet ? (
-                <Button disabled className="w-full h-13 text-base font-semibold rounded-xl opacity-50">
-                  DEX Routing Coming Soon
-                </Button>
               ) : needsApproval ? (
                 <Button
                   onClick={approve}
