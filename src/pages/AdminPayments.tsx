@@ -77,7 +77,7 @@ const AdminPayments = () => {
 
   const getHeaders = useCallback(async () => {
     if (!address) throw new Error("No wallet connected");
-    return getAdminAuthHeaders(address, signMessageAsync);
+    return getAdminAuthHeaders(address, (args: any) => signMessageAsync({ ...args, account: address as `0x${string}` }));
   }, [address, signMessageAsync]);
 
   const fetchData = useCallback(async () => {
