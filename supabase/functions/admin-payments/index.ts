@@ -1,12 +1,37 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { ethers } from "https://esm.sh/ethers@6.13.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-wallet-address, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-admin-address, x-admin-timestamp, x-admin-signature, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const OWNER_ADDRESS = "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c".toLowerCase();
+const MAX_AGE_MS = 5 * 60 * 1000;
+
+function verifyAdmin(req: Request): boolean {
+  const address = req.headers.get("x-admin-address")?.toLowerCase();
+  const timestamp = req.headers.get("x-admin-timestamp");
+  const signature = req.headers.get("x-admin-signature");
+
+  if (!address || !timestamp || !signature || address !== OWNER_ADDRESS) {
+    return false;
+  }
+
+  const ts = Number(timestamp);
+  if (isNaN(ts) || Math.abs(Date.now() - ts) > MAX_AGE_MS) {
+    return false;
+  }
+
+  try {
+    const message = `USDC Directory Admin\nTimestamp: ${ts}`;
+    const recovered = ethers.verifyMessage(message, signature).toLowerCase();
+    return recovered === OWNER_ADDRESS;
+  } catch {
+    return false;
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -14,9 +39,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const walletAddress = req.headers.get("x-wallet-address")?.toLowerCase();
-
-    if (!walletAddress || walletAddress !== OWNER_ADDRESS) {
+    if (!verifyAdmin(req)) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -38,7 +61,6 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Delete the submission and its associated partner (if any)
       const { data: sub } = await supabase
         .from("submissions")
         .select("partner_id")
@@ -97,10 +119,6 @@ Deno.serve(async (req) => {
     const pending = submissions?.filter((s: any) => pendingStatuses.includes(s.payment_status)) || [];
 
     const LISTING_FEE = 10;
-
-    const revenueToday = paid
-      .filter((s: any) => s.created_at >= todayStart)
-      .reduce(() => LISTING_FEE, 0) * paid.filter((s: any) => s.created_at >= todayStart).length || 0;
 
     const revenueMonth = paid
       .filter((s: any) => s.created_at >= monthStart).length * LISTING_FEE;
