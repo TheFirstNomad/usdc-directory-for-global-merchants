@@ -18,7 +18,7 @@ export function buildAdminMessage(timestamp: number): string {
  */
 export async function getAdminAuthHeaders(
   address: string,
-  signMessage: (args: { message: string }) => Promise<string>
+  signMessage: (args: { message: string; account?: any }) => Promise<string>
 ): Promise<Record<string, string>> {
   const now = Date.now();
 
