@@ -1,7 +1,9 @@
 // Admin Manage Listings page — full CRUD table for partners
 import { useEffect, useState, useCallback } from "react";
 import { useAppKitAccount } from "@reown/appkit/react";
+import { useSignMessage } from "wagmi";
 import { TREASURY_ADDRESS } from "@/lib/web3";
+import { getAdminAuthHeaders } from "@/lib/adminAuth";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
@@ -43,6 +45,7 @@ interface PartnerRow {
 
 const AdminListings = () => {
   const { address, isConnected } = useAppKitAccount();
+  const { signMessageAsync } = useSignMessage();
   const { toast } = useToast();
   const [partners, setPartners] = useState<PartnerRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,14 +55,20 @@ const AdminListings = () => {
 
   const isOwner = isConnected && address?.toLowerCase() === TREASURY_ADDRESS.toLowerCase();
 
+  const getHeaders = useCallback(async () => {
+    if (!address) throw new Error("No wallet connected");
+    return getAdminAuthHeaders(address, (args: any) => signMessageAsync({ ...args, account: address as `0x${string}` }));
+  }, [address, signMessageAsync]);
+
   const fetchData = useCallback(async () => {
     if (!isOwner || !address) return;
     setLoading(true);
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const headers = await getHeaders();
       const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/admin-listings`,
-        { headers: { "x-wallet-address": address, "Content-Type": "application/json" } }
+        { headers }
       );
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
@@ -69,18 +78,19 @@ const AdminListings = () => {
     } finally {
       setLoading(false);
     }
-  }, [isOwner, address, toast]);
+  }, [isOwner, address, toast, getHeaders]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const headers = await getHeaders();
       const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/admin-listings`,
         {
           method: "DELETE",
-          headers: { "x-wallet-address": address!, "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ id }),
         }
       );
@@ -90,14 +100,14 @@ const AdminListings = () => {
     } catch {
       toast({ title: "Error", description: "Failed to delete listing", variant: "destructive" });
     }
-  }, [address, toast]);
+  }, [toast, getHeaders]);
 
-  // Updated: send all fields including categories to edge function
   const handleSave = useCallback(async () => {
     if (!editPartner || !address) return;
     setSaving(true);
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const headers = await getHeaders();
       const payload = {
         id: editPartner.id,
         name: editPartner.name,
@@ -106,21 +116,18 @@ const AdminListings = () => {
         categories: editPartner.categories,
         region: editPartner.region,
       };
-      console.log("[AdminListings] Saving listing:", payload);
       const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/admin-listings`,
         {
           method: "PUT",
-          headers: { "x-wallet-address": address, "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify(payload),
         }
       );
       const body = await res.json();
       if (!res.ok) {
-        console.error("[AdminListings] Update failed:", body);
         throw new Error(body.error || "Failed to update");
       }
-      console.log("[AdminListings] Update success:", body);
       setPartners((prev) =>
         prev.map((p) => (p.id === editPartner.id ? { ...p, ...editPartner } : p))
       );
@@ -132,16 +139,17 @@ const AdminListings = () => {
     } finally {
       setSaving(false);
     }
-  }, [editPartner, address, toast]);
+  }, [editPartner, address, toast, getHeaders]);
 
   const handleToggleFeatured = useCallback(async (id: string, featured: boolean) => {
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const headers = await getHeaders();
       const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/admin-listings`,
         {
           method: "PUT",
-          headers: { "x-wallet-address": address!, "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ id, featured }),
         }
       );
@@ -150,7 +158,7 @@ const AdminListings = () => {
     } catch {
       toast({ title: "Error", description: "Failed to toggle featured", variant: "destructive" });
     }
-  }, [address, toast]);
+  }, [toast, getHeaders]);
 
   const filtered = partners.filter(
     (p) => !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.description.toLowerCase().includes(search.toLowerCase())
@@ -182,7 +190,6 @@ const AdminListings = () => {
       <SEO title="Manage Listings | USDC Directory" description="Admin listing management" />
       <Header />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        {/* Header with nav tabs */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
@@ -194,7 +201,6 @@ const AdminListings = () => {
           </Button>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-2 border-b border-border pb-3">
           <Button variant="ghost" size="sm" asChild>
             <Link to="/admin/payments" className="gap-2 text-muted-foreground">
@@ -315,7 +321,6 @@ const AdminListings = () => {
         </Card>
       </main>
 
-      {/* Edit Modal */}
       <Dialog open={!!editPartner} onOpenChange={(open) => !open && setEditPartner(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -352,7 +357,6 @@ const AdminListings = () => {
                   onChange={(e) => setEditPartner({ ...editPartner, region: e.target.value })}
                 />
               </div>
-              {/* Categories multi-select */}
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Categories</label>
                 <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto border border-border rounded-lg p-3">

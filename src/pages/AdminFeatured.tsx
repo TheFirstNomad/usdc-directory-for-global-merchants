@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAppKitAccount } from "@reown/appkit/react";
+import { useSignMessage } from "wagmi";
 import { TREASURY_ADDRESS } from "@/lib/web3";
+import { getAdminAuthHeaders } from "@/lib/adminAuth";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
@@ -30,6 +32,7 @@ interface PartnerRow {
 
 const AdminFeatured = () => {
   const { address, isConnected } = useAppKitAccount();
+  const { signMessageAsync } = useSignMessage();
   const { toast } = useToast();
   const [partners, setPartners] = useState<PartnerRow[]>([]);
   const [featuredCount, setFeaturedCount] = useState(0);
@@ -41,19 +44,20 @@ const AdminFeatured = () => {
     isConnected &&
     address?.toLowerCase() === TREASURY_ADDRESS.toLowerCase();
 
+  const getHeaders = useCallback(async () => {
+    if (!address) throw new Error("No wallet connected");
+    return getAdminAuthHeaders(address, (args: any) => signMessageAsync({ ...args, account: address as `0x${string}` }));
+  }, [address, signMessageAsync]);
+
   const fetchData = useCallback(async () => {
     if (!isOwner || !address) return;
     setLoading(true);
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const headers = await getHeaders();
       const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/admin-featured`,
-        {
-          headers: {
-            "x-wallet-address": address,
-            "Content-Type": "application/json",
-          },
-        }
+        { headers }
       );
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
@@ -64,7 +68,7 @@ const AdminFeatured = () => {
     } finally {
       setLoading(false);
     }
-  }, [isOwner, address, toast]);
+  }, [isOwner, address, toast, getHeaders]);
 
   useEffect(() => {
     fetchData();
@@ -75,14 +79,12 @@ const AdminFeatured = () => {
     setToggling(partnerId);
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const headers = await getHeaders();
       const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/admin-featured`,
         {
           method: "POST",
-          headers: {
-            "x-wallet-address": address,
-            "Content-Type": "application/json",
-          },
+          headers,
           body: JSON.stringify({ partnerId, featured: newValue }),
         }
       );
@@ -91,7 +93,6 @@ const AdminFeatured = () => {
         toast({ title: "Error", description: data.error, variant: "destructive" });
         return;
       }
-      // Update local state
       setPartners((prev) =>
         prev.map((p) => (p.id === partnerId ? { ...p, featured: newValue } : p))
       );
@@ -161,7 +162,6 @@ const AdminFeatured = () => {
           </Button>
         </div>
 
-        {/* Capacity indicator */}
         <div className="flex gap-2">
           {[0, 1, 2, 3].map((i) => (
             <div
