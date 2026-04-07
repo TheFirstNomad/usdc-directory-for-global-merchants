@@ -5,7 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useTheme } from "@/components/ThemeProvider";
 import { TREASURY_ADDRESS } from "@/lib/web3";
-import Logo from "@/components/Logo";
+
 
 const baseNavLinks = [
   { label: "Directory", href: "/" },
@@ -45,7 +45,6 @@ const Header = () => {
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
         <Link to="/" className="flex items-center gap-2.5">
-          <Logo size={36} className="flex-shrink-0 hover:scale-105 transition-transform" />
           <div className="flex items-baseline gap-1">
             <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] bg-clip-text text-transparent">
               USDC

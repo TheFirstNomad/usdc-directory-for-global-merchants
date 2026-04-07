@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS } from "@/lib/partners";
 import type { Partner } from "@/lib/partners";
 import { CheckCircle2, ArrowLeft, Pencil, Wallet } from "lucide-react";
-import Logo from "@/components/Logo";
+
 import { useAppKitAccount } from "@reown/appkit/react";
 import { useAppKit } from "@reown/appkit/react";
 
@@ -229,7 +229,6 @@ const EditListing = () => {
         </div>
 
         <div className="mt-10 bg-primary/5 border border-primary/20 rounded-xl p-6 text-center">
-          <Logo size={40} className="mx-auto mb-3" />
           <h3 className="text-xl font-bold text-foreground mb-1">5 USDC</h3>
           <p className="text-sm text-muted-foreground mb-4">One-time update fee</p>
           {isConnected ? (
