@@ -517,6 +517,7 @@ const LiquidityPanel = () => {
         payAmount={subTab === "add" ? amountA : `${removePercent}%`}
         receiveSymbol={subTab === "add" ? "LP Tokens" : `${tokenA.symbol}+${tokenB.symbol}`}
         receiveAmount={subTab === "add" ? "Received" : "Withdrawn"}
+        mode={subTab === "add" ? "add-liquidity" : "remove-liquidity"}
         onClose={() => {
           setShowSuccess(false);
           reset();

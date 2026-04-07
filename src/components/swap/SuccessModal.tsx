@@ -80,7 +80,7 @@ const SuccessModal = ({
             </Button>
           </a>
           <Button onClick={onClose} className="w-full mt-2 bg-primary hover:bg-primary/90">
-            New Swap
+            {mode === "swap" ? "New Swap" : "Done"}
           </Button>
         </div>
       </div>
