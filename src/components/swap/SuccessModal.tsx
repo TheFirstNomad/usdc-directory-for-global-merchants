@@ -2,6 +2,8 @@ import { CheckCircle2, ExternalLink, X, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
+export type SuccessMode = "swap" | "add-liquidity" | "remove-liquidity";
+
 const SuccessModal = ({
   open,
   txHash,
@@ -11,6 +13,7 @@ const SuccessModal = ({
   payAmount,
   receiveSymbol,
   receiveAmount,
+  mode = "swap",
   onClose,
 }: {
   open: boolean;
@@ -21,6 +24,7 @@ const SuccessModal = ({
   payAmount: string;
   receiveSymbol: string;
   receiveAmount: string;
+  mode?: SuccessMode;
   onClose: () => void;
 }) => {
   const [copied, setCopied] = useState(false);
