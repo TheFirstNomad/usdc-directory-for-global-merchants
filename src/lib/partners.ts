@@ -19,7 +19,7 @@ export async function fetchPartners(): Promise<Partner[]> {
   const { data, error } = await supabase
     .from("partners_public" as any)
     .select("id, name, description, website, logo_url, logo_emoji, categories, region, use_cases, featured, created_at, usdc_score, networks")
-    .order("name", { ascending: true });
+    .order("created_at", { ascending: true });
 
   if (error) {
     console.error("Error fetching partners:", error);
@@ -33,7 +33,7 @@ export async function fetchFeaturedPartners(): Promise<Partner[]> {
     .from("partners_public" as any)
     .select("id, name, description, website, logo_url, logo_emoji, categories, region, use_cases, featured, created_at, usdc_score, networks")
     .eq("featured", true)
-    .order("name", { ascending: true });
+    .order("created_at", { ascending: true });
 
   if (error) {
     console.error("Error fetching featured partners:", error);
