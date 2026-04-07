@@ -50,8 +50,11 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    const ext = file.name.split(".").pop() || "png";
-    const fileName = `${walletAddress.toLowerCase()}-${Date.now()}.${ext}`;
+    const rawExt = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const allowedExts = ["png", "jpg", "jpeg", "gif", "webp", "svg"];
+    const ext = allowedExts.includes(rawExt) ? rawExt : "png";
+    const safeWallet = walletAddress.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const fileName = `${safeWallet}-${Date.now()}.${ext}`;
 
     const arrayBuffer = await file.arrayBuffer();
 
