@@ -31,6 +31,10 @@ export const TOKENS_BY_CHAIN: Record<number, TokenInfo[]> = {
 
 export const WETH_ADDRESS: `0x${string}` = "0x4200000000000000000000000000000000000006";
 
+// Wrapped native token on Arc Testnet (WUSDC — the wrapped form of the native USDC gas token)
+// This is the WETH equivalent on Arc since the native currency is USDC
+export const ARC_WRAPPED_NATIVE: `0x${string}` = "0x02950460cB0F6b58e2a97417c4b80f3Fbb8F2f82";
+
 export const POOL_FEES: Record<string, number> = {
   "ETH-USDC": 500, "USDC-ETH": 500,
   "WETH-USDC": 500, "USDC-WETH": 500,
@@ -66,11 +70,15 @@ export const POPULAR_PAIRS: Record<number, { from: string; to: string }[]> = {
   ],
   5042002: [
     { from: "USDC", to: "EURC" },
+    { from: "EURC", to: "USDC" },
   ],
 };
 
 /** Build a human-readable route string */
-export function getRouteDisplay(tokenIn: TokenInfo, tokenOut: TokenInfo): string {
+export function getRouteDisplay(tokenIn: TokenInfo, tokenOut: TokenInfo, chainId?: number): string {
+  if (chainId === 5042002) {
+    return `${tokenIn.symbol} → ${tokenOut.symbol}`;
+  }
   const isNativeIn = tokenIn.address === "native" && tokenIn.symbol === "ETH";
   if (isNativeIn) {
     return `ETH → WETH → ${tokenOut.symbol}`;
