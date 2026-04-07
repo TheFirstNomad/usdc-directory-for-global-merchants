@@ -104,7 +104,7 @@ const Swap = () => {
     tokenOut: receiveToken,
     amountIn: payAmount,
     chainId: selectedChainId,
-    enabled: quoteEnabled,
+    enabled: true,
   });
 
   const receiveAmount = amountOut ? formatUnits(amountOut, receiveToken.decimals) : "";
