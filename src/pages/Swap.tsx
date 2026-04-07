@@ -134,8 +134,8 @@ const Swap = () => {
       : "text-red-400";
 
   const routeDisplay = useMemo(
-    () => getRouteDisplay(payToken, receiveToken),
-    [payToken, receiveToken]
+    () => getRouteDisplay(payToken, receiveToken, selectedChainId),
+    [payToken, receiveToken, selectedChainId]
   );
 
   /* ── swap execution ── */
