@@ -444,7 +444,7 @@ const Swap = () => {
                     `Insufficient ${payToken.symbol}`
                   ) : payAmountNum <= 0 ? (
                     "Enter Amount"
-                  ) : !amountOut && !isArcTestnet ? (
+                  ) : !amountOut ? (
                     "Fetching Quote…"
                   ) : (
                     "Swap"
