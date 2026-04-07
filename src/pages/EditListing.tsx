@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS } from "@/lib/partners";
 import type { Partner } from "@/lib/partners";
 import { CheckCircle2, ArrowLeft, Pencil, Wallet } from "lucide-react";
-import Logo from "@/components/Logo";
+
 import { useAppKitAccount } from "@reown/appkit/react";
 import { useAppKit } from "@reown/appkit/react";
 
