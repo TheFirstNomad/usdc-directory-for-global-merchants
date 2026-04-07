@@ -264,7 +264,7 @@ const Swap = () => {
             <div className="flex items-center justify-between mb-5">
               <h1 className="text-lg font-bold text-foreground">Swap</h1>
               <div className="flex items-center gap-1">
-                <QuoteTimer active={!!amountOut && payAmountNum > 0 && !isArcTestnet} />
+                <QuoteTimer active={!!amountOut && payAmountNum > 0} />
                 <SlippagePopover value={slippage} onChange={setSlippage} />
                 {isConnected && (
                   <button
