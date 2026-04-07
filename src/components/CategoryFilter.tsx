@@ -38,24 +38,6 @@ const CategoryFilter = ({
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-xl p-5">
-        <h3 className="font-semibold text-card-foreground mb-3 text-sm">🌍 Region</h3>
-        <div className="space-y-1.5">
-          {REGIONS.map((region) => (
-            <label key={region} className="flex items-center gap-2.5 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={selectedRegions.includes(region)}
-                onChange={() => onToggleRegion(region)}
-                className="w-4 h-4 rounded border-border text-primary accent-primary"
-              />
-              <span className="text-sm text-muted-foreground group-hover:text-card-foreground transition-colors">
-                {REGION_FLAGS[region] || "📍"} {region}
-              </span>
-            </label>
-          ))}
-        </div>
-      </div>
 
 
       <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 text-center">
