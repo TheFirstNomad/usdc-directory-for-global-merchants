@@ -99,7 +99,6 @@ const Swap = () => {
       : recErc20Bal != null ? formatUnits(recErc20Bal as bigint, receiveToken.decimals) : null;
 
   /* ── quote ── */
-  const quoteEnabled = !isArcTestnet;
   const { amountOut, isLoading: quoteLoading, error: quoteError, poolFee } = useQuote({
     tokenIn: payToken,
     tokenOut: receiveToken,
