@@ -541,6 +541,7 @@ const Swap = () => {
               </div>
             )}
           </div>
+          </>)}
         </main>
 
         <Footer />
