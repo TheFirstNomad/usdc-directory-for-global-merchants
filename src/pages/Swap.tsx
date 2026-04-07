@@ -9,6 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import LiquidityPanel from "@/components/swap/LiquidityPanel";
+import PoolAnalytics from "@/components/swap/PoolAnalytics";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useBalance, useReadContract, useChainId, useSwitchChain } from "wagmi";
 import { formatUnits } from "viem";
