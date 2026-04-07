@@ -218,12 +218,10 @@ const MerchantDetail = () => {
 
           {/* Sidebar */}
           <div className="space-y-4">
-            {/* Actions - both Visit and Pay hidden for seeded agents */}
+            {/* Actions */}
             <div className="bg-card border border-border rounded-xl p-5 space-y-3">
-              {/* Visit Site - hidden for seeded */}
-              {!isSeeded && partner?.website && 
-               partner.website.startsWith('http') && 
-               !partner.website.includes('demo') && (
+              {/* Visit Site — shown whenever website URL exists */}
+              {partner?.website && partner.website.trim() !== "" && (
                 <Button
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
                   asChild
@@ -233,9 +231,6 @@ const MerchantDetail = () => {
                   </a>
                 </Button>
               )}
-
-              {/* Pay with USDC button removed per owner request */}
-
             </div>
 
             {/* Score card */}
