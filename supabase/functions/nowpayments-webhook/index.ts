@@ -50,6 +50,18 @@ serve(async (req) => {
 
     const { payment_status, order_id, pay_address, payment_id, actually_paid, outcome_amount } = body;
 
+    // Validate order_id is a valid UUID to prevent injection
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!order_id || typeof order_id !== "string" || !uuidRegex.test(order_id)) {
+      console.error("Invalid order_id format:", order_id);
+      return new Response("Invalid order_id", { status: 400 });
+    }
+
+    if (!payment_status || typeof payment_status !== "string") {
+      console.error("Invalid payment_status");
+      return new Response("Invalid payment_status", { status: 400 });
+    }
+
     console.log(`Webhook received: status=${payment_status}, order=${order_id}, paid=${actually_paid}`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

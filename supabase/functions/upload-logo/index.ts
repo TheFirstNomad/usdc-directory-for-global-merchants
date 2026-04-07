@@ -22,8 +22,26 @@ serve(async (req) => {
       });
     }
 
-    if (!file.type.startsWith("image/")) {
-      return new Response(JSON.stringify({ error: "Only image files allowed" }), {
+    const allowedTypes = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"];
+    if (!allowedTypes.includes(file.type)) {
+      return new Response(JSON.stringify({ error: "Only PNG, JPEG, GIF, WebP, or SVG images allowed" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Max 2MB file size
+    const MAX_SIZE = 2 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      return new Response(JSON.stringify({ error: "File too large. Maximum size is 2MB" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate wallet_address format
+    if (walletAddress.length > 256) {
+      return new Response(JSON.stringify({ error: "Invalid wallet address" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
