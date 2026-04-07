@@ -201,9 +201,25 @@ const Swap = () => {
 
         <main className="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:py-12">
           {/* Chain selector */}
-          <div className="mb-6">
+          <div className="mb-6 flex items-center gap-4">
             <ChainSelector chainId={selectedChainId} onChange={handleChainChange} />
           </div>
+
+          {/* Top-level Swap / Liquidity tabs (Liquidity only on Arc) */}
+          {isArcTestnet && (
+            <div className="w-full max-w-[460px] mb-5">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="w-full">
+                  <TabsTrigger value="swap" className="flex-1 gap-1.5">
+                    <ArrowDownUp className="h-3.5 w-3.5" /> Swap
+                  </TabsTrigger>
+                  <TabsTrigger value="liquidity" className="flex-1 gap-1.5">
+                    <Droplets className="h-3.5 w-3.5" /> Liquidity
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          )}
 
           {/* Testnet banner */}
           {isArcTestnet && (
