@@ -524,6 +524,12 @@ const Swap = () => {
                       <span>Pool Fee</span>
                       <span className="text-foreground">{poolFee / 10000}%</span>
                     </div>
+                    {isArcTestnet && (
+                      <div className="flex justify-between">
+                        <span>Platform Fee</span>
+                        <span className="text-foreground">1%</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span>Route</span>
                       <span className="text-foreground font-mono text-[11px]">{routeDisplay}</span>
