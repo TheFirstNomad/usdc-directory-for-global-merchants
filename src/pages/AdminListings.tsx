@@ -248,7 +248,7 @@ const AdminListings = () => {
                               src={p.logo_url}
                               alt={p.name}
                               className="w-8 h-8 rounded-lg object-contain bg-card"
-                              onError={(e) => { e.currentTarget.src = "/usdc-directory-logo.png"; }}
+                              onError={(e) => { e.currentTarget.src = "https://cryptologos.cc/logos/usd-coin-usdc-logo.png"; }}
                             />
                           ) : (
                             <span className="text-xl">{p.logo_emoji || "🏢"}</span>
