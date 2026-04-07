@@ -5,7 +5,7 @@ import { LISTING_FEE_DISPLAY, UPDATE_FEE_DISPLAY } from "@/lib/web3";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, ExternalLink, Loader2, LogIn, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import Logo from "@/components/Logo";
+
 
 interface PaymentModalProps {
   type: "listing" | "update";
