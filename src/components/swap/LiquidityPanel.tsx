@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Wallet, Loader2, Plus, Minus, AlertTriangle, ExternalLink,
   Droplets, Info, BarChart3, DollarSign, Percent, Activity, TrendingUp,
