@@ -2,7 +2,7 @@
 export const UNISWAP_V3_ROUTER = "0x2626664c2603336E57B271c5C0b26F421741e481" as const;
 export const UNISWAP_V3_QUOTER_V2 = "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a" as const;
 
-// Arc DEX Contracts on Arc Testnet (Clean & Working Version - Final)
+// Arc DEX Contracts on Arc Testnet 
 export const ARC_V2_FACTORY = "0xBb527D0D58246Fc13Ec6fD9C01dDde4718EE4558" as const;
 export const ARC_V2_ROUTER = "0x57913693B72BF96BbB535F2B50E2c048019f9a6C" as const;
 
