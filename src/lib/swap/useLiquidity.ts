@@ -231,6 +231,11 @@ export function useLiquidity({
       const minB = parsedB * slippageFactor / 10000n;
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
 
+      // Safety guard: prevent zero-amount transactions
+      if (parsedA === 0n || parsedB === 0n) {
+        throw new Error("Token amounts cannot be zero");
+      }
+
       let hash: `0x${string}`;
 
       if (isNativeA || isNativeB) {
@@ -265,6 +270,7 @@ export function useLiquidity({
     } catch (err: any) {
       setState("error");
       setErrorMessage(err?.shortMessage || err?.message || "Add liquidity failed");
+      throw err; // Re-throw so caller knows it failed
     }
   }, [tokenA, tokenB, userAddress, isNativeA, isNativeB, addrA, addrB, writeContractAsync, publicClient]);
 
@@ -303,6 +309,7 @@ export function useLiquidity({
     } catch (err: any) {
       setState("error");
       setErrorMessage(err?.shortMessage || err?.message || "Remove liquidity failed");
+      throw err; // Re-throw so caller knows it failed
     }
   }, [tokenA, tokenB, userAddress, isNativeA, isNativeB, addrA, addrB, writeContractAsync, publicClient]);
 

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Wallet, Loader2, Plus, Minus, AlertTriangle, ExternalLink,
   Droplets, Info, BarChart3, DollarSign, Percent, Activity, TrendingUp,
@@ -122,14 +122,27 @@ const LiquidityPanel = () => {
   const needsApprovalB = parsedB > 0n && allowanceB < parsedB;
   const needsLpApproval = lpToRemove > 0n && lpAllowance < lpToRemove;
 
+  // Show success modal reactively when tx is confirmed on-chain
+  useEffect(() => {
+    if (state === "success" && txHash) {
+      setShowSuccess(true);
+    }
+  }, [state, txHash]);
+
   const handleAdd = async () => {
-    await addLiquidity(amountA, amountB, slippage);
-    setShowSuccess(true);
+    try {
+      await addLiquidity(amountA, amountB, slippage);
+    } catch {
+      // error already handled inside useLiquidity
+    }
   };
 
   const handleRemove = async () => {
-    await removeLiquidity(lpToRemove, slippage);
-    setShowSuccess(true);
+    try {
+      await removeLiquidity(lpToRemove, slippage);
+    } catch {
+      // error already handled inside useLiquidity
+    }
   };
 
   const handleCreatePair = async () => {
