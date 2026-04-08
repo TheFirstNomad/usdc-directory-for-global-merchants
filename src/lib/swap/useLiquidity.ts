@@ -136,7 +136,12 @@ export function useLiquidity({
 
   /* ── Helper: wait for tx ── */
   const waitForTx = async (hash: `0x${string}`) => {
-    if (publicClient) await publicClient.waitForTransactionReceipt({ hash });
+    if (publicClient) {
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status === "reverted") {
+        throw new Error("Transaction reverted on-chain");
+      }
+    }
   };
 
   const refetchAll = () => {
