@@ -11,7 +11,8 @@ const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID || "3592c16759a
 const arcTestnet = {
   id: 5042002,
   name: "Arc Testnet",
-  nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 6 },
+  // Arc Testnet uses USDC as native gas token — msg.value is in 18-decimal wei
+  nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
   rpcUrls: { default: { http: ["https://rpc.testnet.arc.network"] } },
   blockExplorers: { default: { name: "ArcScan", url: "https://testnet.arcscan.app" } },
   testnet: true,
