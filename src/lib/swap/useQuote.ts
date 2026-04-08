@@ -2,7 +2,7 @@ import { useReadContract } from "wagmi";
 import { parseUnits } from "viem";
 import { UNISWAP_V3_QUOTER_V2, QUOTER_V2_ABI, ARC_V2_ROUTER, V2_ROUTER_ABI } from "./contracts";
 import type { TokenInfo } from "./tokens";
-import { WETH_ADDRESS, getPoolFee, ARC_WRAPPED_NATIVE } from "./tokens";
+import { WETH_ADDRESS, getPoolFee } from "./tokens";
 
 export function useQuote({
   tokenIn,
@@ -57,8 +57,9 @@ export function useQuote({
   });
 
   // ── V2 quote (Arc Testnet) ──
-  const v2TokenIn = tokenIn?.address === "native" ? ARC_WRAPPED_NATIVE : (tokenIn?.address as `0x${string}`);
-  const v2TokenOut = tokenOut?.address === "native" ? ARC_WRAPPED_NATIVE : (tokenOut?.address as `0x${string}`);
+  // On Arc, both USDC and EURC are ERC-20 tokens — use their addresses directly
+  const v2TokenIn = tokenIn?.address as `0x${string}`;
+  const v2TokenOut = tokenOut?.address as `0x${string}`;
 
   const shouldFetchV2 =
     enabled && isArc && !!tokenIn && !!tokenOut &&

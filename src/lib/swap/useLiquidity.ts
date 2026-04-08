@@ -6,7 +6,7 @@ import {
   V2_ROUTER_ABI, V2_FACTORY_ABI, V2_PAIR_ABI, ERC20_ABI,
 } from "./contracts";
 import type { TokenInfo } from "./tokens";
-import { ARC_WRAPPED_NATIVE, PLATFORM_FEE_WALLET, PLATFORM_FEE_BPS } from "./tokens";
+import { PLATFORM_FEE_WALLET, PLATFORM_FEE_BPS } from "./tokens";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as `0x${string}`;
 const ARC_CHAIN_ID = 5042002;
@@ -32,10 +32,11 @@ export function useLiquidity({
   const publicClient = usePublicClient({ chainId: ARC_CHAIN_ID });
   const { writeContractAsync } = useWriteContract();
 
-  const addrA = tokenA?.address === "native" ? ARC_WRAPPED_NATIVE : (tokenA?.address as `0x${string}`);
-  const addrB = tokenB?.address === "native" ? ARC_WRAPPED_NATIVE : (tokenB?.address as `0x${string}`);
-  const isNativeA = tokenA?.address === "native";
-  const isNativeB = tokenB?.address === "native";
+  // On Arc, USDC is an ERC-20 (0x3600..., 6 decimals) — never "native"
+  const addrA = tokenA?.address as `0x${string}`;
+  const addrB = tokenB?.address as `0x${string}`;
+  const isNativeA = false; // Arc tokens are always ERC-20
+  const isNativeB = false;
 
   /* ── Pair lookup ── */
   const { data: pairAddress, refetch: refetchPair } = useReadContract({
@@ -243,30 +244,14 @@ export function useLiquidity({
 
       let hash: `0x${string}`;
 
-      if (isNativeA || isNativeB) {
-        const token = isNativeA ? addrB : addrA;
-        const amountToken = isNativeA ? parsedB : parsedA;
-        const amountETH = isNativeA ? parsedA : parsedB;
-        const amountTokenMin = isNativeA ? minB : minA;
-        const amountETHMin = isNativeA ? minA : minB;
-
-        hash = await writeContractAsync({
-          address: ARC_V2_ROUTER as `0x${string}`,
-          abi: V2_ROUTER_ABI,
-          functionName: "addLiquidityETH",
-          args: [token, amountToken, amountTokenMin, amountETHMin, userAddress, deadline],
-          value: amountETH,
-          chainId: ARC_CHAIN_ID,
-        } as any);
-      } else {
-        hash = await writeContractAsync({
-          address: ARC_V2_ROUTER as `0x${string}`,
-          abi: V2_ROUTER_ABI,
-          functionName: "addLiquidity",
-          args: [addrA, addrB, parsedA, parsedB, minA, minB, userAddress, deadline],
-          chainId: ARC_CHAIN_ID,
-        } as any);
-      }
+      // Arc router: addLiquidity with both ERC-20 tokens (no native wrapping)
+      hash = await writeContractAsync({
+        address: ARC_V2_ROUTER as `0x${string}`,
+        abi: V2_ROUTER_ABI,
+        functionName: "addLiquidity",
+        args: [addrA, addrB, parsedA, parsedB, minA, minB, userAddress, deadline],
+        chainId: ARC_CHAIN_ID,
+      } as any);
 
       setTxHash(hash);
       await waitForTx(hash);
@@ -288,24 +273,13 @@ export function useLiquidity({
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
       let hash: `0x${string}`;
 
-      if (isNativeA || isNativeB) {
-        const token = isNativeA ? addrB : addrA;
-        hash = await writeContractAsync({
-          address: ARC_V2_ROUTER as `0x${string}`,
-          abi: V2_ROUTER_ABI,
-          functionName: "removeLiquidityETH",
-          args: [token, lpAmount, 0n, 0n, userAddress, deadline],
-          chainId: ARC_CHAIN_ID,
-        } as any);
-      } else {
-        hash = await writeContractAsync({
-          address: ARC_V2_ROUTER as `0x${string}`,
-          abi: V2_ROUTER_ABI,
-          functionName: "removeLiquidity",
-          args: [addrA, addrB, lpAmount, 0n, 0n, userAddress, deadline],
-          chainId: ARC_CHAIN_ID,
-        } as any);
-      }
+      hash = await writeContractAsync({
+        address: ARC_V2_ROUTER as `0x${string}`,
+        abi: V2_ROUTER_ABI,
+        functionName: "removeLiquidity",
+        args: [addrA, addrB, lpAmount, 0n, 0n, userAddress, deadline],
+        chainId: ARC_CHAIN_ID,
+      } as any);
 
       setTxHash(hash);
       await waitForTx(hash);
