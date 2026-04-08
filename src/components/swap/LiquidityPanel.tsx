@@ -123,13 +123,21 @@ const LiquidityPanel = () => {
   const needsLpApproval = lpToRemove > 0n && lpAllowance < lpToRemove;
 
   const handleAdd = async () => {
-    await addLiquidity(amountA, amountB, slippage);
-    setShowSuccess(true);
+    try {
+      await addLiquidity(amountA, amountB, slippage);
+    } catch {
+      // error already handled inside useLiquidity
+      return;
+    }
   };
 
   const handleRemove = async () => {
-    await removeLiquidity(lpToRemove, slippage);
-    setShowSuccess(true);
+    try {
+      await removeLiquidity(lpToRemove, slippage);
+    } catch {
+      // error already handled inside useLiquidity
+      return;
+    }
   };
 
   const handleCreatePair = async () => {

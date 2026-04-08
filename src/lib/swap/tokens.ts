@@ -19,8 +19,11 @@ export const BASE_TOKENS: TokenInfo[] = [
   { symbol: "DEGEN", name: "Degen", address: "0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed", decimals: 18, logoUrl: "/tokens/eth.png" },
 ];
 
+// Arc Testnet: USDC is the native gas token.
+// msg.value (and WUSDC) uses 18 decimals on the EVM level, matching standard WETH wrapping.
+// EURC is a standard ERC-20 with 6 decimals.
 export const ARC_TESTNET_TOKENS: TokenInfo[] = [
-  { symbol: "USDC", name: "USDC (Native Gas)", address: "native", decimals: 6, logoUrl: "/tokens/usdc.png", isStable: true },
+  { symbol: "USDC", name: "USDC (Native Gas)", address: "native", decimals: 18, logoUrl: "/tokens/usdc.png", isStable: true },
   { symbol: "EURC", name: "Euro Coin", address: "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a", decimals: 6, logoUrl: "/tokens/eurc.png", isStable: true },
 ];
 
