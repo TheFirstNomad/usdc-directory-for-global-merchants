@@ -122,12 +122,18 @@ const LiquidityPanel = () => {
   const needsApprovalB = parsedB > 0n && allowanceB < parsedB;
   const needsLpApproval = lpToRemove > 0n && lpAllowance < lpToRemove;
 
+  // Show success modal reactively when tx is confirmed on-chain
+  useEffect(() => {
+    if (state === "success" && txHash) {
+      setShowSuccess(true);
+    }
+  }, [state, txHash]);
+
   const handleAdd = async () => {
     try {
       await addLiquidity(amountA, amountB, slippage);
     } catch {
       // error already handled inside useLiquidity
-      return;
     }
   };
 
@@ -136,7 +142,6 @@ const LiquidityPanel = () => {
       await removeLiquidity(lpToRemove, slippage);
     } catch {
       // error already handled inside useLiquidity
-      return;
     }
   };
 
