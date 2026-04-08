@@ -6,7 +6,7 @@ import {
   ARC_V2_ROUTER, V2_ROUTER_ABI,
 } from "./contracts";
 import type { TokenInfo } from "./tokens";
-import { WETH_ADDRESS, ARC_WRAPPED_NATIVE, getPoolFee } from "./tokens";
+import { WETH_ADDRESS, getPoolFee } from "./tokens";
 import { encodeFunctionData } from "viem";
 
 export type SwapState = "idle" | "approving" | "swapping" | "success" | "error";
@@ -43,8 +43,9 @@ export function useSwap({
   const routerAddress = isArc ? ARC_V2_ROUTER : UNISWAP_V3_ROUTER;
 
   // Resolve actual token addresses for on-chain calls
+  // On Arc, USDC is an ERC-20 (never "native" in our config anymore), so isNativeIn is always false for Arc
   const actualTokenIn = isNativeIn
-    ? (isArc ? ARC_WRAPPED_NATIVE : WETH_ADDRESS)
+    ? WETH_ADDRESS
     : (tokenIn?.address as `0x${string}`);
 
   const amountInParsed = (() => {
@@ -100,46 +101,28 @@ export function useSwap({
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
 
       if (isArc) {
-        // ── Uniswap V2 swap on Arc Testnet ──
-        const wrappedIn = isNativeIn ? ARC_WRAPPED_NATIVE : (tokenIn.address as `0x${string}`);
-        const wrappedOut = isNativeOut ? ARC_WRAPPED_NATIVE : (tokenOut.address as `0x${string}`);
-        const path: `0x${string}`[] = [wrappedIn, wrappedOut];
+        // ── Arc Testnet swap (ERC-20 to ERC-20 via simplified V2 router) ──
+        // Both USDC and EURC are ERC-20 tokens on Arc — no native wrapping needed
+        const path: `0x${string}`[] = [
+          tokenIn.address as `0x${string}`,
+          tokenOut.address as `0x${string}`,
+        ];
 
         let hash: `0x${string}`;
 
-        if (isNativeIn) {
-          // swapExactETHForTokens (native USDC → ERC20)
-          hash = await writeContractAsync({
-            address: ARC_V2_ROUTER as `0x${string}`,
-            abi: V2_ROUTER_ABI,
-            functionName: "swapExactETHForTokens",
-            args: [amountOutMin, path, userAddress, deadline],
-            value: amountInParsed,
-            chainId: 5042002,
-          } as any);
-        } else if (isNativeOut) {
-          // swapExactTokensForETH (ERC20 → native USDC)
-          hash = await writeContractAsync({
-            address: ARC_V2_ROUTER as `0x${string}`,
-            abi: V2_ROUTER_ABI,
-            functionName: "swapExactTokensForETH",
-            args: [amountInParsed, amountOutMin, path, userAddress, deadline],
-            chainId: 5042002,
-          } as any);
-        } else {
-          // swapExactTokensForTokens (ERC20 → ERC20)
-          hash = await writeContractAsync({
-            address: ARC_V2_ROUTER as `0x${string}`,
-            abi: V2_ROUTER_ABI,
-            functionName: "swapExactTokensForTokens",
-            args: [amountInParsed, amountOutMin, path, userAddress, deadline],
-            chainId: 5042002,
-          } as any);
-        }
+        // All Arc swaps are ERC-20 to ERC-20
+        hash = await writeContractAsync({
+          address: ARC_V2_ROUTER as `0x${string}`,
+          abi: V2_ROUTER_ABI,
+          functionName: "swapExactTokensForTokens",
+          args: [amountInParsed, amountOutMin, path, userAddress, deadline],
+          chainId: 5042002,
+        } as any);
 
         setTxHash(hash);
         if (publicClient) {
-          await publicClient.waitForTransactionReceipt({ hash });
+          const receipt = await publicClient.waitForTransactionReceipt({ hash });
+          if (receipt.status === "reverted") throw new Error("Transaction reverted on-chain");
         }
         setSwapState("success");
       } else {
