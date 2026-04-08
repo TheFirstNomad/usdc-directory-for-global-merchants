@@ -20,10 +20,11 @@ export const BASE_TOKENS: TokenInfo[] = [
 ];
 
 // Arc Testnet: USDC is the native gas token.
-// msg.value (and WUSDC) uses 18 decimals on the EVM level, matching standard WETH wrapping.
-// EURC is a standard ERC-20 with 6 decimals.
+// The USDC ERC-20 interface at 0x3600... uses 6 decimals (per official Arc docs).
+// Native gas balance uses 18 decimals, but ALL on-chain token operations should
+// use the 6-decimal ERC-20 interface. EURC also uses 6 decimals.
 export const ARC_TESTNET_TOKENS: TokenInfo[] = [
-  { symbol: "USDC", name: "USDC (Native Gas)", address: "native", decimals: 18, logoUrl: "/tokens/usdc.png", isStable: true },
+  { symbol: "USDC", name: "USDC (Native)", address: "0x3600000000000000000000000000000000000000", decimals: 6, logoUrl: "/tokens/usdc.png", isStable: true },
   { symbol: "EURC", name: "Euro Coin", address: "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a", decimals: 6, logoUrl: "/tokens/eurc.png", isStable: true },
 ];
 
@@ -34,8 +35,8 @@ export const TOKENS_BY_CHAIN: Record<number, TokenInfo[]> = {
 
 export const WETH_ADDRESS: `0x${string}` = "0x4200000000000000000000000000000000000006";
 
-// Wrapped native token on Arc Testnet (WUSDC — the wrapped form of the native USDC gas token)
-// This is the WETH equivalent on Arc since the native currency is USDC
+// USDC ERC-20 interface on Arc Testnet (used as both token address and "wrapped native" equivalent)
+// This directly affects native USDC balance — approve/transferFrom work against the native balance.
 export const ARC_WRAPPED_NATIVE: `0x${string}` = "0x3600000000000000000000000000000000000000";
 
 // Platform fee wallet (1% on swaps/liquidity removal)
