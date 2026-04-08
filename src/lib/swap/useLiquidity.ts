@@ -270,6 +270,7 @@ export function useLiquidity({
     } catch (err: any) {
       setState("error");
       setErrorMessage(err?.shortMessage || err?.message || "Add liquidity failed");
+      throw err; // Re-throw so caller knows it failed
     }
   }, [tokenA, tokenB, userAddress, isNativeA, isNativeB, addrA, addrB, writeContractAsync, publicClient]);
 
