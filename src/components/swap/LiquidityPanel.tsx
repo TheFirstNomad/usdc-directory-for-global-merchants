@@ -42,7 +42,7 @@ const LiquidityPanel = () => {
     allowanceA, allowanceB, lpAllowance,
     approveToken, approveLp, createPair,
     addLiquidity, removeLiquidity, reset,
-    isNativeA, addrA, addrB,
+    isNativeA, isNativeB, addrA, addrB,
   } = useLiquidity({
     tokenA, tokenB,
     userAddress: address as `0x${string}` | undefined,
@@ -56,28 +56,28 @@ const LiquidityPanel = () => {
   });
 
   const { data: erc20BalA } = useReadContract({
-    address: tokenA.address === "native" ? undefined : (tokenA.address as `0x${string}`),
+    address: tokenA.address === "native" || isNativeA ? undefined : (tokenA.address as `0x${string}`),
     abi: ERC20_ABI,
     functionName: "balanceOf",
     args: address ? [address as `0x${string}`] : undefined,
     chainId: 5042002,
-    query: { enabled: isConnected && !!address && tokenA.address !== "native" },
+    query: { enabled: isConnected && !!address && tokenA.address !== "native" && !isNativeA },
   });
 
   const { data: erc20BalB } = useReadContract({
-    address: tokenB.address === "native" ? undefined : (tokenB.address as `0x${string}`),
+    address: tokenB.address === "native" || isNativeB ? undefined : (tokenB.address as `0x${string}`),
     abi: ERC20_ABI,
     functionName: "balanceOf",
     args: address ? [address as `0x${string}`] : undefined,
     chainId: 5042002,
-    query: { enabled: isConnected && !!address && tokenB.address !== "native" },
+    query: { enabled: isConnected && !!address && tokenB.address !== "native" && !isNativeB },
   });
 
-  const balA = tokenA.address === "native"
+  const balA = tokenA.address === "native" || isNativeA
     ? (nativeBal ? formatUnits(nativeBal.value, nativeBal.decimals) : null)
     : (erc20BalA != null ? formatUnits(erc20BalA as bigint, tokenA.decimals) : null);
 
-  const balB = tokenB.address === "native"
+  const balB = tokenB.address === "native" || isNativeB
     ? (nativeBal ? formatUnits(nativeBal.value, nativeBal.decimals) : null)
     : (erc20BalB != null ? formatUnits(erc20BalB as bigint, tokenB.decimals) : null);
 
@@ -116,12 +116,16 @@ const LiquidityPanel = () => {
     }
   }, [priceAB]);
 
-  const parsedA = (() => { try { return parseUnits(amountA || "0", tokenA?.decimals ?? 6); } catch { return 0n; } })();
-  const parsedB = (() => { try { return parseUnits(amountB || "0", tokenB?.decimals ?? 6); } catch { return 0n; } })();
+  // Liquidity inputs use 18 decimals for Arc native USDC and token decimals for ERC-20 sides.
+  const amountDecimalsA = isNativeA ? 18 : (tokenA?.decimals ?? 6);
+  const amountDecimalsB = isNativeB ? 18 : (tokenB?.decimals ?? 6);
+  const parsedA = (() => { try { return parseUnits(amountA || "0", amountDecimalsA); } catch { return 0n; } })();
+  const parsedB = (() => { try { return parseUnits(amountB || "0", amountDecimalsB); } catch { return 0n; } })();
 
   const needsApprovalA = !isNativeA && parsedA > 0n && allowanceA < parsedA;
-  const needsApprovalB = parsedB > 0n && allowanceB < parsedB;
+  const needsApprovalB = !isNativeB && parsedB > 0n && allowanceB < parsedB;
   const needsLpApproval = lpToRemove > 0n && lpAllowance < lpToRemove;
+  const actionErrorMessage = errorMessage || "Transaction failed. Check the token amounts, approvals, and native USDC balance, then try again.";
 
   // Show success modal reactively when tx is confirmed on-chain
   useEffect(() => {
@@ -373,7 +377,7 @@ const LiquidityPanel = () => {
             <div className="pt-1 space-y-2">
               {state === "error" && (
                 <div className="text-center space-y-2 animate-fade-in">
-                  <p className="text-sm text-red-400">{errorMessage}</p>
+                  <p className="text-sm text-red-400">{actionErrorMessage}</p>
                   <Button onClick={reset} variant="outline" className="w-full">Try Again</Button>
                 </div>
               )}
@@ -482,7 +486,7 @@ const LiquidityPanel = () => {
                 <div className="space-y-2">
                   {state === "error" && (
                     <div className="text-center space-y-2 animate-fade-in">
-                      <p className="text-sm text-red-400">{errorMessage}</p>
+                      <p className="text-sm text-red-400">{actionErrorMessage}</p>
                       <Button onClick={reset} variant="outline" className="w-full">Try Again</Button>
                     </div>
                   )}
