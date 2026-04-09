@@ -198,7 +198,6 @@ export function useLiquidity({
     }
   }, [addrA, addrB, writeContractAsync, refetchAll]);
 
-  /* ── FINAL ADD LIQUIDITY (auto-creates pair + simulation for clear error) ── */
   const addLiquidity = useCallback(
     async (amountA: string, amountB: string, slippage: number) => {
       if (!tokenA || !tokenB || !userAddress) return;
@@ -212,14 +211,12 @@ export function useLiquidity({
         const minB = (parsedB * slippageFactor) / 10000n;
         const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
 
-        // Auto-create pair if it doesn't exist
         if (!pairExists) {
           await createPair();
-          await new Promise((r) => setTimeout(r, 4000)); // give Arc time to index
+          await new Promise((r) => setTimeout(r, 5000));
           await refetchAll();
         }
 
-        // Simulate first (gives exact revert reason)
         await publicClient.simulateContract({
           address: ARC_V2_ROUTER as `0x${string}`,
           abi: V2_ROUTER_ABI,
@@ -244,9 +241,10 @@ export function useLiquidity({
         setState("success");
       } catch (err: any) {
         setState("error");
-        const msg = err?.shortMessage || err?.message || "Add liquidity failed";
+        // ← IMPROVED: shows the real contract revert reason
+        let msg = err?.cause?.reason || err?.shortMessage || err?.message || "Add liquidity failed";
         setErrorMessage(msg);
-        console.error("Exact error:", err);
+        console.error("🔴 Exact revert reason:", msg);
         throw err;
       }
     },
