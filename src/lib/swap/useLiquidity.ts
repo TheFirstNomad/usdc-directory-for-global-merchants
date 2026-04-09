@@ -56,7 +56,7 @@ export function useLiquidity({
         } as any);
 
         setState("success");
-        console.log("Tx sent:", hash);
+        console.log("Transaction sent:", hash);
       } catch (err: any) {
         setState("error");
         setErrorMessage(err?.shortMessage || err?.message || "Add liquidity failed");
