@@ -154,9 +154,12 @@ const Swap = () => {
 
   /* watch for success — open modal */
   const handleSwap = useCallback(async () => {
-    await swap();
-    // swap() resolves after success, so we show the modal
-    setShowSuccess(true);
+    try {
+      await swap();
+      setShowSuccess(true);
+    } catch {
+      setShowSuccess(false);
+    }
   }, [swap]);
 
   /* ── handlers ── */

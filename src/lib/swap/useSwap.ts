@@ -11,6 +11,43 @@ import { encodeFunctionData } from "viem";
 
 export type SwapState = "idle" | "approving" | "swapping" | "success" | "error";
 
+const getReadableSwapError = (error: any) => {
+  const combinedMessage = [
+    error?.shortMessage,
+    error?.message,
+    error?.details,
+    error?.cause?.shortMessage,
+    error?.cause?.message,
+  ]
+    .filter(Boolean)
+    .join(" | ");
+
+  const normalized = combinedMessage.toLowerCase();
+
+  if (normalized.includes("user rejected") || normalized.includes("rejected the request") || normalized.includes("user denied")) {
+    return "Transaction cancelled in wallet.";
+  }
+
+  if (normalized.includes("insufficient funds")) {
+    return "Insufficient balance for the swap and network fees.";
+  }
+
+  if (
+    normalized.includes("network fee unavailable") ||
+    normalized.includes("estimate gas") ||
+    normalized.includes("gas estimation") ||
+    normalized.includes("unpredictable gas")
+  ) {
+    return "Swap could not be simulated. Recheck the amount, route, and slippage, then try again.";
+  }
+
+  if (normalized.includes("reverted") || normalized.includes("execution reverted")) {
+    return "Swap reverted on-chain. Try a smaller amount or refresh the quote.";
+  }
+
+  return error?.shortMessage || error?.message || "Swap failed";
+};
+
 export function useSwap({
   tokenIn,
   tokenOut,
@@ -88,7 +125,7 @@ export function useSwap({
       setSwapState("idle");
     } catch (err: any) {
       setSwapState("error");
-      setErrorMessage(err?.shortMessage || err?.message || "Approval failed");
+      setErrorMessage(getReadableSwapError(err));
     }
   }, [tokenIn, isNativeIn, userAddress, actualTokenIn, amountInParsed, writeContractAsync, publicClient, routerAddress, chainId]);
 
@@ -178,7 +215,8 @@ export function useSwap({
       }
     } catch (err: any) {
       setSwapState("error");
-      setErrorMessage(err?.shortMessage || err?.message || "Swap failed");
+      setErrorMessage(getReadableSwapError(err));
+      throw err;
     }
   }, [tokenIn, tokenOut, userAddress, amountInParsed, amountOutMin, isNativeIn, isNativeOut, isArc, writeContractAsync, publicClient]);
 
