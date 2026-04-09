@@ -21,47 +21,53 @@ export function useLiquidity({
   const [errorMessage, setErrorMessage] = useState("");
   const { writeContractAsync } = useWriteContract();
 
-  const addLiquidity = useCallback(async (amountA: string, amountB: string) => {
-    if (!tokenA || !tokenB || !userAddress) return;
-
-    setState("adding");
-    setErrorMessage("");
-
-    try {
-      const parsedA = parseUnits(amountA || "0", tokenA.decimals);
-      const parsedB = parseUnits(amountB || "0", tokenB.decimals);
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
-
-      if (parsedA === 0n || parsedB === 0n) {
-        throw new Error("Amounts cannot be zero");
+  const addLiquidity = useCallback(
+    async (amountA: string, amountB: string) => {
+      if (!tokenA || !tokenB || !userAddress) {
+        setErrorMessage("Missing token or address");
+        return;
       }
 
-      // Simple addLiquidity call
-      const hash = await writeContractAsync({
-        address: ARC_V2_ROUTER as `0x${string}`,
-        abi: V2_ROUTER_ABI,
-        functionName: "addLiquidity",
-        args: [
-          tokenA.address as `0x${string}`,
-          tokenB.address as `0x${string}`,
-          parsedA,
-          parsedB,
-          0n, // minA
-          0n, // minB
-          userAddress,
-          deadline
-        ],
-        chainId: ARC_CHAIN_ID,
-      } as any);
+      setState("adding");
+      setErrorMessage("");
 
-      setState("success");
-      console.log("Transaction sent:", hash);
-    } catch (err: any) {
-      setState("error");
-      setErrorMessage(err?.shortMessage || err?.message || "Add liquidity failed");
-      console.error(err);
-    }
-  }, [tokenA, tokenB, userAddress, writeContractAsync]);
+      try {
+        const parsedA = parseUnits(amountA || "0", tokenA.decimals);
+        const parsedB = parseUnits(amountB || "0", tokenB.decimals);
+        const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
+
+        if (parsedA === 0n || parsedB === 0n) {
+          throw new Error("Amounts cannot be zero");
+        }
+
+        const hash = await writeContractAsync({
+          address: ARC_V2_ROUTER as `0x${string}`,
+          abi: V2_ROUTER_ABI,
+          functionName: "addLiquidity",
+          args: [
+            tokenA.address as `0x${string}`,
+            tokenB.address as `0x${string}`,
+            parsedA,
+            parsedB,
+            0n,
+            0n,
+            userAddress,
+            deadline,
+          ],
+          chainId: ARC_CHAIN_ID,
+        } as any);
+
+        setState("success");
+        console.log("Liquidity tx sent:", hash);
+      } catch (err: any) {
+        setState("error");
+        const msg = err?.shortMessage || err?.message || "Add liquidity failed";
+        setErrorMessage(msg);
+        console.error("Add liquidity error:", err);
+      }
+    },
+    [tokenA, tokenB, userAddress, writeContractAsync],
+  );
 
   const reset = useCallback(() => {
     setState("idle");
