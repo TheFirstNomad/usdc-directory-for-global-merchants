@@ -81,8 +81,6 @@ const LiquidityPanel = () => {
     ? (nativeBal ? formatUnits(nativeBal.value, nativeBal.decimals) : null)
     : (erc20BalB != null ? formatUnits(erc20BalB as bigint, tokenB.decimals) : null);
 
-  // Arc router limitation: addLiquidity only works for NEW pairs
-  const routerLimitedForExistingPair = pairExists;
 
   const reserveAFmt = tokenA ? formatUnits(reserveA, tokenA.decimals) : "0";
   const reserveBFmt = tokenB ? formatUnits(reserveB, tokenB.decimals) : "0";
