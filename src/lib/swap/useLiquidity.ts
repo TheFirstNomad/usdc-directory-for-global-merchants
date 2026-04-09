@@ -213,8 +213,24 @@ export function useLiquidity({
 
         if (!pairExists) {
           await createPair();
-          await new Promise((r) => setTimeout(r, 5000));
+          await new Promise((r) => setTimeout(r, 6000)); // longer wait for Arc indexing
           await refetchAll();
+        }
+
+        // Simulate to get the EXACT revert reason
+        try {
+          await publicClient.simulateContract({
+            address: ARC_V2_ROUTER as `0x${string}`,
+            abi: V2_ROUTER_ABI,
+            functionName: "addLiquidity",
+            args: [addrA, addrB, parsedA, parsedB, minA, minB, userAddress, deadline],
+            account: userAddress,
+          });
+        } catch (simErr: any) {
+          const reason = simErr?.cause?.reason || simErr?.shortMessage || simErr?.message || "Unknown revert";
+          setErrorMessage(reason);
+          setState("error");
+          throw simErr;
         }
 
         const hash = await writeContractAsync({
@@ -223,8 +239,8 @@ export function useLiquidity({
           functionName: "addLiquidity",
           args: [addrA, addrB, parsedA, parsedB, minA, minB, userAddress, deadline],
           chainId: ARC_CHAIN_ID,
-          gas: 2_500_000, // ← Fixed for Arc
-          maxFeePerGas: parseUnits("200", 9), // ← Fixed for Arc (200 Gwei)
+          gas: 2_500_000,
+          maxFeePerGas: parseUnits("200", 9),
         } as any);
 
         setTxHash(hash);
@@ -233,11 +249,12 @@ export function useLiquidity({
         setState("success");
       } catch (err: any) {
         setState("error");
-        setErrorMessage(err?.shortMessage || err?.message || "Add liquidity failed");
+        const msg = err?.cause?.reason || err?.shortMessage || err?.message || "Add liquidity failed";
+        setErrorMessage(msg);
         throw err;
       }
     },
-    [tokenA, tokenB, userAddress, addrA, addrB, pairExists, createPair, writeContractAsync, refetchAll],
+    [tokenA, tokenB, userAddress, addrA, addrB, pairExists, createPair, writeContractAsync, publicClient, refetchAll],
   );
 
   const removeLiquidity = useCallback(
