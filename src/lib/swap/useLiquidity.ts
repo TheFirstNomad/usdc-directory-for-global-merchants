@@ -37,7 +37,6 @@ export function useLiquidity({
   const addrA = tokenA?.address as `0x${string}`;
   const addrB = tokenB?.address as `0x${string}`;
 
-  /* ── Pair lookup ── */
   const { data: pairAddress, refetch: refetchPair } = useReadContract({
     address: ARC_V2_FACTORY,
     abi: V2_FACTORY_ABI,
@@ -49,7 +48,6 @@ export function useLiquidity({
 
   const pairExists = !!pairAddress && pairAddress !== ZERO_ADDRESS;
 
-  /* ── Reserves & LP data ── */
   const { data: reserves, refetch: refetchReserves } = useReadContract({
     address: pairAddress as `0x${string}`,
     abi: V2_PAIR_ABI,
@@ -111,9 +109,7 @@ export function useLiquidity({
   const waitForTx = async (hash: `0x${string}`) => {
     if (!publicClient) return;
     const receipt = await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
-    if (receipt.status === "reverted") {
-      throw new Error("Transaction failed on-chain");
-    }
+    if (receipt.status === "reverted") throw new Error("Transaction failed on-chain");
   };
 
   const refetchAll = () => {
@@ -126,7 +122,6 @@ export function useLiquidity({
     refetchAllowanceB();
   };
 
-  /* ── Approve ── */
   const approveToken = useCallback(
     async (tokenAddr: `0x${string}`, amount: bigint, label: "approving-a" | "approving-b") => {
       setState(label);
@@ -139,7 +134,7 @@ export function useLiquidity({
           args: [ARC_V2_ROUTER as `0x${string}`, amount],
           chainId: ARC_CHAIN_ID,
           gas: 800_000,
-          maxFeePerGas: parseUnits("200", 9), // 200 Gwei (above Arc minimum 160 Gwei)
+          maxFeePerGas: parseUnits("200", 9),
         } as any);
         await waitForTx(hash);
         refetchAll();
@@ -195,13 +190,15 @@ export function useLiquidity({
       await waitForTx(hash);
       refetchAll();
       setState("idle");
+      return hash;
     } catch (err: any) {
       setState("error");
       setErrorMessage(err?.shortMessage || err?.message || "Create pair failed");
+      throw err;
     }
   }, [addrA, addrB, writeContractAsync, refetchAll]);
 
-  /* ── ADD LIQUIDITY (FINAL FIX FOR OKX + ARC) ── */
+  /* ── FINAL ADD LIQUIDITY (auto-creates pair + simulation for clear error) ── */
   const addLiquidity = useCallback(
     async (amountA: string, amountB: string, slippage: number) => {
       if (!tokenA || !tokenB || !userAddress) return;
@@ -215,11 +212,21 @@ export function useLiquidity({
         const minB = (parsedB * slippageFactor) / 10000n;
         const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
 
+        // Auto-create pair if it doesn't exist
         if (!pairExists) {
           await createPair();
-          await new Promise((r) => setTimeout(r, 2000));
+          await new Promise((r) => setTimeout(r, 4000)); // give Arc time to index
           await refetchAll();
         }
+
+        // Simulate first (gives exact revert reason)
+        await publicClient.simulateContract({
+          address: ARC_V2_ROUTER as `0x${string}`,
+          abi: V2_ROUTER_ABI,
+          functionName: "addLiquidity",
+          args: [addrA, addrB, parsedA, parsedB, minA, minB, userAddress, deadline],
+          account: userAddress,
+        });
 
         const hash = await writeContractAsync({
           address: ARC_V2_ROUTER as `0x${string}`,
@@ -227,8 +234,8 @@ export function useLiquidity({
           functionName: "addLiquidity",
           args: [addrA, addrB, parsedA, parsedB, minA, minB, userAddress, deadline],
           chainId: ARC_CHAIN_ID,
-          gas: 2_500_000, // safe for OKX + Arc
-          maxFeePerGas: parseUnits("200", 9), // official Arc minimum is 160 Gwei → we use 200 Gwei
+          gas: 2_500_000,
+          maxFeePerGas: parseUnits("200", 9),
         } as any);
 
         setTxHash(hash);
@@ -237,11 +244,13 @@ export function useLiquidity({
         setState("success");
       } catch (err: any) {
         setState("error");
-        setErrorMessage(err?.shortMessage || err?.message || "Add liquidity failed");
+        const msg = err?.shortMessage || err?.message || "Add liquidity failed";
+        setErrorMessage(msg);
+        console.error("Exact error:", err);
         throw err;
       }
     },
-    [tokenA, tokenB, userAddress, addrA, addrB, pairExists, createPair, writeContractAsync, refetchAll],
+    [tokenA, tokenB, userAddress, addrA, addrB, pairExists, createPair, writeContractAsync, publicClient, refetchAll],
   );
 
   const removeLiquidity = useCallback(
