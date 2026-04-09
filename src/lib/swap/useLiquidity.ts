@@ -133,6 +133,8 @@ export function useLiquidity({
           functionName: "approve",
           args: [ARC_V2_ROUTER as `0x${string}`, amount],
           chainId: ARC_CHAIN_ID,
+          gas: 800_000,
+          maxFeePerGas: parseUnits("200", 9),
         } as any);
         await waitForTx(hash);
         refetchAll();
@@ -157,6 +159,8 @@ export function useLiquidity({
           functionName: "approve",
           args: [ARC_V2_ROUTER as `0x${string}`, amount],
           chainId: ARC_CHAIN_ID,
+          gas: 800_000,
+          maxFeePerGas: parseUnits("200", 9),
         } as any);
         await waitForTx(hash);
         refetchAll();
@@ -180,6 +184,8 @@ export function useLiquidity({
         functionName: "createPair",
         args: [addrA, addrB],
         chainId: ARC_CHAIN_ID,
+        gas: 2_500_000,
+        maxFeePerGas: parseUnits("200", 9),
       } as any);
       await waitForTx(hash);
       refetchAll();
@@ -205,7 +211,6 @@ export function useLiquidity({
         const minB = (parsedB * slippageFactor) / 10000n;
         const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
 
-        // Auto create pair if needed
         if (!pairExists) {
           await createPair();
           await new Promise((r) => setTimeout(r, 5000));
@@ -218,6 +223,8 @@ export function useLiquidity({
           functionName: "addLiquidity",
           args: [addrA, addrB, parsedA, parsedB, minA, minB, userAddress, deadline],
           chainId: ARC_CHAIN_ID,
+          gas: 2_500_000, // ← Fixed for Arc
+          maxFeePerGas: parseUnits("200", 9), // ← Fixed for Arc (200 Gwei)
         } as any);
 
         setTxHash(hash);
@@ -250,6 +257,8 @@ export function useLiquidity({
           functionName: "removeLiquidity",
           args: [addrA, addrB, liquidityAmount, minA, minB, userAddress, deadline],
           chainId: ARC_CHAIN_ID,
+          gas: 1_800_000,
+          maxFeePerGas: parseUnits("200", 9),
         } as any);
 
         setTxHash(hash);
