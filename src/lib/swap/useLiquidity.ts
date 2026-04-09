@@ -6,8 +6,6 @@ import type { TokenInfo } from "./tokens";
 
 const ARC_CHAIN_ID = 5042002;
 
-export type LiquidityState = "idle" | "adding" | "success" | "error";
-
 export function useLiquidity({
   tokenA,
   tokenB,
@@ -17,7 +15,7 @@ export function useLiquidity({
   tokenB: TokenInfo | null;
   userAddress: `0x${string}` | undefined;
 }) {
-  const [state, setState] = useState<LiquidityState>("idle");
+  const [state, setState] = useState<"idle" | "adding" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const { writeContractAsync } = useWriteContract();
 
@@ -58,12 +56,11 @@ export function useLiquidity({
         } as any);
 
         setState("success");
-        console.log("Liquidity tx sent:", hash);
+        console.log("Tx sent:", hash);
       } catch (err: any) {
         setState("error");
-        const msg = err?.shortMessage || err?.message || "Add liquidity failed";
-        setErrorMessage(msg);
-        console.error("Add liquidity error:", err);
+        setErrorMessage(err?.shortMessage || err?.message || "Add liquidity failed");
+        console.error(err);
       }
     },
     [tokenA, tokenB, userAddress, writeContractAsync],
