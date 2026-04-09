@@ -6,7 +6,6 @@ import {
   V2_ROUTER_ABI, V2_FACTORY_ABI, V2_PAIR_ABI, ERC20_ABI,
 } from "./contracts";
 import type { TokenInfo } from "./tokens";
-import { PLATFORM_FEE_WALLET, PLATFORM_FEE_BPS } from "./tokens";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as `0x${string}`;
 const ARC_CHAIN_ID = 5042002;
@@ -51,13 +50,13 @@ export function useLiquidity({
 
   const pairExists = !!pairAddress && pairAddress !== ZERO_ADDRESS;
 
-  /* ── Reserves ── */
+  /* ── Reserves & LP data ── */
   const { data: reserves, refetch: refetchReserves } = useReadContract({
     address: pairAddress as `0x${string}`,
     abi: V2_PAIR_ABI,
     functionName: "getReserves",
     chainId: ARC_CHAIN_ID,
-    query: { enabled: pairExists, refetchInterval: 15_000 },
+    query: { enabled: pairExists },
   });
 
   const { data: token0 } = useReadContract({
@@ -68,7 +67,6 @@ export function useLiquidity({
     query: { enabled: pairExists },
   });
 
-  /* ── LP token data ── */
   const { data: totalSupply, refetch: refetchTotalSupply } = useReadContract({
     address: pairAddress as `0x${string}`,
     abi: V2_PAIR_ABI,
@@ -95,7 +93,7 @@ export function useLiquidity({
     query: { enabled: pairExists && !!userAddress },
   });
 
-  /* ── Token allowances ── */
+  /* ── Allowances ── */
   const { data: allowanceA, refetch: refetchAllowanceA } = useReadContract({
     address: addrA,
     abi: ERC20_ABI,
@@ -114,7 +112,7 @@ export function useLiquidity({
     query: { enabled: !!userAddress && !isNativeUSDC_B },
   });
 
-  /* ── Parsed reserves ── */
+  /* ── Reserves parsing ── */
   const reserveA = (() => {
     if (!reserves || !token0 || !tokenA) return 0n;
     const [r0, r1] = reserves as [bigint, bigint, number];
@@ -138,9 +136,7 @@ export function useLiquidity({
   const waitForTx = async (hash: `0x${string}`) => {
     if (publicClient) {
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      if (receipt.status === "reverted") {
-        throw new Error("Transaction reverted on-chain");
-      }
+      if (receipt.status === "reverted") throw new Error("Transaction reverted on-chain");
     }
   };
 
@@ -154,12 +150,8 @@ export function useLiquidity({
     refetchAllowanceB();
   };
 
-  /* ── Approve token ── */
-  const approveToken = useCallback(async (
-    tokenAddr: `0x${string}`,
-    amount: bigint,
-    label: "approving-a" | "approving-b",
-  ) => {
+  /* Approve functions */
+  const approveToken = useCallback(async (tokenAddr: `0x${string}`, amount: bigint, label: "approving-a" | "approving-b") => {
     setState(label);
     setErrorMessage("");
     try {
@@ -179,7 +171,6 @@ export function useLiquidity({
     }
   }, [writeContractAsync, publicClient]);
 
-  /* ── Approve LP ── */
   const approveLp = useCallback(async (amount: bigint) => {
     if (!pairAddress || pairAddress === ZERO_ADDRESS) return;
     setState("approving-lp");
@@ -201,7 +192,6 @@ export function useLiquidity({
     }
   }, [writeContractAsync, publicClient, pairAddress]);
 
-  /* ── Create pair ── */
   const createPair = useCallback(async () => {
     if (pairExists) return;
     setState("creating-pair");
@@ -223,7 +213,7 @@ export function useLiquidity({
     }
   }, [pairExists, addrA, addrB, writeContractAsync, publicClient]);
 
-  /* ── Add liquidity (Fixed for Arc native USDC) ── */
+  /* ── Add Liquidity with Debug Logs ── */
   const addLiquidity = useCallback(async (amountA: string, amountB: string, slippage: number) => {
     if (!tokenA || !tokenB || !userAddress) return;
 
@@ -231,6 +221,12 @@ export function useLiquidity({
     setErrorMessage("");
 
     try {
+      console.log("=== Add Liquidity Debug ===");
+      console.log("TokenA:", tokenA.symbol, addrA, "Native USDC?", isNativeUSDC_A);
+      console.log("TokenB:", tokenB.symbol, addrB, "Native USDC?", isNativeUSDC_B);
+      console.log("AmountA input:", amountA, "Parsed:", parsedA?.toString());
+      console.log("AmountB input:", amountB, "Parsed:", parsedB?.toString());
+
       const parsedA = parseUnits(amountA || "0", tokenA.decimals);
       const parsedB = parseUnits(amountB || "0", tokenB.decimals);
       const slippageFactor = BigInt(Math.floor((1 - slippage / 100) * 10000));
@@ -239,12 +235,11 @@ export function useLiquidity({
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
 
       if (parsedA === 0n || parsedB === 0n) {
-        throw new Error("Token amounts cannot be zero");
+        throw new Error("Amounts cannot be zero");
       }
 
       let hash: `0x${string}`;
 
-      // Arc native USDC handling
       if (isNativeUSDC_A || isNativeUSDC_B) {
         const nativeIsA = isNativeUSDC_A;
         const ercToken = nativeIsA ? tokenB : tokenA;
@@ -253,11 +248,15 @@ export function useLiquidity({
         const nativeAmount = nativeIsA ? parsedA : parsedB;
         const nativeMin = nativeIsA ? minA : minB;
 
-        // Convert native USDC amount to 18 decimals for msg.value
         const nativeAmount18 = parseUnits(
           formatUnits(nativeAmount, nativeIsA ? tokenA.decimals : tokenB.decimals),
           18
         );
+
+        console.log("Using addLiquidityETH");
+        console.log("ERC Token:", ercToken.address);
+        console.log("ERC Amount:", ercAmount.toString());
+        console.log("Native Amount (18 dec):", nativeAmount18.toString());
 
         hash = await writeContractAsync({
           address: ARC_V2_ROUTER as `0x${string}`,
@@ -269,13 +268,13 @@ export function useLiquidity({
             ercMin,
             nativeMin,
             userAddress,
-            deadline,
+            deadline
           ],
           value: nativeAmount18,
           chainId: ARC_CHAIN_ID,
         } as any);
       } else {
-        // Both ERC-20 fallback
+        console.log("Using regular addLiquidity (both ERC-20)");
         hash = await writeContractAsync({
           address: ARC_V2_ROUTER as `0x${string}`,
           abi: V2_ROUTER_ABI,
@@ -285,6 +284,7 @@ export function useLiquidity({
         } as any);
       }
 
+      console.log("Transaction sent:", hash);
       setTxHash(hash);
       await waitForTx(hash);
       refetchAll();
@@ -293,19 +293,18 @@ export function useLiquidity({
       setState("error");
       const msg = err?.shortMessage || err?.message || "Add liquidity failed";
       setErrorMessage(msg);
-      console.error("Add liquidity error:", err);
+      console.error("Add liquidity FULL ERROR:", err);
       throw err;
     }
   }, [tokenA, tokenB, userAddress, addrA, addrB, isNativeUSDC_A, isNativeUSDC_B, writeContractAsync, publicClient]);
 
-  /* ── Remove liquidity ── */
+  /* Remove Liquidity */
   const removeLiquidity = useCallback(async (lpAmount: bigint, slippage: number) => {
     if (!tokenA || !tokenB || !userAddress || !pairAddress) return;
     setState("removing");
     setErrorMessage("");
     try {
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
-
       const hash = await writeContractAsync({
         address: ARC_V2_ROUTER as `0x${string}`,
         abi: V2_ROUTER_ABI,
@@ -351,9 +350,5 @@ export function useLiquidity({
     addLiquidity,
     removeLiquidity,
     reset,
-    isNativeA: isNativeUSDC_A,
-    isNativeB: isNativeUSDC_B,
-    addrA,
-    addrB,
   };
 }
