@@ -398,7 +398,7 @@ const LiquidityPanel = () => {
                   ) : (
                     <Button
                       onClick={handleAdd}
-                      disabled={parsedA <= 0n || parsedB <= 0n || busy || routerLimitedForExistingPair}
+                      disabled={parsedA <= 0n || parsedB <= 0n || busy}
                       className="w-full h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground disabled:opacity-40"
                     >
                       {busy ? (
