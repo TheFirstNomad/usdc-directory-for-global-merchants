@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import {
-  Wallet, Loader2, Plus, Minus, AlertTriangle, ExternalLink,
+  Wallet, Loader2, Plus, Minus, ExternalLink,
   Droplets, Info, BarChart3, DollarSign, Percent, Activity, TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
