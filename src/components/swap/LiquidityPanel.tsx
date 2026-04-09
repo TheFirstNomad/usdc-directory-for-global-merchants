@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import {
-  Wallet, Loader2, Plus, Minus, AlertTriangle, ExternalLink,
+  Wallet, Loader2, Plus, Minus, ExternalLink,
   Droplets, Info, BarChart3, DollarSign, Percent, Activity, TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -81,8 +81,6 @@ const LiquidityPanel = () => {
     ? (nativeBal ? formatUnits(nativeBal.value, nativeBal.decimals) : null)
     : (erc20BalB != null ? formatUnits(erc20BalB as bigint, tokenB.decimals) : null);
 
-  // Arc router limitation: addLiquidity only works for NEW pairs
-  const routerLimitedForExistingPair = pairExists;
 
   const reserveAFmt = tokenA ? formatUnits(reserveA, tokenA.decimals) : "0";
   const reserveBFmt = tokenB ? formatUnits(reserveB, tokenB.decimals) : "0";
@@ -367,17 +365,6 @@ const LiquidityPanel = () => {
             {parsedA > 0n && parsedB > 0n && (
               <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70 px-1">
                 <Info className="h-3 w-3" />
-
-            {/* Router limitation warning for existing pairs */}
-            {routerLimitedForExistingPair && (
-              <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 flex items-start gap-2 animate-fade-in">
-                <AlertTriangle className="h-4 w-4 text-yellow-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs text-yellow-300 font-medium">Adding to existing pools is not yet supported on this Arc Testnet router.</p>
-                  <p className="text-[10px] text-yellow-400/70 mt-0.5">Initial pool creation works. Swaps work normally.</p>
-                </div>
-              </div>
-            )}
                 <span>{PLATFORM_FEE_BPS / 100}% platform fee on swaps • 0.3% LP trading fee</span>
               </div>
             )}
@@ -411,7 +398,7 @@ const LiquidityPanel = () => {
                   ) : (
                     <Button
                       onClick={handleAdd}
-                      disabled={parsedA <= 0n || parsedB <= 0n || busy || routerLimitedForExistingPair}
+                      disabled={parsedA <= 0n || parsedB <= 0n || busy}
                       className="w-full h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground disabled:opacity-40"
                     >
                       {busy ? (
