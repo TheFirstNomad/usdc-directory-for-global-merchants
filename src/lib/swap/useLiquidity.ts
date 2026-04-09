@@ -133,8 +133,7 @@ export function useLiquidity({
           functionName: "approve",
           args: [ARC_V2_ROUTER as `0x${string}`, amount],
           chainId: ARC_CHAIN_ID,
-          gas: 800_000,
-          maxFeePerGas: parseUnits("200", 9),
+          // Gas limits removed to allow dynamic estimation
         } as any);
         await waitForTx(hash);
         refetchAll();
@@ -159,8 +158,7 @@ export function useLiquidity({
           functionName: "approve",
           args: [ARC_V2_ROUTER as `0x${string}`, amount],
           chainId: ARC_CHAIN_ID,
-          gas: 800_000,
-          maxFeePerGas: parseUnits("200", 9),
+          // Gas limits removed
         } as any);
         await waitForTx(hash);
         refetchAll();
@@ -184,8 +182,7 @@ export function useLiquidity({
         functionName: "createPair",
         args: [addrA, addrB],
         chainId: ARC_CHAIN_ID,
-        gas: 2_500_000,
-        maxFeePerGas: parseUnits("200", 9),
+        // Gas limits removed
       } as any);
       await waitForTx(hash);
       refetchAll();
@@ -201,21 +198,27 @@ export function useLiquidity({
   const addLiquidity = useCallback(
     async (amountA: string, amountB: string, slippage: number) => {
       if (!tokenA || !tokenB || !userAddress) return;
+
+      const parsedA = parseUnits(amountA, tokenA.decimals);
+      const parsedB = parseUnits(amountB, tokenB.decimals);
+
+      // Explicit allowance check before attempting transaction
+      if ((allowanceA || 0n) < parsedA || (allowanceB || 0n) < parsedB) {
+        setErrorMessage("Insufficient allowance. Please approve both tokens first.");
+        setState("error");
+        return;
+      }
+
       setState("adding");
       setErrorMessage("");
+
       try {
-        const parsedA = parseUnits(amountA, tokenA.decimals);
-        const parsedB = parseUnits(amountB, tokenB.decimals);
         const slippageFactor = BigInt(Math.floor((1 - slippage / 100) * 10000));
         const minA = (parsedA * slippageFactor) / 10000n;
         const minB = (parsedB * slippageFactor) / 10000n;
         const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
 
-        if (!pairExists) {
-          await createPair();
-          await new Promise((r) => setTimeout(r, 5000));
-          await refetchAll();
-        }
+        // Removed manual createPair block
 
         const hash = await writeContractAsync({
           address: ARC_V2_ROUTER as `0x${string}`,
@@ -223,8 +226,7 @@ export function useLiquidity({
           functionName: "addLiquidity",
           args: [addrA, addrB, parsedA, parsedB, minA, minB, userAddress, deadline],
           chainId: ARC_CHAIN_ID,
-          gas: 2_500_000,
-          maxFeePerGas: parseUnits("200", 9),
+          // Gas limits removed
         } as any);
 
         setTxHash(hash);
@@ -237,7 +239,7 @@ export function useLiquidity({
         throw err;
       }
     },
-    [tokenA, tokenB, userAddress, addrA, addrB, pairExists, createPair, writeContractAsync, refetchAll],
+    [tokenA, tokenB, userAddress, addrA, addrB, allowanceA, allowanceB, writeContractAsync, refetchAll],
   );
 
   const removeLiquidity = useCallback(
@@ -257,8 +259,7 @@ export function useLiquidity({
           functionName: "removeLiquidity",
           args: [addrA, addrB, liquidityAmount, minA, minB, userAddress, deadline],
           chainId: ARC_CHAIN_ID,
-          gas: 1_800_000,
-          maxFeePerGas: parseUnits("200", 9),
+          // Gas limits removed
         } as any);
 
         setTxHash(hash);
