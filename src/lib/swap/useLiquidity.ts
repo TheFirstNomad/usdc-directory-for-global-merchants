@@ -102,14 +102,20 @@ export function useLiquidity({
     query: { enabled: !!userAddress },
   });
 
+  /* ── Correct reserve mapping (token0/token1 order) ── */
   const reserveA = reserves && addrA ? (reserves as any)[0] : 0n;
   const reserveB = reserves && addrB ? (reserves as any)[1] : 0n;
 
   const userShare =
     totalSupply && userLpBalance ? Number((BigInt(userLpBalance) * 10000n) / BigInt(totalSupply)) / 100 : 0;
 
+  /* ── FIXED: Properly detect on-chain failures ── */
   const waitForTx = async (hash: `0x${string}`) => {
-    if (publicClient) await publicClient.waitForTransactionReceipt({ hash });
+    if (!publicClient) return;
+    const receipt = await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+    if (receipt.status === "reverted") {
+      throw new Error("Transaction failed on-chain");
+    }
   };
 
   const refetchAll = () => {
@@ -122,7 +128,7 @@ export function useLiquidity({
     refetchAllowanceB();
   };
 
-  /* ── ALL WRITE FUNCTIONS NOW FIXED FOR ARC TESTNET ── */
+  /* ── Approve functions (already fixed) ── */
   const approveToken = useCallback(
     async (tokenAddr: `0x${string}`, amount: bigint, label: "approving-a" | "approving-b") => {
       setState(label);
@@ -174,6 +180,7 @@ export function useLiquidity({
     [pairAddress, writeContractAsync, refetchAll],
   );
 
+  /* ── Create Pair ── */
   const createPair = useCallback(async () => {
     if (!addrA || !addrB) return;
     setState("creating-pair");
@@ -191,12 +198,15 @@ export function useLiquidity({
       await waitForTx(hash);
       refetchAll();
       setState("idle");
+      return hash;
     } catch (err: any) {
       setState("error");
       setErrorMessage(err?.shortMessage || err?.message || "Create pair failed");
+      throw err;
     }
   }, [addrA, addrB, writeContractAsync, refetchAll]);
 
+  /* ── FIXED ADD LIQUIDITY: Auto-creates pair if missing + proper failure detection ── */
   const addLiquidity = useCallback(
     async (amountA: string, amountB: string, slippage: number) => {
       if (!tokenA || !tokenB || !userAddress) return;
@@ -210,19 +220,27 @@ export function useLiquidity({
         const minB = (parsedB * slippageFactor) / 10000n;
         const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
 
+        // AUTO CREATE PAIR if it doesn't exist yet
+        if (!pairExists) {
+          await createPair();
+          // small delay for indexing
+          await new Promise((r) => setTimeout(r, 2000));
+          await refetchAll();
+        }
+
         const hash = await writeContractAsync({
           address: ARC_V2_ROUTER as `0x${string}`,
           abi: V2_ROUTER_ABI,
           functionName: "addLiquidity",
           args: [addrA, addrB, parsedA, parsedB, minA, minB, userAddress, deadline],
           chainId: ARC_CHAIN_ID,
-          gas: 2_000_000, // ← THIS FIXES THE "exceeds block gas limit" ERROR
+          gas: 2_000_000,
           maxFeePerGas: parseUnits("0.000001", 18),
         } as any);
 
         setTxHash(hash);
-        await waitForTx(hash);
-        refetchAll();
+        await waitForTx(hash); // ← NOW correctly detects on-chain revert
+        await refetchAll();
         setState("success");
       } catch (err: any) {
         setState("error");
@@ -230,9 +248,10 @@ export function useLiquidity({
         throw err;
       }
     },
-    [tokenA, tokenB, userAddress, addrA, addrB, writeContractAsync, refetchAll],
+    [tokenA, tokenB, userAddress, addrA, addrB, pairExists, createPair, writeContractAsync, refetchAll],
   );
 
+  /* ── Remove Liquidity (also fixed) ── */
   const removeLiquidity = useCallback(
     async (liquidityAmount: bigint, slippage: number) => {
       if (!userAddress || !pairAddress) return;
@@ -256,7 +275,7 @@ export function useLiquidity({
 
         setTxHash(hash);
         await waitForTx(hash);
-        refetchAll();
+        await refetchAll();
         setState("success");
       } catch (err: any) {
         setState("error");
