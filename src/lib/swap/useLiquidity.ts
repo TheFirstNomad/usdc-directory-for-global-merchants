@@ -217,14 +217,6 @@ export function useLiquidity({
           await refetchAll();
         }
 
-        await publicClient.simulateContract({
-          address: ARC_V2_ROUTER as `0x${string}`,
-          abi: V2_ROUTER_ABI,
-          functionName: "addLiquidity",
-          args: [addrA, addrB, parsedA, parsedB, minA, minB, userAddress, deadline],
-          account: userAddress,
-        });
-
         const hash = await writeContractAsync({
           address: ARC_V2_ROUTER as `0x${string}`,
           abi: V2_ROUTER_ABI,
@@ -241,14 +233,11 @@ export function useLiquidity({
         setState("success");
       } catch (err: any) {
         setState("error");
-        // ← IMPROVED: shows the real contract revert reason
-        let msg = err?.cause?.reason || err?.shortMessage || err?.message || "Add liquidity failed";
-        setErrorMessage(msg);
-        console.error("🔴 Exact revert reason:", msg);
+        setErrorMessage(err?.shortMessage || err?.message || "Add liquidity failed");
         throw err;
       }
     },
-    [tokenA, tokenB, userAddress, addrA, addrB, pairExists, createPair, writeContractAsync, publicClient, refetchAll],
+    [tokenA, tokenB, userAddress, addrA, addrB, pairExists, createPair, writeContractAsync, refetchAll],
   );
 
   const removeLiquidity = useCallback(
