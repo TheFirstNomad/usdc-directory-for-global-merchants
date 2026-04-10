@@ -7,9 +7,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CHAINS, type SupportedChainId } from "@/lib/swap/chains";
 
-const CHAIN_ICONS: Record<SupportedChainId, { color: string; label: string }> = {
-  8453: { color: "bg-blue-500", label: "B" },
-  5042002: { color: "bg-purple-500", label: "A" },
+const CHAIN_ICONS: Record<SupportedChainId, { src: string; alt: string }> = {
+  8453: { src: "/chains/base.jpg", alt: "Base" },
+  5042002: { src: "/chains/arc.jpg", alt: "Arc" },
 };
 
 const ChainDropdown = ({
@@ -26,9 +26,7 @@ const ChainDropdown = ({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border/60 bg-card hover:bg-muted transition-colors text-sm font-medium text-foreground focus:outline-none">
-          <span className={`w-5 h-5 rounded-full ${icon.color} flex items-center justify-center text-[10px] font-bold text-white`}>
-            {icon.label}
-          </span>
+          <img src={icon.src} alt={icon.alt} className="w-5 h-5 rounded-full object-cover" />
           <span className="hidden sm:inline">{current.shortName}</span>
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         </button>
@@ -45,9 +43,7 @@ const ChainDropdown = ({
                 onClick={() => onChange(numId)}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer focus:bg-muted/60 data-[highlighted]:bg-muted/60"
               >
-                <span className={`w-7 h-7 rounded-full ${ci.color} flex items-center justify-center text-xs font-bold text-white shrink-0`}>
-                  {ci.label}
-                </span>
+                <img src={ci.src} alt={ci.alt} className="w-7 h-7 rounded-full object-cover shrink-0" />
                 <div className="flex flex-col flex-1 min-w-0">
                   <span className="text-sm font-semibold text-foreground">{chain.name}</span>
                   <span className="text-[11px] text-muted-foreground">

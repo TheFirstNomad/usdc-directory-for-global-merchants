@@ -103,7 +103,7 @@ const Swap = () => {
       : recErc20Bal != null ? formatUnits(recErc20Bal as bigint, receiveToken.decimals) : null;
 
   /* ── quote ── */
-  const { amountOut, isLoading: quoteLoading, error: quoteError, poolFee } = useQuote({
+  const { amountOut, isLoading: quoteLoading, error: quoteError, poolFee, isEstimate } = useQuote({
     tokenIn: payToken,
     tokenOut: receiveToken,
     amountIn: payAmount,
@@ -191,7 +191,7 @@ const Swap = () => {
   };
 
   const insufficientBalance = payBalance !== null && payAmountNum > 0 && payAmountNum > parseFloat(payBalance);
-  const swapDisabled = payAmountNum <= 0 || !amountOut || wrongChain || insufficientBalance;
+  const swapDisabled = payAmountNum <= 0 || (!amountOut && !isArcTestnet) || wrongChain || insufficientBalance;
 
   /* ── render ── */
   return (
@@ -400,8 +400,11 @@ const Swap = () => {
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </button>
               </div>
-              {quoteError && payAmountNum > 0 && (
+              {quoteError && payAmountNum > 0 && !isArcTestnet && (
                 <p className="text-xs text-red-400 mt-1.5">No liquidity found for this pair</p>
+              )}
+              {isEstimate && receiveAmountNum > 0 && (
+                <p className="text-xs text-yellow-400/70 mt-1.5">Estimated rate · Executed via Circle App Kit</p>
               )}
             </div>
 
