@@ -78,7 +78,7 @@ const chainMap: Record<string, Chain> = {
 };
 
 // ── Create adapter from the user's browser wallet (window.ethereum) ──
-export function createViemAdapterFromWallet(): ViemAdapter {
+export function createViemAdapterFromWallet(account: `0x${string}`): ViemAdapter {
   const provider = (window as any).ethereum;
   if (!provider) throw new Error("No wallet detected. Please install MetaMask or another Web3 wallet.");
 
@@ -91,6 +91,7 @@ export function createViemAdapterFromWallet(): ViemAdapter {
       getWalletClient: (({ chain }: { chain: any }) => {
         const viemChain = chainMap[chain as unknown as string] || viemArcTestnet;
         return createWalletClient({
+          account,
           chain: viemChain,
           transport: custom(provider),
         });
