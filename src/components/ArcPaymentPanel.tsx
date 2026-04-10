@@ -39,7 +39,7 @@ interface ArcPaymentPanelProps {
 
 const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelProps) => {
   const { toast } = useToast();
-  const { isConnected } = useAppKitAccount();
+  const { isConnected, address } = useAppKitAccount();
   const { open } = useAppKit();
 
   const [paying, setPaying] = useState(false);
