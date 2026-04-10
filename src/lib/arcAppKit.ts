@@ -69,6 +69,11 @@ export function toBlockchainEnum(chainId: PaymentChainId): typeof Blockchain.Bas
   return chainId === 8453 ? Blockchain.Base : Blockchain.Arc_Testnet;
 }
 
+// Map PaymentChainId → exact string literal the Circle API expects
+export function toChainString(chainId: PaymentChainId): "Base" | "Arc_Testnet" {
+  return chainId === 8453 ? "Base" : "Arc_Testnet";
+}
+
 export function getExplorerUrl(chainId: PaymentChainId, txHash: string): string {
   return chainId === 8453
     ? `https://basescan.org/tx/${txHash}`
@@ -182,7 +187,7 @@ export async function swapViaKit(
 ): Promise<{ txHash: string }> {
   try {
     const kit = getAppKit();
-    const chain = toBlockchainEnum(chainId);
+    const chain = toChainString(chainId);
     const result = await kit.swap({
       from: { adapter, chain },
       amountIn: amount,
