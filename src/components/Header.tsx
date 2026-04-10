@@ -6,7 +6,7 @@ import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useTheme } from "@/components/ThemeProvider";
 import { TREASURY_ADDRESS } from "@/lib/web3";
 import { useChainContext } from "@/contexts/ChainContext";
-import { CHAINS, type SupportedChainId } from "@/lib/swap/chains";
+import ChainDropdown from "@/components/ChainDropdown";
 
 const baseNavLinks = [
   { label: "Directory", href: "/" },
@@ -43,7 +43,7 @@ const Header = () => {
     open(isConnected ? { view: "Account" } : undefined);
   };
 
-  const chainIds = Object.keys(CHAINS).map(Number) as SupportedChainId[];
+  
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/40">
@@ -76,22 +76,7 @@ const Header = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
-          {/* Chain toggle */}
-          <div className="flex items-center p-0.5 rounded-lg bg-muted/30 border border-border/40">
-            {chainIds.map((id) => (
-              <button
-                key={id}
-                onClick={() => setChainId(id)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-200 ${
-                  chainId === id
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {CHAINS[id].shortName}
-              </button>
-            ))}
-          </div>
+          <ChainDropdown chainId={chainId} onChange={setChainId} />
 
           <button
             onClick={toggleTheme}
@@ -147,22 +132,7 @@ const Header = () => {
             </Link>
           ))}
           <div className="pt-3 space-y-2">
-            {/* Mobile chain toggle */}
-            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-muted/30 border border-border/40">
-              {chainIds.map((id) => (
-                <button
-                  key={id}
-                  onClick={() => setChainId(id)}
-                  className={`flex-1 px-3 py-2 rounded-md text-xs font-semibold transition-all ${
-                    chainId === id
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {CHAINS[id].shortName}
-                </button>
-              ))}
-            </div>
+            <ChainDropdown chainId={chainId} onChange={setChainId} />
             <button
               onClick={toggleTheme}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border border-border bg-card"
