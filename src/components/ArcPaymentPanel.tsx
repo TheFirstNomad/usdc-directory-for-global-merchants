@@ -1,10 +1,5 @@
 /**
- * ArcPaymentPanel – replaces the old NowPayments PaymentModal.
- *
- * Provides three actions:
- *  1. Bridge USDC from Base / other chain → Arc Testnet
- *  2. Pay 10 USDC listing fee on Arc Testnet
- *  3. (Optional) Swap USDC → EURC on Arc Testnet
+ * ArcPaymentPanel – Supports payments on both Base Mainnet and Arc Testnet.
  */
 
 import { useState } from "react";
@@ -19,19 +14,22 @@ import {
   ArrowDownUp,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { useAppKit } from "@reown/appkit/react";
 import {
   createViemAdapterFromWallet,
   payListingFee,
-  bridgeToArc,
-  swapUsdcToEurc,
-  TREASURY_ADDRESS,
+  bridgeUsdc,
+  swapViaKit,
+  getExplorerUrl,
+  getExplorerName,
+  getChainLabel,
+  type PaymentChainId,
 } from "@/lib/arcAppKit";
 import { Blockchain } from "@circle-fin/app-kit";
+import { useChainContext } from "@/contexts/ChainContext";
 
 interface ArcPaymentPanelProps {
-  /** "listing" = 10 USDC, "update" = 5 USDC */
   type: "listing" | "update";
   submissionData: Record<string, unknown>;
   onSuccess: (txHash: string) => void;
@@ -41,6 +39,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
   const { toast } = useToast();
   const { isConnected, address } = useAppKitAccount();
   const { open } = useAppKit();
+  const { chainId } = useChainContext();
 
   const [paying, setPaying] = useState(false);
   const [bridging, setBridging] = useState(false);
@@ -49,6 +48,9 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
   const [error, setError] = useState<string | null>(null);
 
   const fee = type === "listing" ? "10" : "5";
+  const paymentChainId = chainId as PaymentChainId;
+  const chainLabel = getChainLabel(paymentChainId);
+  const explorerName = getExplorerName(paymentChainId);
 
   // ── Pay listing fee ────────────────────────────────────────────────
   const handlePay = async () => {
@@ -56,12 +58,12 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
     setError(null);
     try {
       const adapter = createViemAdapterFromWallet(address as `0x${string}`);
-      const result = await payListingFee(adapter);
+      const result = await payListingFee(adapter, paymentChainId, fee);
       setTxHash(result.txHash);
       toast({ title: "Payment successful!", description: `Tx: ${result.txHash.slice(0, 12)}…` });
       onSuccess(result.txHash);
     } catch (err: any) {
-      const msg = err?.shortMessage || err?.message || "Payment failed";
+      const msg = err?.shortMessage || err?.message || `Payment failed on ${chainLabel}`;
       setError(msg);
       toast({ title: "Payment failed", description: msg, variant: "destructive" });
     } finally {
@@ -69,16 +71,23 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
     }
   };
 
-  // ── Bridge USDC to Arc ─────────────────────────────────────────────
+  // ── Bridge USDC ────────────────────────────────────────────────────
   const handleBridge = async () => {
     setBridging(true);
     setError(null);
     try {
       const adapter = createViemAdapterFromWallet(address as `0x${string}`);
-      const result = await bridgeToArc(adapter, Blockchain.Base, "15");
-      toast({ title: "Bridge initiated!", description: "USDC is being bridged to Arc Testnet. This may take 1-5 minutes." });
+      if (paymentChainId === 5042002) {
+        // Bridge from Ethereum Sepolia → Arc Testnet
+        await bridgeUsdc(adapter, Blockchain.Ethereum_Sepolia, Blockchain.Arc_Testnet, "15");
+        toast({ title: "Bridge initiated!", description: "USDC is being bridged to Arc Testnet. This may take 1-5 minutes." });
+      } else {
+        // Bridge from Ethereum Sepolia → Base
+        await bridgeUsdc(adapter, Blockchain.Ethereum_Sepolia, Blockchain.Base, "15");
+        toast({ title: "Bridge initiated!", description: "USDC is being bridged to Base. This may take 1-5 minutes." });
+      }
     } catch (err: any) {
-      const msg = err?.shortMessage || err?.message || "Bridge failed";
+      const msg = err?.shortMessage || err?.message || `Bridge failed on ${chainLabel}`;
       setError(msg);
       toast({ title: "Bridge failed", description: msg, variant: "destructive" });
     } finally {
@@ -86,16 +95,16 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
     }
   };
 
-  // ── Swap USDC → EURC ──────────────────────────────────────────────
+  // ── Swap USDC → EURC (Arc only) ───────────────────────────────────
   const handleSwap = async () => {
     setSwapping(true);
     setError(null);
     try {
       const adapter = createViemAdapterFromWallet(address as `0x${string}`);
-      await swapUsdcToEurc(adapter, "10");
-      toast({ title: "Swap complete!", description: "Swapped USDC → EURC on Arc Testnet" });
+      await swapViaKit(adapter, paymentChainId, "USDC", "EURC", "10");
+      toast({ title: "Swap complete!", description: `Swapped USDC → EURC on ${chainLabel}` });
     } catch (err: any) {
-      const msg = err?.shortMessage || err?.message || "Swap failed";
+      const msg = err?.shortMessage || err?.message || `Swap failed on ${chainLabel}`;
       setError(msg);
       toast({ title: "Swap failed", description: msg, variant: "destructive" });
     } finally {
@@ -119,7 +128,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
         </div>
         <h3 className="text-xl font-bold text-foreground">Payment Confirmed!</h3>
         <p className="text-sm text-muted-foreground">
-          Your {fee} USDC payment on Arc Testnet was successful.
+          Your {fee} USDC payment on {chainLabel} was successful.
         </p>
         <div className="bg-muted/50 rounded-xl p-3 flex items-center justify-between gap-2">
           <span className="text-xs font-mono text-muted-foreground truncate">{txHash}</span>
@@ -128,12 +137,12 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
           </button>
         </div>
         <a
-          href={`https://testnet.arcscan.app/tx/${txHash}`}
+          href={getExplorerUrl(paymentChainId, txHash)}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
         >
-          <ExternalLink className="h-3.5 w-3.5" /> View on ArcScan
+          <ExternalLink className="h-3.5 w-3.5" /> View on {explorerName}
         </a>
       </div>
     );
@@ -145,7 +154,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
       <div className="space-y-4 text-center">
         <h3 className="text-xl font-bold text-foreground">{fee} USDC</h3>
         <p className="text-sm text-muted-foreground">
-          {type === "listing" ? "One-time listing fee" : "One-time update fee"} — paid on Arc Testnet
+          {type === "listing" ? "One-time listing fee" : "One-time update fee"} — paid on {chainLabel}
         </p>
         <Button
           onClick={() => open()}
@@ -158,12 +167,16 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
   }
 
   // ── Main payment UI ────────────────────────────────────────────────
+  const bridgeLabel = paymentChainId === 5042002
+    ? "Bridge USDC from Sepolia → Arc Testnet"
+    : "Bridge USDC from Sepolia → Base";
+
   return (
     <div className="space-y-4">
       <div className="text-center mb-2">
         <h3 className="text-xl font-bold text-foreground">{fee} USDC</h3>
         <p className="text-sm text-muted-foreground">
-          {type === "listing" ? "One-time listing fee" : "One-time update fee"} on Arc Testnet
+          {type === "listing" ? "One-time listing fee" : "One-time update fee"} on {chainLabel}
         </p>
       </div>
 
@@ -176,7 +189,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
         {paying ? (
           <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Processing Payment…</>
         ) : (
-          <>💰 Pay {fee} USDC on Arc Testnet</>
+          <>💰 Pay {fee} USDC on {chainLabel}</>
         )}
       </Button>
 
@@ -190,24 +203,26 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
         {bridging ? (
           <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Bridging…</>
         ) : (
-          <><ArrowRightLeft className="h-4 w-4 mr-2" /> Bridge USDC from Base → Arc Testnet</>
+          <><ArrowRightLeft className="h-4 w-4 mr-2" /> {bridgeLabel}</>
         )}
       </Button>
 
-      {/* Tertiary: Swap button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleSwap}
-        disabled={paying || bridging || swapping}
-        className="w-full text-muted-foreground hover:text-foreground"
-      >
-        {swapping ? (
-          <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Swapping…</>
-        ) : (
-          <><ArrowDownUp className="h-3.5 w-3.5 mr-1.5" /> Swap USDC → EURC on Arc</>
-        )}
-      </Button>
+      {/* Tertiary: Swap button (Arc only) */}
+      {paymentChainId === 5042002 && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSwap}
+          disabled={paying || bridging || swapping}
+          className="w-full text-muted-foreground hover:text-foreground"
+        >
+          {swapping ? (
+            <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Swapping…</>
+          ) : (
+            <><ArrowDownUp className="h-3.5 w-3.5 mr-1.5" /> Swap USDC → EURC on Arc</>
+          )}
+        </Button>
+      )}
 
       {error && (
         <p className="text-sm text-destructive text-center">{error}</p>
@@ -215,7 +230,8 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
 
       <div className="bg-muted/50 rounded-xl p-4">
         <p className="text-xs text-muted-foreground">
-          🔵 Payments are processed on Arc Testnet using Circle's App Kit. Need USDC on Arc? Use the Bridge button above to move USDC from Base or other chains.
+          🔵 Payments are processed on <strong>{chainLabel}</strong> using Circle's App Kit. 
+          Need USDC? Use the Bridge button above to move USDC from other chains.
         </p>
       </div>
     </div>

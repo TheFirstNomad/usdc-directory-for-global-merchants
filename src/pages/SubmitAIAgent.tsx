@@ -8,10 +8,19 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAccount } from "wagmi";
-import { createViemAdapterFromWallet, payListingFee } from "@/lib/arcAppKit";
+import {
+  createViemAdapterFromWallet,
+  payListingFee,
+  getExplorerUrl,
+  getExplorerName,
+  getChainLabel,
+  type PaymentChainId,
+} from "@/lib/arcAppKit";
+import { useChainContext } from "@/contexts/ChainContext";
 
 const SubmitAIAgent = () => {
   const { address, isConnected } = useAccount();
+  const { chainId } = useChainContext();
   const [agentName, setAgentName] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [description, setDescription] = useState("");
@@ -19,6 +28,10 @@ const SubmitAIAgent = () => {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
   const [success, setSuccess] = useState<{ txHash: string; explorerUrl: string } | null>(null);
+
+  const paymentChainId = chainId as PaymentChainId;
+  const chainLabel = getChainLabel(paymentChainId);
+  const explorerName = getExplorerName(paymentChainId);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -56,14 +69,11 @@ const SubmitAIAgent = () => {
 
     setPaying(true);
     try {
-      // 1. Pay 10 USDC via Arc App Kit
       const adapter = createViemAdapterFromWallet(address as `0x${string}`);
-      const { txHash, explorerUrl } = await payListingFee(adapter);
+      const { txHash, explorerUrl } = await payListingFee(adapter, paymentChainId);
 
-      // 2. Upload logo if provided
       const logoUrl = await uploadLogo();
 
-      // 3. Create submission via edge function
       const { error } = await supabase.functions.invoke("submit-ai-agent", {
         body: {
           agent_name: agentName.trim(),
@@ -80,7 +90,7 @@ const SubmitAIAgent = () => {
       toast.success("AI Agent listed successfully!");
     } catch (err: any) {
       console.error("Submit error:", err);
-      toast.error(err.message || "Payment or submission failed");
+      toast.error(err.message || `Payment or submission failed on ${chainLabel}`);
     } finally {
       setPaying(false);
     }
@@ -124,7 +134,7 @@ const SubmitAIAgent = () => {
               </div>
               <Button asChild variant="outline" className="rounded-xl">
                 <a href={success.explorerUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4 mr-2" /> View on Explorer
+                  <ExternalLink className="h-4 w-4 mr-2" /> View on {explorerName}
                 </a>
               </Button>
             </div>
@@ -138,7 +148,7 @@ const SubmitAIAgent = () => {
                   🤖 List Your AI Agent — 10 USDC
                 </h1>
                 <p className="text-muted-foreground text-base max-w-md mx-auto">
-                  Pay 10 USDC on Arc Testnet. Fully autonomous, any wallet.
+                  Pay 10 USDC on {chainLabel}. Fully autonomous, any wallet.
                 </p>
               </div>
 
@@ -190,7 +200,7 @@ const SubmitAIAgent = () => {
                         Processing…
                       </span>
                     ) : (
-                      "Pay 10 USDC & List Instantly"
+                      `Pay 10 USDC on ${chainLabel} & List`
                     )}
                   </Button>
                 )}
