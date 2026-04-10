@@ -27,7 +27,7 @@ export const ARC_KIT_KEY =
 // ── Treasury wallet for listing payments ─────────────────────────────
 export const TREASURY_ADDRESS: `0x${string}` =
   (import.meta.env.VITE_TREASURY_ADDRESS as `0x${string}`) ||
-  "0x13FA78ab20762c8F49B58D44DBc177d2Adb94D7c";
+  "0x13fA78AB20762c8F49B58D44dbC177d2adB94D7C";
 
 // ── Supported chains ─────────────────────────────────────────────────
 export const SUPPORTED_CHAINS = [ArcTestnet, Base, EthereumSepolia] as const;
