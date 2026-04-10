@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS, NETWORKS } from "@/lib/partners";
 import { CheckCircle2, ArrowRight, ArrowLeft, Upload, Eye } from "lucide-react";
+import { useAppKitAccount } from "@reown/appkit/react";
 
 
 const STEPS = [
@@ -121,9 +122,8 @@ const Submit = () => {
     if (step > 0) setStep(step - 1);
   };
 
-  const handlePaymentSuccess = (id: string) => {
-    setOrderId(id);
-    setShowPayment(false);
+  const handlePaymentSuccess = (txHash: string) => {
+    setOrderId(txHash);
     setSubmitted(true);
   };
 
@@ -352,24 +352,12 @@ const Submit = () => {
 
           {step === 4 && (
             <div className="space-y-6">
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 text-center">
-                <h3 className="text-xl font-bold text-foreground mb-1">10 USDC</h3>
-                <p className="text-sm text-muted-foreground mb-4">One-time listing fee</p>
-                {isConnected ? (
-                  <Button
-                    onClick={() => setShowPayment(true)}
-                    className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold px-8 py-3 rounded-xl text-base"
-                  >
-                    Pay & List Your Business
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => open()}
-                    className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold px-8 py-3 rounded-xl text-base"
-                  >
-                    <Wallet className="h-5 w-5 mr-2" /> Connect Wallet to Pay
-                  </Button>
-                )}
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
+                <ArcPaymentPanel
+                  type="listing"
+                  submissionData={submissionData}
+                  onSuccess={handlePaymentSuccess}
+                />
               </div>
               <div className="bg-card border border-border rounded-xl p-4">
                 <h4 className="font-semibold text-foreground text-sm mb-2">What you get:</h4>
@@ -397,15 +385,6 @@ const Submit = () => {
       </main>
 
       <Footer />
-
-      {showPayment && (
-        <PaymentModal
-          type="listing"
-          submissionData={submissionData}
-          onSuccess={handlePaymentSuccess}
-          onClose={() => setShowPayment(false)}
-        />
-      )}
     </div>
   );
 };
