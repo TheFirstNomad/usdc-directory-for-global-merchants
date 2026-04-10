@@ -19,7 +19,7 @@ import {
   ArrowDownUp,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAppKitAccount } from "@reown/appkit/react";
+import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { useAppKit } from "@reown/appkit/react";
 import {
   createViemAdapterFromWallet,

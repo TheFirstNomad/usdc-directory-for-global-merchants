@@ -57,7 +57,7 @@ const SubmitAIAgent = () => {
     setPaying(true);
     try {
       // 1. Pay 10 USDC via Arc App Kit
-      const adapter = createViemAdapterFromWallet();
+      const adapter = createViemAdapterFromWallet(address as `0x${string}`);
       const { txHash, explorerUrl } = await payListingFee(adapter);
 
       // 2. Upload logo if provided
