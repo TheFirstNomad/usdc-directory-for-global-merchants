@@ -133,22 +133,6 @@ const Insights = () => {
           </div>
         )}
 
-        {/* Circle Alliance Spotlight */}
-        <div className="bg-gradient-to-r from-primary/[0.08] to-[hsl(275,100%,25%)]/[0.06] border border-primary/20 rounded-2xl p-8 text-center">
-          <h2 className="text-xl font-bold text-foreground mb-2">Circle Alliance Spotlight</h2>
-          <p className="text-muted-foreground text-sm max-w-lg mx-auto mb-4">
-            USDC Directory curates verified merchants from Circle's global partner ecosystem.
-            Over 300 companies integrate USDC through the Circle Alliance program.
-          </p>
-          <a
-            href="https://partners.circle.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary font-semibold text-sm hover:underline"
-          >
-            Explore Circle Alliance →
-          </a>
-        </div>
       </main>
 
       <Footer />

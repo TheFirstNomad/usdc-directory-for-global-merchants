@@ -18,6 +18,7 @@ import AdminPayments from "./pages/AdminPayments.tsx";
 import SubmitAIAgent from "./pages/SubmitAIAgent.tsx";
 import AIAgents from "./pages/AIAgents.tsx";
 import Swap from "./pages/Swap.tsx";
+import Bridge from "./pages/Bridge.tsx";
 import AdminFeatured from "./pages/AdminFeatured.tsx";
 import AdminListings from "./pages/AdminListings.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/submit/ai-agent" element={<SubmitAIAgent />} />
             <Route path="/ai-agents" element={<AIAgents />} />
             <Route path="/swap" element={<Swap />} />
+            <Route path="/bridge" element={<Bridge />} />
             <Route path="/insights" element={<Insights />} />
             <Route path="/merchant/:id" element={<MerchantDetail />} />
             <Route path="/edit/:id" element={<EditListing />} />
