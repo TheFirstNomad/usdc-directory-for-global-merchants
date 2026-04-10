@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import PaymentModal from "@/components/PaymentModal";
+import ArcPaymentPanel from "@/components/ArcPaymentPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -92,8 +92,8 @@ const EditListing = () => {
     return true;
   };
 
-  const handlePaymentSuccess = (id: string) => {
-    setOrderId(id);
+  const handlePaymentSuccess = (txHash: string) => {
+    setOrderId(txHash);
     setShowPayment(false);
     setSubmitted(true);
   };
@@ -228,37 +228,16 @@ const EditListing = () => {
           </div>
         </div>
 
-        <div className="mt-10 bg-primary/5 border border-primary/20 rounded-xl p-6 text-center">
-          <h3 className="text-xl font-bold text-foreground mb-1">5 USDC</h3>
-          <p className="text-sm text-muted-foreground mb-4">One-time update fee</p>
-          {isConnected ? (
-            <Button
-              onClick={() => { if (!validate()) return; setShowPayment(true); }}
-              className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold px-8 py-3 rounded-xl text-base"
-            >
-              Pay & Update Listing
-            </Button>
-          ) : (
-            <Button
-              onClick={() => open()}
-              className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold px-8 py-3 rounded-xl text-base"
-            >
-              <Wallet className="h-5 w-5 mr-2" /> Connect Wallet to Pay
-            </Button>
-          )}
+        <div className="mt-10 bg-primary/5 border border-primary/20 rounded-xl p-6">
+          <ArcPaymentPanel
+            type="update"
+            submissionData={submissionData}
+            onSuccess={handlePaymentSuccess}
+          />
         </div>
       </main>
 
       <Footer />
-
-      {showPayment && (
-        <PaymentModal
-          type="update"
-          submissionData={submissionData}
-          onSuccess={handlePaymentSuccess}
-          onClose={() => setShowPayment(false)}
-        />
-      )}
     </div>
   );
 };
