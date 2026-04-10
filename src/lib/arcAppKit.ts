@@ -187,7 +187,7 @@ export async function swapViaKit(
 ): Promise<{ txHash: string }> {
   try {
     const kit = getAppKit();
-    const chain = toBlockchainEnum(chainId);
+    const chain = toChainString(chainId);
     const result = await kit.swap({
       from: { adapter, chain },
       amountIn: amount,
