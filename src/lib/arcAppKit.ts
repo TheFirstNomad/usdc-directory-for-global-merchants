@@ -159,7 +159,7 @@ export async function swapUsdcToEurc(
   const kit = getAppKit();
   const result = await kit.swap({
     from: { adapter, chain: Blockchain.Arc_Testnet },
-    amount,
+    amountIn: amount,
     tokenIn: "USDC",
     tokenOut: "EURC",
   });
