@@ -43,6 +43,11 @@ createAppKit({
   features: {
     email: false,
     socials: false,
+    swaps: false,
+    send: false,
+    receive: false,
+    onramp: false,
+    history: false,
   },
 });
 

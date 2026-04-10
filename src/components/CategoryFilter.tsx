@@ -1,4 +1,4 @@
-import { CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS, NETWORKS } from "@/lib/partners";
+import { CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS } from "@/lib/partners";
 
 interface CategoryFilterProps {
   selectedCategories: string[];
