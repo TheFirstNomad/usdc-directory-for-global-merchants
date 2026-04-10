@@ -84,17 +84,17 @@ export function createViemAdapterFromWallet(): ViemAdapter {
 
   return new ViemAdapter(
     {
-      getPublicClient: ({ chain }) => {
+      getPublicClient: (({ chain }: { chain: any }) => {
         const viemChain = chainMap[chain as unknown as string] || viemArcTestnet;
         return createPublicClient({ chain: viemChain, transport: http() });
-      },
-      getWalletClient: ({ chain }) => {
+      }) as any,
+      getWalletClient: (({ chain }: { chain: any }) => {
         const viemChain = chainMap[chain as unknown as string] || viemArcTestnet;
         return createWalletClient({
           chain: viemChain,
           transport: custom(provider),
         });
-      },
+      }) as any,
     },
     {
       addressContext: "user-controlled",
