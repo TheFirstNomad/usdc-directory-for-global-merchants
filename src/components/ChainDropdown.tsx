@@ -1,0 +1,69 @@
+import { Check, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { CHAINS, type SupportedChainId } from "@/lib/swap/chains";
+
+const CHAIN_ICONS: Record<SupportedChainId, { color: string; label: string }> = {
+  8453: { color: "bg-blue-500", label: "B" },
+  5042002: { color: "bg-purple-500", label: "A" },
+};
+
+const ChainDropdown = ({
+  chainId,
+  onChange,
+}: {
+  chainId: SupportedChainId;
+  onChange: (id: SupportedChainId) => void;
+}) => {
+  const current = CHAINS[chainId];
+  const icon = CHAIN_ICONS[chainId];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border/60 bg-card hover:bg-muted transition-colors text-sm font-medium text-foreground focus:outline-none">
+          <span className={`w-5 h-5 rounded-full ${icon.color} flex items-center justify-center text-[10px] font-bold text-white`}>
+            {icon.label}
+          </span>
+          <span className="hidden sm:inline">{current.shortName}</span>
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56 rounded-xl border border-border/60 bg-card p-1.5 shadow-xl shadow-black/20">
+        {(Object.entries(CHAINS) as [string, (typeof CHAINS)[SupportedChainId]][]).map(
+          ([id, chain]) => {
+            const numId = Number(id) as SupportedChainId;
+            const active = numId === chainId;
+            const ci = CHAIN_ICONS[numId];
+            return (
+              <DropdownMenuItem
+                key={id}
+                onClick={() => onChange(numId)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer focus:bg-muted/60 data-[highlighted]:bg-muted/60"
+              >
+                <span className={`w-7 h-7 rounded-full ${ci.color} flex items-center justify-center text-xs font-bold text-white shrink-0`}>
+                  {ci.label}
+                </span>
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="text-sm font-semibold text-foreground">{chain.name}</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {numId === 8453 ? "Production · Low fees" : "Testnet · No real value"}
+                  </span>
+                </div>
+                {active && (
+                  <Check className="h-4 w-4 text-primary shrink-0" />
+                )}
+              </DropdownMenuItem>
+            );
+          }
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
+export default ChainDropdown;
