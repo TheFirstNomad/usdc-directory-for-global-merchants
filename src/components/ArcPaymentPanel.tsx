@@ -19,7 +19,7 @@ import {
   ArrowDownUp,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAppKitAccount } from "@reown/appkit/react";
+import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { useAppKit } from "@reown/appkit/react";
 import {
   createViemAdapterFromWallet,
@@ -39,7 +39,7 @@ interface ArcPaymentPanelProps {
 
 const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelProps) => {
   const { toast } = useToast();
-  const { isConnected } = useAppKitAccount();
+  const { isConnected, address } = useAppKitAccount();
   const { open } = useAppKit();
 
   const [paying, setPaying] = useState(false);
@@ -55,7 +55,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
     setPaying(true);
     setError(null);
     try {
-      const adapter = createViemAdapterFromWallet();
+      const adapter = createViemAdapterFromWallet(address as `0x${string}`);
       const result = await payListingFee(adapter);
       setTxHash(result.txHash);
       toast({ title: "Payment successful!", description: `Tx: ${result.txHash.slice(0, 12)}…` });
@@ -74,7 +74,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
     setBridging(true);
     setError(null);
     try {
-      const adapter = createViemAdapterFromWallet();
+      const adapter = createViemAdapterFromWallet(address as `0x${string}`);
       const result = await bridgeToArc(adapter, Blockchain.Base, "15");
       toast({ title: "Bridge initiated!", description: "USDC is being bridged to Arc Testnet. This may take 1-5 minutes." });
     } catch (err: any) {
@@ -91,7 +91,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
     setSwapping(true);
     setError(null);
     try {
-      const adapter = createViemAdapterFromWallet();
+      const adapter = createViemAdapterFromWallet(address as `0x${string}`);
       await swapUsdcToEurc(adapter, "10");
       toast({ title: "Swap complete!", description: "Swapped USDC → EURC on Arc Testnet" });
     } catch (err: any) {
