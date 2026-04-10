@@ -16,7 +16,7 @@ import {
   http,
   type Chain,
 } from "viem";
-import { arcTestnet } from "./swap/chains";
+
 
 // ── Client-side publishable key ──────────────────────────────────────
 // This is NOT a secret — it's a publishable kit key safe for the browser.
