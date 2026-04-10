@@ -1,6 +1,6 @@
 import { useReadContract } from "wagmi";
 import { parseUnits } from "viem";
-import { UNISWAP_V3_QUOTER_V2, QUOTER_V2_ABI, ARC_V2_ROUTER, V2_ROUTER_ABI } from "./contracts";
+import { UNISWAP_V3_QUOTER_V2, QUOTER_V2_ABI } from "./contracts";
 import type { TokenInfo } from "./tokens";
 import { WETH_ADDRESS, getPoolFee } from "./tokens";
 
@@ -56,36 +56,31 @@ export function useQuote({
     query: { enabled: shouldFetchV3, refetchInterval: 15_000 },
   });
 
-  // ── V2 quote (Arc Testnet) ──
-  // On Arc, both USDC and EURC are ERC-20 tokens — use their addresses directly
-  const v2TokenIn = tokenIn?.address as `0x${string}`;
-  const v2TokenOut = tokenOut?.address as `0x${string}`;
-
-  const shouldFetchV2 =
-    enabled && isArc && !!tokenIn && !!tokenOut &&
-    amountInParsed > 0n && v2TokenIn !== v2TokenOut;
-
-  const v2Path = shouldFetchV2 ? [v2TokenIn, v2TokenOut] : [];
-
-  const { data: v2Data, isLoading: v2Loading, error: v2Error } = useReadContract({
-    address: ARC_V2_ROUTER,
-    abi: V2_ROUTER_ABI,
-    functionName: "getAmountsOut",
-    args: shouldFetchV2 ? [amountInParsed, v2Path as `0x${string}`[]] : undefined,
-    chainId: 5042002,
-    query: { enabled: shouldFetchV2, refetchInterval: 15_000 },
-  });
-
-  // ── Return unified result ──
+  // ── Arc Testnet: Use 1:1 stablecoin estimate (no on-chain V2 liquidity available) ──
+  // Arc Testnet USDC/EURC swaps are executed via Circle App Kit's built-in swap,
+  // so we provide an estimated quote here for display purposes.
   if (isArc) {
-    const amounts = v2Data as bigint[] | undefined;
-    const amountOut = amounts && amounts.length >= 2 ? amounts[amounts.length - 1] : null;
+    const bothStable = tokenIn?.isStable && tokenOut?.isStable;
+    // For USDC/EURC, approximate 1:1.08 rate (or inverse)
+    let estimatedOut: bigint | null = null;
+    if (amountInParsed > 0n && tokenIn && tokenOut && bothStable) {
+      if (tokenIn.symbol === "USDC" && tokenOut.symbol === "EURC") {
+        // 1 USDC ≈ 0.926 EURC (1/1.08)
+        estimatedOut = (amountInParsed * 926n) / 1000n;
+      } else if (tokenIn.symbol === "EURC" && tokenOut.symbol === "USDC") {
+        // 1 EURC ≈ 1.08 USDC
+        estimatedOut = (amountInParsed * 1080n) / 1000n;
+      } else {
+        estimatedOut = amountInParsed; // same stablecoin fallback
+      }
+    }
     return {
-      amountOut,
+      amountOut: estimatedOut,
       gasEstimate: null,
-      isLoading: shouldFetchV2 && v2Loading,
-      error: v2Error,
-      poolFee: 3000, // V2 uses 0.3% fee
+      isLoading: false,
+      error: null,
+      poolFee: 3000,
+      isEstimate: true, // flag that this is an estimate, not on-chain
     };
   }
 
@@ -97,5 +92,6 @@ export function useQuote({
     isLoading: shouldFetchV3 && v3Loading,
     error: v3Error,
     poolFee,
+    isEstimate: false,
   };
 }
