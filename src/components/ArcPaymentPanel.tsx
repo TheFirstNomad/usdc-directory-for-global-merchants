@@ -55,7 +55,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
     setPaying(true);
     setError(null);
     try {
-      const adapter = createViemAdapterFromWallet();
+      const adapter = createViemAdapterFromWallet(address as `0x${string}`);
       const result = await payListingFee(adapter);
       setTxHash(result.txHash);
       toast({ title: "Payment successful!", description: `Tx: ${result.txHash.slice(0, 12)}…` });
@@ -74,7 +74,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
     setBridging(true);
     setError(null);
     try {
-      const adapter = createViemAdapterFromWallet();
+      const adapter = createViemAdapterFromWallet(address as `0x${string}`);
       const result = await bridgeToArc(adapter, Blockchain.Base, "15");
       toast({ title: "Bridge initiated!", description: "USDC is being bridged to Arc Testnet. This may take 1-5 minutes." });
     } catch (err: any) {
@@ -91,7 +91,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
     setSwapping(true);
     setError(null);
     try {
-      const adapter = createViemAdapterFromWallet();
+      const adapter = createViemAdapterFromWallet(address as `0x${string}`);
       await swapUsdcToEurc(adapter, "10");
       toast({ title: "Swap complete!", description: "Swapped USDC → EURC on Arc Testnet" });
     } catch (err: any) {
