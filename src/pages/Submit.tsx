@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS, NETWORKS } from "@/lib/partners";
+import { CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS } from "@/lib/partners";
 import { CheckCircle2, ArrowRight, ArrowLeft, Upload, Eye } from "lucide-react";
 import { useAppKitAccount } from "@reown/appkit/react";
 
