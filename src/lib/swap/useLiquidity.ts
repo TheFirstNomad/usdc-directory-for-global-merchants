@@ -162,8 +162,8 @@ export function useLiquidity({
   });
 
   const pairToken0Address = pairToken0 as `0x${string}` | undefined;
-  const reserve0 = reserves ? (reserves as readonly [bigint, bigint, bigint])[0] : 0n;
-  const reserve1 = reserves ? (reserves as readonly [bigint, bigint, bigint])[1] : 0n;
+  const reserve0 = reserves ? (reserves as unknown as readonly [bigint, bigint, bigint])[0] : 0n;
+  const reserve1 = reserves ? (reserves as unknown as readonly [bigint, bigint, bigint])[1] : 0n;
   const inferredToken0 = addrA && addrB
     ? (addrA.toLowerCase() < addrB.toLowerCase() ? addrA : addrB)
     : undefined;
