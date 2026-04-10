@@ -42,7 +42,9 @@ const Swap = () => {
   const walletChainId = useChainId();
   const { switchChain } = useSwitchChain();
 
-  const [selectedChainId, setSelectedChainId] = useState<SupportedChainId>(8453);
+  const { chainId: globalChainId, setChainId: setGlobalChainId } = useChainContext();
+
+  const [selectedChainId, setSelectedChainId] = useState<SupportedChainId>(globalChainId);
   const [activeTab, setActiveTab] = useState("swap");
   const tokens = TOKENS_BY_CHAIN[selectedChainId] ?? [];
   const [payToken, setPayToken] = useState<TokenInfo>(tokens[0]);
