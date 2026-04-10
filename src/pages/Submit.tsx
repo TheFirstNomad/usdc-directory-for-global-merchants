@@ -15,7 +15,6 @@ import { useAppKitAccount } from "@reown/appkit/react";
 
 const STEPS = [
   { title: "Business Info", description: "Tell us about your business" },
-  { title: "Networks", description: "Which chains do you accept USDC on?" },
   { title: "Location", description: "Where are your customers?" },
   { title: "Preview", description: "Review your listing before payment" },
   { title: "Payment", description: "Pay 10 USDC to list" },
@@ -38,8 +37,7 @@ const Submit = () => {
     website: "",
     description: "",
     categories: [] as string[],
-    region: "Global",
-    networks: [] as string[],
+    region: "",
     presence_type: "Online Only",
     city: "",
     country: "",
@@ -54,14 +52,6 @@ const Submit = () => {
         : [...f.categories, cat],
     }));
 
-  const toggleNetwork = (net: string) =>
-    setForm((f) => ({
-      ...f,
-      networks: f.networks.includes(net)
-        ? f.networks.filter((n) => n !== net)
-        : [...f.networks, net],
-    }));
-
   const validateStep = (): boolean => {
     if (step === 0) {
       if (!form.company_name || !form.description) {
@@ -72,10 +62,6 @@ const Submit = () => {
         toast({ title: "Please select at least one category", variant: "destructive" });
         return false;
       }
-    }
-    if (step === 1 && form.networks.length === 0) {
-      toast({ title: "Please select at least one network", variant: "destructive" });
-      return false;
     }
     return true;
   };
@@ -107,7 +93,6 @@ const Submit = () => {
 
   const nextStep = async () => {
     if (!validateStep()) return;
-    // Upload logo when moving past step 0
     if (step === 0 && form.logo_file && !logoUrl) {
       if (!isConnected) {
         toast({ title: "Please connect wallet to upload logo", variant: "destructive" });
@@ -134,7 +119,6 @@ const Submit = () => {
     description: form.description,
     categories: form.categories,
     region: form.region,
-    networks: form.networks,
     logo_url: logoUrl,
   };
 
@@ -200,6 +184,7 @@ const Submit = () => {
         </div>
 
         <div>
+          {/* Step 0: Business Info */}
           {step === 0 && (
             <div className="space-y-4">
               <div>
@@ -216,7 +201,7 @@ const Submit = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">Country / Region</label>
-                <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="e.g. Uganda, United States (optional)" maxLength={100} />
+                <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="e.g. United States, Nigeria (optional)" maxLength={100} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">Description *</label>
@@ -258,22 +243,8 @@ const Submit = () => {
             </div>
           )}
 
+          {/* Step 1: Location */}
           {step === 1 && (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">Select all blockchain networks where you accept USDC.</p>
-              <div className="grid grid-cols-2 gap-3">
-                {NETWORKS.map((net) => (
-                  <button key={net} type="button" onClick={() => toggleNetwork(net)} className={`p-4 rounded-xl border text-sm font-medium transition-all ${
-                    form.networks.includes(net) ? "bg-primary/10 border-primary text-primary" : "bg-card border-border text-muted-foreground hover:border-primary/40"
-                  }`}>
-                    {net}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Business Presence</label>
@@ -303,19 +274,19 @@ const Submit = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Country</label>
-                    <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="Uganda" maxLength={100} />
+                    <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="e.g. United States" maxLength={100} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">City</label>
-                    <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Kampala" maxLength={100} />
+                    <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="e.g. New York" maxLength={100} />
                   </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* Preview Step */}
-          {step === 3 && (
+          {/* Step 2: Preview */}
+          {step === 2 && (
             <div className="space-y-6">
               <div className="bg-card border border-border rounded-2xl p-6">
                 <div className="flex items-center gap-4 mb-4">
@@ -335,12 +306,9 @@ const Submit = () => {
                     </span>
                   ))}
                 </div>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {form.networks.map((net) => (
-                    <span key={net} className="text-xs bg-muted text-muted-foreground px-2.5 py-1 rounded-full font-medium">⛓ {net}</span>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">📍 {REGION_FLAGS[form.region] || "📍"} {form.region}</p>
+                {form.region && (
+                  <p className="text-xs text-muted-foreground">📍 {REGION_FLAGS[form.region] || "📍"} {form.region}</p>
+                )}
               </div>
 
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
@@ -350,7 +318,8 @@ const Submit = () => {
             </div>
           )}
 
-          {step === 4 && (
+          {/* Step 3: Payment */}
+          {step === 3 && (
             <div className="space-y-6">
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
                 <ArcPaymentPanel
@@ -378,7 +347,7 @@ const Submit = () => {
           </Button>
           {step < STEPS.length - 1 && (
             <Button onClick={nextStep} disabled={uploadingLogo} className="bg-primary text-primary-foreground hover:bg-primary/90">
-              {uploadingLogo ? "Uploading…" : "Continue"} <ArrowRight className="h-4 w-4 ml-1" />
+              {uploadingLogo ? "Uploading…" : "Next"} <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           )}
         </div>
