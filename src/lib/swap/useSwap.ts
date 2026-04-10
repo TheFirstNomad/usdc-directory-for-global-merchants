@@ -11,18 +11,31 @@ import { encodeFunctionData } from "viem";
 
 export type SwapState = "idle" | "approving" | "swapping" | "success" | "error";
 
+const ARC_CHAIN_ID = 5042002;
+const ARC_SAFE_GAS = 2_500_000;
+const ARC_MAX_FEE_PER_GAS = parseUnits("200", 9);
+
+const normalizeErrorMessage = (message: string) =>
+  message
+    .replace(/^execution reverted:?\s*/i, "")
+    .replace(/^The contract function "[^"]+" reverted with the following reason:\s*/i, "")
+    .trim();
+
 const getReadableSwapError = (error: any) => {
   const combinedMessage = [
+    error?.cause?.reason,
     error?.shortMessage,
     error?.message,
     error?.details,
     error?.cause?.shortMessage,
     error?.cause?.message,
+    error?.cause?.details,
   ]
     .filter(Boolean)
     .join(" | ");
 
-  const normalized = combinedMessage.toLowerCase();
+  const normalizedMessage = normalizeErrorMessage(combinedMessage);
+  const normalized = normalizedMessage.toLowerCase();
 
   if (normalized.includes("user rejected") || normalized.includes("rejected the request") || normalized.includes("user denied")) {
     return "Transaction cancelled in wallet.";
@@ -42,10 +55,10 @@ const getReadableSwapError = (error: any) => {
   }
 
   if (normalized.includes("reverted") || normalized.includes("execution reverted")) {
-    return "Swap reverted on-chain. Try a smaller amount or refresh the quote.";
+    return normalizedMessage || "Swap reverted on-chain. Try a smaller amount or refresh the quote.";
   }
 
-  return error?.shortMessage || error?.message || "Swap failed";
+  return normalizedMessage || error?.shortMessage || error?.message || "Swap failed";
 };
 
 export function useSwap({
@@ -117,7 +130,11 @@ export function useSwap({
         abi: ERC20_ABI,
         functionName: "approve",
         args: [routerAddress as `0x${string}`, amountInParsed],
+        account: userAddress,
         chainId,
+        ...(chainId === ARC_CHAIN_ID
+          ? { gas: ARC_SAFE_GAS, maxFeePerGas: ARC_MAX_FEE_PER_GAS }
+          : {}),
       } as any);
       if (publicClient) {
         await publicClient.waitForTransactionReceipt({ hash });
@@ -153,7 +170,10 @@ export function useSwap({
           abi: V2_ROUTER_ABI,
           functionName: "swapExactTokensForTokens",
           args: [amountInParsed, amountOutMin, path, userAddress, deadline],
-          chainId: 5042002,
+          account: userAddress,
+          chainId: ARC_CHAIN_ID,
+          gas: ARC_SAFE_GAS,
+          maxFeePerGas: ARC_MAX_FEE_PER_GAS,
         } as any);
 
         setTxHash(hash);
@@ -204,6 +224,7 @@ export function useSwap({
           functionName: "multicall",
           args: [deadline, calls],
           value: isNativeIn ? amountInParsed : undefined,
+          account: userAddress,
           chainId: 8453,
         } as any);
 

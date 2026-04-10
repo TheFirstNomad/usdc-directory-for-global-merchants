@@ -5,11 +5,13 @@ import { ARC_V2_ROUTER, ARC_V2_FACTORY, V2_ROUTER_ABI, V2_FACTORY_ABI, V2_PAIR_A
 import type { TokenInfo } from "./tokens";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as `0x${string}`;
+const ARC_NATIVE_USDC = "0x3600000000000000000000000000000000000000" as `0x${string}`;
 const ARC_CHAIN_ID = 5042002;
 const ARC_SAFE_GAS = 2_500_000;
 const ARC_MAX_FEE_PER_GAS = parseUnits("200", 9);
 const PAIR_SYNC_ATTEMPTS = 8;
 const PAIR_SYNC_DELAY_MS = 2000;
+const DEFAULT_DEADLINE_SECONDS = 1800;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -21,16 +23,38 @@ const normalizeErrorMessage = (message: string) =>
 
 const getReadableLiquidityError = (err: unknown) => {
   const error = err as any;
-  const rawMessage =
-    error?.cause?.reason ||
-    error?.cause?.shortMessage ||
-    error?.shortMessage ||
-    error?.details ||
-    error?.message ||
-    "Transaction failed";
+  const rawMessage = [
+    error?.cause?.reason,
+    error?.cause?.shortMessage,
+    error?.cause?.details,
+    error?.shortMessage,
+    error?.details,
+    error?.message,
+  ]
+    .find(Boolean);
 
-  return normalizeErrorMessage(String(rawMessage)) || "Transaction failed";
+  const message = normalizeErrorMessage(String(rawMessage ?? ""));
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("user rejected") || normalized.includes("user denied") || normalized.includes("rejected the request")) {
+    return "Transaction cancelled in wallet.";
+  }
+
+  if (normalized.includes("network fee unavailable")) {
+    return "Network fee unavailable. Arc could not estimate gas for this transaction; recheck approvals, pair state, and native USDC amount.";
+  }
+
+  return message || "Transaction failed";
 };
+
+const getSlippageFactor = (slippage: number) => {
+  const boundedSlippage = Number.isFinite(slippage) ? Math.min(Math.max(slippage, 0), 100) : 0;
+  return BigInt(Math.max(0, 10000 - Math.floor(boundedSlippage * 100)));
+};
+
+const getDeadline = () => BigInt(Math.floor(Date.now() / 1000) + DEFAULT_DEADLINE_SECONDS);
+
+const isArcNativeToken = (token: TokenInfo | null) => token?.address === ARC_NATIVE_USDC;
 
 export type LiquidityState =
   | "idle"
@@ -59,8 +83,12 @@ export function useLiquidity({
   const publicClient = usePublicClient({ chainId: ARC_CHAIN_ID });
   const { writeContractAsync } = useWriteContract();
 
-  const addrA = tokenA?.address as `0x${string}`;
-  const addrB = tokenB?.address as `0x${string}`;
+  const isNativeA = isArcNativeToken(tokenA);
+  const isNativeB = isArcNativeToken(tokenB);
+  const addrA = tokenA?.address as `0x${string}` | undefined;
+  const addrB = tokenB?.address as `0x${string}` | undefined;
+  const amountDecimalsA = isNativeA ? 18 : tokenA?.decimals ?? 18;
+  const amountDecimalsB = isNativeB ? 18 : tokenB?.decimals ?? 18;
 
   const { data: pairAddress, refetch: refetchPair } = useReadContract({
     address: ARC_V2_FACTORY,
@@ -77,6 +105,14 @@ export function useLiquidity({
     address: pairAddress as `0x${string}`,
     abi: V2_PAIR_ABI,
     functionName: "getReserves",
+    chainId: ARC_CHAIN_ID,
+    query: { enabled: pairExists },
+  });
+
+  const { data: pairToken0, refetch: refetchPairToken0 } = useReadContract({
+    address: pairAddress as `0x${string}`,
+    abi: V2_PAIR_ABI,
+    functionName: "token0",
     chainId: ARC_CHAIN_ID,
     query: { enabled: pairExists },
   });
@@ -108,25 +144,32 @@ export function useLiquidity({
   });
 
   const { data: allowanceA, refetch: refetchAllowanceA } = useReadContract({
-    address: addrA,
+    address: isNativeA ? undefined : addrA,
     abi: ERC20_ABI,
     functionName: "allowance",
     args: userAddress ? [userAddress, ARC_V2_ROUTER as `0x${string}`] : undefined,
     chainId: ARC_CHAIN_ID,
-    query: { enabled: !!userAddress },
+    query: { enabled: !!userAddress && !!addrA && !isNativeA },
   });
 
   const { data: allowanceB, refetch: refetchAllowanceB } = useReadContract({
-    address: addrB,
+    address: isNativeB ? undefined : addrB,
     abi: ERC20_ABI,
     functionName: "allowance",
     args: userAddress ? [userAddress, ARC_V2_ROUTER as `0x${string}`] : undefined,
     chainId: ARC_CHAIN_ID,
-    query: { enabled: !!userAddress },
+    query: { enabled: !!userAddress && !!addrB && !isNativeB },
   });
 
-  const reserveA = reserves && addrA ? (reserves as any)[0] : 0n;
-  const reserveB = reserves && addrB ? (reserves as any)[1] : 0n;
+  const pairToken0Address = pairToken0 as `0x${string}` | undefined;
+  const reserve0 = reserves ? (reserves as readonly [bigint, bigint, bigint])[0] : 0n;
+  const reserve1 = reserves ? (reserves as readonly [bigint, bigint, bigint])[1] : 0n;
+  const inferredToken0 = addrA && addrB
+    ? (addrA.toLowerCase() < addrB.toLowerCase() ? addrA : addrB)
+    : undefined;
+  const token0Address = pairToken0Address ?? inferredToken0;
+  const reserveA = token0Address && addrA && token0Address.toLowerCase() === addrA.toLowerCase() ? reserve0 : reserve1;
+  const reserveB = token0Address && addrA && token0Address.toLowerCase() === addrA.toLowerCase() ? reserve1 : reserve0;
 
   const userShare =
     totalSupply && userLpBalance ? Number((BigInt(userLpBalance) * 10000n) / BigInt(totalSupply)) / 100 : 0;
@@ -137,12 +180,17 @@ export function useLiquidity({
     }
 
     const receipt = await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
-    if (receipt.status === "reverted") throw new Error("Transaction failed on-chain");
+    if (receipt.status === "reverted") {
+      throw new Error("Transaction reverted on-chain after wallet confirmation.");
+    }
+
+    return receipt;
   }, [publicClient]);
 
   const refetchAll = useCallback(async () => {
     await Promise.allSettled([
       refetchPair(),
+      refetchPairToken0(),
       refetchReserves(),
       refetchTotalSupply(),
       refetchLpBalance(),
@@ -156,6 +204,7 @@ export function useLiquidity({
     refetchLpAllowance,
     refetchLpBalance,
     refetchPair,
+    refetchPairToken0,
     refetchReserves,
     refetchTotalSupply,
   ]);
@@ -194,10 +243,11 @@ export function useLiquidity({
 
   const approveToken = useCallback(
     async (tokenAddr: `0x${string}`, amount: bigint, label: "approving-a" | "approving-b") => {
-      if (!userAddress) return;
+      if (!userAddress || amount <= 0n || tokenAddr === ARC_NATIVE_USDC) return;
 
       setState(label);
       setErrorMessage("");
+      setTxHash(undefined);
 
       try {
         const hash = await writeContractAsync({
@@ -224,10 +274,11 @@ export function useLiquidity({
 
   const approveLp = useCallback(
     async (amount: bigint) => {
-      if (!pairAddress || !userAddress) return;
+      if (!pairAddress || !userAddress || amount <= 0n) return;
 
       setState("approving-lp");
       setErrorMessage("");
+      setTxHash(undefined);
 
       try {
         const hash = await writeContractAsync({
@@ -256,8 +307,13 @@ export function useLiquidity({
     async ({ allowExistingPair = false, preserveState = false }: { allowExistingPair?: boolean; preserveState?: boolean } = {}) => {
       if (!addrA || !addrB || !userAddress) return;
 
+      if (addrA.toLowerCase() === addrB.toLowerCase()) {
+        throw new Error("Select two different tokens before creating a pair.");
+      }
+
       if (!preserveState) {
         setState("creating-pair");
+        setTxHash(undefined);
       }
 
       setErrorMessage("");
@@ -308,6 +364,7 @@ export function useLiquidity({
 
       setState("adding");
       setErrorMessage("");
+      setTxHash(undefined);
 
       try {
         const normalizedAmountA = amountA.trim();
@@ -317,18 +374,21 @@ export function useLiquidity({
           throw new Error("Enter both token amounts before adding liquidity.");
         }
 
-        const parsedA = parseUnits(normalizedAmountA, tokenA.decimals);
-        const parsedB = parseUnits(normalizedAmountB, tokenB.decimals);
+        if (addrA.toLowerCase() === addrB.toLowerCase()) {
+          throw new Error("Select two different tokens before adding liquidity.");
+        }
+
+        const parsedA = parseUnits(normalizedAmountA, amountDecimalsA);
+        const parsedB = parseUnits(normalizedAmountB, amountDecimalsB);
 
         if (parsedA <= 0n || parsedB <= 0n) {
           throw new Error("Liquidity amounts must be greater than zero.");
         }
 
-        const boundedSlippage = Number.isFinite(slippage) ? Math.min(Math.max(slippage, 0), 100) : 0;
-        const slippageFactor = BigInt(Math.max(0, 10000 - Math.floor(boundedSlippage * 100)));
+        const slippageFactor = getSlippageFactor(slippage);
         const minA = (parsedA * slippageFactor) / 10000n;
         const minB = (parsedB * slippageFactor) / 10000n;
-        const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
+        const deadline = getDeadline();
 
         if (!pairExists) {
           await createPairInternal({ allowExistingPair: true, preserveState: true });
@@ -337,16 +397,43 @@ export function useLiquidity({
           setState("adding");
         }
 
-        const hash = await writeContractAsync({
-          address: ARC_V2_ROUTER as `0x${string}`,
-          abi: V2_ROUTER_ABI,
-          functionName: "addLiquidity",
-          args: [addrA, addrB, parsedA, parsedB, minA, minB, userAddress, deadline],
-          account: userAddress,
-          chainId: ARC_CHAIN_ID,
-          gas: ARC_SAFE_GAS,
-          maxFeePerGas: ARC_MAX_FEE_PER_GAS,
-        } as any);
+        const nativeSides = Number(isNativeA) + Number(isNativeB);
+        let hash: `0x${string}`;
+
+        if (nativeSides > 1) {
+          throw new Error("Only one native USDC side is supported on Arc Testnet.");
+        }
+
+        if (isNativeA || isNativeB) {
+          const tokenAddress = (isNativeA ? addrB : addrA) as `0x${string}`;
+          const tokenDesired = isNativeA ? parsedB : parsedA;
+          const tokenMin = isNativeA ? minB : minA;
+          const nativeDesired = isNativeA ? parsedA : parsedB;
+          const nativeMin = isNativeA ? minA : minB;
+
+          hash = await writeContractAsync({
+            address: ARC_V2_ROUTER as `0x${string}`,
+            abi: V2_ROUTER_ABI,
+            functionName: "addLiquidityETH",
+            args: [tokenAddress, tokenDesired, tokenMin, nativeMin, userAddress, deadline],
+            value: nativeDesired,
+            account: userAddress,
+            chainId: ARC_CHAIN_ID,
+            gas: ARC_SAFE_GAS,
+            maxFeePerGas: ARC_MAX_FEE_PER_GAS,
+          } as any);
+        } else {
+          hash = await writeContractAsync({
+            address: ARC_V2_ROUTER as `0x${string}`,
+            abi: V2_ROUTER_ABI,
+            functionName: "addLiquidity",
+            args: [addrA, addrB, parsedA, parsedB, minA, minB, userAddress, deadline],
+            account: userAddress,
+            chainId: ARC_CHAIN_ID,
+            gas: ARC_SAFE_GAS,
+            maxFeePerGas: ARC_MAX_FEE_PER_GAS,
+          } as any);
+        }
 
         setTxHash(hash);
         await waitForTx(hash);
@@ -364,7 +451,11 @@ export function useLiquidity({
       userAddress,
       addrA,
       addrB,
+      amountDecimalsA,
+      amountDecimalsB,
       pairExists,
+      isNativeA,
+      isNativeB,
       createPairInternal,
       waitForPairSync,
       writeContractAsync,
@@ -375,27 +466,55 @@ export function useLiquidity({
 
   const removeLiquidity = useCallback(
     async (liquidityAmount: bigint, slippage: number) => {
-      if (!userAddress || !pairAddress) return;
+      if (!userAddress || !pairAddress || !addrA || !addrB) return;
 
       setState("removing");
       setErrorMessage("");
+      setTxHash(undefined);
 
       try {
-        const slippageFactor = BigInt(Math.floor((1 - slippage / 100) * 10000));
-        const minA = (reserveA * liquidityAmount * slippageFactor) / (totalSupply || 1n) / 10000n;
-        const minB = (reserveB * liquidityAmount * slippageFactor) / (totalSupply || 1n) / 10000n;
-        const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
+        if (liquidityAmount <= 0n) {
+          throw new Error("Enter an LP amount greater than zero.");
+        }
 
-        const hash = await writeContractAsync({
-          address: ARC_V2_ROUTER as `0x${string}`,
-          abi: V2_ROUTER_ABI,
-          functionName: "removeLiquidity",
-          args: [addrA, addrB, liquidityAmount, minA, minB, userAddress, deadline],
-          account: userAddress,
-          chainId: ARC_CHAIN_ID,
-          gas: 1_800_000,
-          maxFeePerGas: ARC_MAX_FEE_PER_GAS,
-        } as any);
+        if (!totalSupply || totalSupply <= 0n) {
+          throw new Error("Pool total supply unavailable. Refresh and try again.");
+        }
+
+        const slippageFactor = getSlippageFactor(slippage);
+        const minA = (reserveA * liquidityAmount * slippageFactor) / totalSupply / 10000n;
+        const minB = (reserveB * liquidityAmount * slippageFactor) / totalSupply / 10000n;
+        const deadline = getDeadline();
+
+        let hash: `0x${string}`;
+
+        if (isNativeA || isNativeB) {
+          const tokenAddress = (isNativeA ? addrB : addrA) as `0x${string}`;
+          const tokenMin = isNativeA ? minB : minA;
+          const nativeMin = isNativeA ? minA : minB;
+
+          hash = await writeContractAsync({
+            address: ARC_V2_ROUTER as `0x${string}`,
+            abi: V2_ROUTER_ABI,
+            functionName: "removeLiquidityETH",
+            args: [tokenAddress, liquidityAmount, tokenMin, nativeMin, userAddress, deadline],
+            account: userAddress,
+            chainId: ARC_CHAIN_ID,
+            gas: ARC_SAFE_GAS,
+            maxFeePerGas: ARC_MAX_FEE_PER_GAS,
+          } as any);
+        } else {
+          hash = await writeContractAsync({
+            address: ARC_V2_ROUTER as `0x${string}`,
+            abi: V2_ROUTER_ABI,
+            functionName: "removeLiquidity",
+            args: [addrA, addrB, liquidityAmount, minA, minB, userAddress, deadline],
+            account: userAddress,
+            chainId: ARC_CHAIN_ID,
+            gas: ARC_SAFE_GAS,
+            maxFeePerGas: ARC_MAX_FEE_PER_GAS,
+          } as any);
+        }
 
         setTxHash(hash);
         await waitForTx(hash);
@@ -407,7 +526,7 @@ export function useLiquidity({
         throw err;
       }
     },
-    [userAddress, pairAddress, addrA, addrB, reserveA, reserveB, totalSupply, writeContractAsync, waitForTx, refetchAll],
+    [userAddress, pairAddress, addrA, addrB, reserveA, reserveB, totalSupply, isNativeA, isNativeB, writeContractAsync, waitForTx, refetchAll],
   );
 
   const reset = useCallback(() => {
@@ -435,8 +554,8 @@ export function useLiquidity({
     addLiquidity,
     removeLiquidity,
     reset,
-    isNativeA: false,
-    isNativeB: false,
+    isNativeA,
+    isNativeB,
     addrA,
     addrB,
   };
