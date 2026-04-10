@@ -63,11 +63,12 @@ const Swap = () => {
   /* ── chain switch ── */
   const handleChainChange = useCallback((id: SupportedChainId) => {
     setSelectedChainId(id);
+    setGlobalChainId(id);
     const t = TOKENS_BY_CHAIN[id] ?? [];
     setPayToken(t[0]);
     setReceiveToken(t[1] ?? t[0]);
     setPayAmount("");
-  }, []);
+  }, [setGlobalChainId]);
 
   /* ── balances ── */
   const { data: nativeBalance } = useBalance({
