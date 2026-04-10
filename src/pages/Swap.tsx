@@ -8,7 +8,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
-import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useBalance, useReadContract, useChainId, useSwitchChain } from "wagmi";
 import { formatUnits } from "viem";
 
@@ -44,7 +43,7 @@ const Swap = () => {
   const { chainId: globalChainId, setChainId: setGlobalChainId } = useChainContext();
 
   const [selectedChainId, setSelectedChainId] = useState<SupportedChainId>(globalChainId);
-  const [activeTab, setActiveTab] = useState("swap");
+  const tokens = TOKENS_BY_CHAIN[selectedChainId] ?? [];
   const tokens = TOKENS_BY_CHAIN[selectedChainId] ?? [];
   const [payToken, setPayToken] = useState<TokenInfo>(tokens[0]);
   const [receiveToken, setReceiveToken] = useState<TokenInfo>(tokens[1] ?? tokens[0]);
@@ -211,22 +210,6 @@ const Swap = () => {
             <ChainSelector chainId={selectedChainId} onChange={handleChainChange} />
           </div>
 
-          {/* Top-level Swap / Liquidity tabs (Liquidity only on Arc) */}
-          {isArcTestnet && (
-            <div className="w-full max-w-[460px] mb-5">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="w-full">
-                  <TabsTrigger value="swap" className="flex-1 gap-1.5">
-                    <ArrowDownUp className="h-3.5 w-3.5" /> Swap
-                  </TabsTrigger>
-                  <TabsTrigger value="liquidity" className="flex-1 gap-1.5">
-                    <Droplets className="h-3.5 w-3.5" /> Liquidity
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          )}
-
           {/* Testnet banner */}
           {isArcTestnet && (
             <div className="w-full max-w-[460px] mb-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 flex items-start gap-3 animate-fade-in">
@@ -249,14 +232,9 @@ const Swap = () => {
               </div>
             </div>
           )}
-          {/* ── Liquidity Tab ── */}
-          {isArcTestnet && activeTab === "liquidity" && (
-            <LiquidityPanel />
-          )}
 
-
-          {/* ── Swap Tab ── */}
-          {(!isArcTestnet || activeTab === "swap") && (<>
+          {/* ── Swap UI ── */}
+          {(<>
           {/* Popular pairs */}
           {popularPairs.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-5 justify-center">
