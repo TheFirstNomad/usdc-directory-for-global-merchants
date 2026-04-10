@@ -23,6 +23,7 @@ import { CHAINS, type SupportedChainId } from "@/lib/swap/chains";
 import { ERC20_ABI } from "@/lib/swap/contracts";
 import { useQuote } from "@/lib/swap/useQuote";
 import { useSwap } from "@/lib/swap/useSwap";
+import { useChainContext } from "@/contexts/ChainContext";
 
 /* rough fiat prices for display */
 const FIAT_PRICES: Record<string, number> = {
@@ -41,7 +42,9 @@ const Swap = () => {
   const walletChainId = useChainId();
   const { switchChain } = useSwitchChain();
 
-  const [selectedChainId, setSelectedChainId] = useState<SupportedChainId>(8453);
+  const { chainId: globalChainId, setChainId: setGlobalChainId } = useChainContext();
+
+  const [selectedChainId, setSelectedChainId] = useState<SupportedChainId>(globalChainId);
   const [activeTab, setActiveTab] = useState("swap");
   const tokens = TOKENS_BY_CHAIN[selectedChainId] ?? [];
   const [payToken, setPayToken] = useState<TokenInfo>(tokens[0]);
@@ -60,11 +63,12 @@ const Swap = () => {
   /* ── chain switch ── */
   const handleChainChange = useCallback((id: SupportedChainId) => {
     setSelectedChainId(id);
+    setGlobalChainId(id);
     const t = TOKENS_BY_CHAIN[id] ?? [];
     setPayToken(t[0]);
     setReceiveToken(t[1] ?? t[0]);
     setPayAmount("");
-  }, []);
+  }, [setGlobalChainId]);
 
   /* ── balances ── */
   const { data: nativeBalance } = useBalance({
