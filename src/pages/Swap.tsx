@@ -44,7 +44,6 @@ const Swap = () => {
 
   const [selectedChainId, setSelectedChainId] = useState<SupportedChainId>(globalChainId);
   const tokens = TOKENS_BY_CHAIN[selectedChainId] ?? [];
-  const tokens = TOKENS_BY_CHAIN[selectedChainId] ?? [];
   const [payToken, setPayToken] = useState<TokenInfo>(tokens[0]);
   const [receiveToken, setReceiveToken] = useState<TokenInfo>(tokens[1] ?? tokens[0]);
   const [payAmount, setPayAmount] = useState("");
