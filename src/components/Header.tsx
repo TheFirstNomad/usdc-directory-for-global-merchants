@@ -11,10 +11,10 @@ import ChainDropdown from "@/components/ChainDropdown";
 const baseNavLinks = [
   { label: "Directory", href: "/" },
   { label: "Swap", href: "/swap" },
+  { label: "Bridge", href: "/bridge" },
   { label: "AI Agents", href: "/ai-agents" },
   { label: "Map", href: "/map" },
   { label: "My Listings", href: "/my-listings" },
-  { label: "About USDC", href: "/about" },
   { label: "Insights", href: "/insights" },
 ];
 
