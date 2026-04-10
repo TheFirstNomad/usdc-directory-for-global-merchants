@@ -3,16 +3,13 @@ import { useSearchParams } from "react-router-dom";
 import SEO from "@/components/SEO";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import PaymentModal from "@/components/PaymentModal";
+import ArcPaymentPanel from "@/components/ArcPaymentPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS, NETWORKS } from "@/lib/partners";
 import { CheckCircle2, ArrowRight, ArrowLeft, Upload, Eye } from "lucide-react";
-import { useAppKitAccount } from "@reown/appkit/react";
-import { useAppKit } from "@reown/appkit/react";
-import { Wallet } from "lucide-react";
 
 
 const STEPS = [
