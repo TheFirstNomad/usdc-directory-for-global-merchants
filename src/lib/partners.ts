@@ -95,11 +95,6 @@ export const REGIONS = [
   "Asia",
   "North America",
   "South America",
-  "Uganda",
-  "Kampala",
-  "Kenya",
-  "Nigeria",
-  "South Africa",
   "Other",
 ];
 
@@ -110,21 +105,5 @@ export const REGION_FLAGS: Record<string, string> = {
   Asia: "🌏",
   "North America": "🇺🇸",
   "South America": "🌎",
-  Uganda: "🇺🇬",
-  Kampala: "🇺🇬",
-  Kenya: "🇰🇪",
-  Nigeria: "🇳🇬",
-  "South Africa": "🇿🇦",
   Other: "📍",
 };
-
-export const NETWORKS = [
-  "Ethereum",
-  "Base",
-  "Solana",
-  "Polygon",
-  "Arbitrum",
-  "Noble",
-  "Avalanche",
-  "Arc",
-];

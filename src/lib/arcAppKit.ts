@@ -83,6 +83,17 @@ export function getChainLabel(chainId: PaymentChainId): string {
   return chainId === 8453 ? "Base Mainnet" : "Arc Testnet";
 }
 
+// ── Friendly error messages ─────────────────────────────────────────
+function friendlyError(err: any, chainId: PaymentChainId): string {
+  const raw = err?.shortMessage || err?.message || "";
+  const chain = getChainLabel(chainId);
+  if (raw.includes("user rejected") || raw.includes("User denied")) return "Transaction was cancelled.";
+  if (raw.includes("insufficient funds") || raw.includes("exceeds balance")) return `Insufficient USDC balance on ${chain}. Please bridge funds first.`;
+  if (raw.includes("kitKey") || raw.includes("validation")) return `Configuration error. Please try again or switch to ${chain === "Arc Testnet" ? "Base Mainnet" : "Arc Testnet"}.`;
+  if (raw.includes("disconnected") || raw.includes("wallet")) return "Wallet disconnected. Please reconnect and try again.";
+  return raw || `Transaction failed on ${chain}. Please try again.`;
+}
+
 // ── Create adapter from the user's browser wallet ────────────────────
 export function createViemAdapterFromWallet(account: `0x${string}`): ViemAdapter {
   const provider = (window as any).ethereum;
@@ -110,7 +121,9 @@ export function createViemAdapterFromWallet(account: `0x${string}`): ViemAdapter
 let _kit: AppKit | null = null;
 
 export function getAppKit(): AppKit {
-  if (!_kit) { _kit = new AppKit(); }
+  if (!_kit) {
+    _kit = new AppKit({ kitKey: ARC_KIT_KEY } as any);
+  }
   return _kit;
 }
 
@@ -120,17 +133,21 @@ export async function payListingFee(
   chainId: PaymentChainId = 5042002,
   amount: string = "10"
 ): Promise<{ txHash: string; explorerUrl: string }> {
-  const kit = getAppKit();
-  const chain = toBlockchainEnum(chainId);
-  const result = await kit.send({
-    from: { adapter, chain },
-    to: TREASURY_ADDRESS,
-    amount,
-    token: "USDC",
-  });
+  try {
+    const kit = getAppKit();
+    const chain = toBlockchainEnum(chainId);
+    const result = await kit.send({
+      from: { adapter, chain },
+      to: TREASURY_ADDRESS,
+      amount,
+      token: "USDC",
+    });
 
-  const txHash = (result as any).txHash || (result as any).transactionHash || String(result);
-  return { txHash, explorerUrl: getExplorerUrl(chainId, txHash) };
+    const txHash = (result as any).txHash || (result as any).transactionHash || String(result);
+    return { txHash, explorerUrl: getExplorerUrl(chainId, txHash) };
+  } catch (err: any) {
+    throw new Error(friendlyError(err, chainId));
+  }
 }
 
 // ── Helper: Bridge USDC between chains ───────────────────────────────
@@ -140,16 +157,20 @@ export async function bridgeUsdc(
   destChain: typeof Blockchain.Base | typeof Blockchain.Ethereum_Sepolia | typeof Blockchain.Arc_Testnet,
   amount: string
 ): Promise<{ txHash: string }> {
-  const kit = getAppKit();
-  const result = await kit.bridge({
-    from: { adapter, chain: sourceChain },
-    to: { adapter, chain: destChain },
-    amount,
-    token: "USDC",
-  });
+  try {
+    const kit = getAppKit();
+    const result = await kit.bridge({
+      from: { adapter, chain: sourceChain },
+      to: { adapter, chain: destChain },
+      amount,
+      token: "USDC",
+    });
 
-  const txHash = (result as any).txHash || (result as any).transactionHash || String(result);
-  return { txHash };
+    const txHash = (result as any).txHash || (result as any).transactionHash || String(result);
+    return { txHash };
+  } catch (err: any) {
+    throw new Error(friendlyError(err, 5042002));
+  }
 }
 
 // ── Helper: Swap on any supported chain ──────────────────────────────
@@ -160,17 +181,21 @@ export async function swapViaKit(
   tokenOut: string,
   amount: string
 ): Promise<{ txHash: string }> {
-  const kit = getAppKit();
-  const chain = toBlockchainEnum(chainId);
-  const result = await kit.swap({
-    from: { adapter, chain },
-    amountIn: amount,
-    tokenIn,
-    tokenOut,
-  });
+  try {
+    const kit = getAppKit();
+    const chain = toBlockchainEnum(chainId);
+    const result = await kit.swap({
+      from: { adapter, chain },
+      amountIn: amount,
+      tokenIn,
+      tokenOut,
+    });
 
-  const txHash = (result as any).txHash || (result as any).transactionHash || String(result);
-  return { txHash };
+    const txHash = (result as any).txHash || (result as any).transactionHash || String(result);
+    return { txHash };
+  } catch (err: any) {
+    throw new Error(friendlyError(err, chainId));
+  }
 }
 
 // ── Legacy wrappers (backward compat) ────────────────────────────────
