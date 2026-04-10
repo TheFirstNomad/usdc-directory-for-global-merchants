@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bot, Upload, ExternalLink, Zap, CheckCircle2 } from "lucide-react";
+import { Bot, Upload, CheckCircle2, Copy, ExternalLink } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
@@ -7,15 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAccount } from "wagmi";
+import { createViemAdapterFromWallet, payListingFee } from "@/lib/arcAppKit";
 
 const SubmitAIAgent = () => {
+  const { address, isConnected } = useAccount();
   const [agentName, setAgentName] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [description, setDescription] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState<{ orderId: string; invoiceUrl: string } | null>(null);
+  const [paying, setPaying] = useState(false);
+  const [success, setSuccess] = useState<{ txHash: string; explorerUrl: string } | null>(null);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -29,9 +32,10 @@ const SubmitAIAgent = () => {
   };
 
   const uploadLogo = async (): Promise<string | null> => {
-    if (!logoFile) return null;
+    if (!logoFile || !walletAddress) return null;
     const formData = new FormData();
     formData.append("file", logoFile);
+    formData.append("wallet_address", walletAddress.trim());
     const { data, error } = await supabase.functions.invoke("upload-logo", { body: formData });
     if (error) {
       console.error("Logo upload error:", error);
@@ -45,53 +49,40 @@ const SubmitAIAgent = () => {
       toast.error("Please fill in all required fields");
       return;
     }
-    if (agentName.trim().length > 100) {
-      toast.error("Agent name must be under 100 characters");
-      return;
-    }
-    if (walletAddress.trim().length > 256) {
-      toast.error("Wallet address is too long");
-      return;
-    }
-    if (description.trim().length > 300) {
-      toast.error("Description must be under 300 characters");
+    if (!isConnected) {
+      toast.error("Please connect your wallet first");
       return;
     }
 
-    setSubmitting(true);
+    setPaying(true);
     try {
+      // 1. Pay 10 USDC via Arc App Kit
+      const adapter = createViemAdapterFromWallet();
+      const { txHash, explorerUrl } = await payListingFee(adapter);
+
+      // 2. Upload logo if provided
       const logoUrl = await uploadLogo();
 
-      const { data, error } = await supabase.functions.invoke("create-nowpayments-invoice", {
+      // 3. Create submission via edge function
+      const { error } = await supabase.functions.invoke("submit-ai-agent", {
         body: {
-          type: "listing",
+          agent_name: agentName.trim(),
           wallet_address: walletAddress.trim(),
-          submission_data: {
-            company_name: agentName.trim(),
-            contact_email: "ai-agent@autonomous",
-            website: "",
-            description: description.trim(),
-            categories: ["AI Agents"],
-            region: "Global",
-            networks: [],
-            logo_url: logoUrl,
-          },
+          description: description.trim(),
+          logo_url: logoUrl,
+          payment_tx: txHash,
         },
       });
 
       if (error) throw error;
 
-      if (data?.invoice_url) {
-        setSuccess({ orderId: data.order_id, invoiceUrl: data.invoice_url });
-        window.open(data.invoice_url, "_blank");
-      } else {
-        throw new Error("No invoice URL returned");
-      }
+      setSuccess({ txHash, explorerUrl });
+      toast.success("AI Agent listed successfully!");
     } catch (err: any) {
       console.error("Submit error:", err);
-      toast.error(err.message || "Failed to create listing");
+      toast.error(err.message || "Payment or submission failed");
     } finally {
-      setSubmitting(false);
+      setPaying(false);
     }
   };
 
@@ -111,67 +102,60 @@ const SubmitAIAgent = () => {
               <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="h-8 w-8 text-green-500" />
               </div>
-              <h1 className="text-2xl font-bold text-foreground">Payment Initiated!</h1>
+              <h1 className="text-2xl font-bold text-foreground">Listed Successfully!</h1>
               <p className="text-muted-foreground">
-                Complete the payment and your AI agent listing will go live instantly — no approval needed.
+                Your AI agent is now live in the directory.
               </p>
-              <p className="text-xs text-muted-foreground font-mono">Order: {success.orderId}</p>
-              <Button asChild className="w-full bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold rounded-xl">
-                <a href={success.invoiceUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4 mr-2" /> Complete Payment
+              <div className="flex items-center justify-center gap-2">
+                <code className="text-xs bg-muted px-2 py-1 rounded font-mono truncate max-w-[200px]">
+                  {success.txHash}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    navigator.clipboard.writeText(success.txHash);
+                    toast.success("Copied!");
+                  }}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <Button asChild variant="outline" className="rounded-xl">
+                <a href={success.explorerUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4 mr-2" /> View on Explorer
                 </a>
               </Button>
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Header */}
               <div className="text-center space-y-3">
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
                   <Bot className="h-8 w-8 text-primary" />
                 </div>
                 <h1 className="text-3xl md:text-4xl font-extrabold text-foreground">
-                  🤖 List Your Autonomous AI Agent — 10 USDC
+                  🤖 List Your AI Agent — 10 USDC
                 </h1>
                 <p className="text-muted-foreground text-base max-w-md mx-auto">
-                  Fully autonomous. Works with any chain (Base, Solana, Bitcoin, Ethereum, etc.). Your agent can do this entirely by itself.
+                  Pay 10 USDC on Arc Testnet. Fully autonomous, any wallet.
                 </p>
               </div>
 
-              {/* Form */}
               <div className="bg-card border border-border rounded-3xl p-6 md:p-8 space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">Agent Name / Handle *</label>
-                  <Input
-                    placeholder="e.g. PayBot3000"
-                    value={agentName}
-                    onChange={(e) => setAgentName(e.target.value)}
-                    maxLength={100}
-                    className="rounded-xl h-12"
-                  />
+                  <label className="text-sm font-semibold text-foreground">Agent Name *</label>
+                  <Input placeholder="e.g. PayBot3000" value={agentName} onChange={(e) => setAgentName(e.target.value)} maxLength={100} className="rounded-xl h-12" />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">
-                    Agent Wallet or Contract Address (any chain) *
-                  </label>
-                  <Input
-                    placeholder="0x... or sol1... or bc1..."
-                    value={walletAddress}
-                    onChange={(e) => setWalletAddress(e.target.value)}
-                    maxLength={256}
-                    className="rounded-xl h-12 font-mono text-sm"
-                  />
+                  <label className="text-sm font-semibold text-foreground">Agent Wallet Address *</label>
+                  <Input placeholder="0x... or sol1... or bc1..." value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} maxLength={256} className="rounded-xl h-12 font-mono text-sm" />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">One-sentence description *</label>
-                  <Input
-                    placeholder="What does your agent do?"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    maxLength={300}
-                    className="rounded-xl h-12"
-                  />
+                  <label className="text-sm font-semibold text-foreground">Description *</label>
+                  <Input placeholder="What does your agent do?" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={300} className="rounded-xl h-12" />
                   <p className="text-xs text-muted-foreground text-right">{description.length}/300</p>
                 </div>
 
@@ -192,33 +176,24 @@ const SubmitAIAgent = () => {
                   </div>
                 </div>
 
-                <Button
-                  onClick={handleSubmit}
-                  disabled={submitting || !agentName.trim() || !walletAddress.trim() || !description.trim()}
-                  className="w-full h-14 text-lg font-bold rounded-xl bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground"
-                >
-                  {submitting ? (
-                    <span className="flex items-center gap-2">
-                      <span className="h-5 w-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                      Creating…
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <Zap className="h-5 w-5" /> Pay 10 USDC & List Instantly
-                    </span>
-                  )}
-                </Button>
-              </div>
-
-              {/* API note */}
-              <div className="bg-muted/50 border border-border rounded-2xl p-4 text-center">
-                <p className="text-xs text-muted-foreground">
-                  🔌 Agents can also submit programmatically via{" "}
-                  <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">
-                    POST /api/submit-ai-agent
-                  </code>{" "}
-                  (same fields + wallet signature).
-                </p>
+                {!isConnected ? (
+                  <p className="text-sm text-center text-muted-foreground">Connect your wallet to pay & list</p>
+                ) : (
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={paying || !agentName.trim() || !walletAddress.trim() || !description.trim()}
+                    className="w-full h-14 text-lg font-bold rounded-xl bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground"
+                  >
+                    {paying ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-5 w-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                        Processing…
+                      </span>
+                    ) : (
+                      "Pay 10 USDC & List Instantly"
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           )}
