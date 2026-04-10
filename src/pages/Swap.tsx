@@ -23,6 +23,7 @@ import { CHAINS, type SupportedChainId } from "@/lib/swap/chains";
 import { ERC20_ABI } from "@/lib/swap/contracts";
 import { useQuote } from "@/lib/swap/useQuote";
 import { useSwap } from "@/lib/swap/useSwap";
+import { useChainContext } from "@/contexts/ChainContext";
 
 /* rough fiat prices for display */
 const FIAT_PRICES: Record<string, number> = {
