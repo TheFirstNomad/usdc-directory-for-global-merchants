@@ -37,16 +37,6 @@ const BRIDGE_ROUTES = [
     toIcon: "🔷",
     testnet: true,
   },
-  {
-    id: "base-to-arc",
-    from: "Base Mainnet",
-    to: "Arc Testnet",
-    fromEnum: Blockchain.Base,
-    toEnum: Blockchain.Arc_Testnet,
-    fromIcon: "/chains/base.jpg",
-    toIcon: "/chains/arc.jpg",
-    testnet: false,
-  },
 ] as const;
 
 const Bridge = () => {

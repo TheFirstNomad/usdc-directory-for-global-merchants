@@ -89,7 +89,6 @@ function friendlyError(err: any, chainId: PaymentChainId): string {
   const chain = getChainLabel(chainId);
   if (raw.includes("user rejected") || raw.includes("User denied")) return "Transaction was cancelled.";
   if (raw.includes("insufficient funds") || raw.includes("exceeds balance")) return `Insufficient USDC balance on ${chain}. Please bridge funds first.`;
-  if (raw.includes("kitKey") || raw.includes("validation") || raw.includes("config")) return `This operation is not yet supported on ${chain}. Please try on ${chain === "Arc Testnet" ? "Base Mainnet" : "Arc Testnet"}.`;
   if (raw.includes("disconnected") || raw.includes("wallet")) return "Wallet disconnected. Please reconnect and try again.";
   return raw || `Transaction failed on ${chain}. Please try again.`;
 }
@@ -189,6 +188,7 @@ export async function swapViaKit(
       amountIn: amount,
       tokenIn,
       tokenOut,
+      config: { kitKey: ARC_KIT_KEY },
     });
 
     const txHash = (result as any).txHash || (result as any).transactionHash || String(result);
