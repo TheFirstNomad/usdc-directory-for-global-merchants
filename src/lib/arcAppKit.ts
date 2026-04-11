@@ -1,20 +1,17 @@
 /**
  * Circle Arc App Kit integration
- * 
- * IMPORTANT: Per Circle docs, kit.swap() is NOT available on Arc Testnet
- * or any testnet. Swap is mainnet-only.
- * 
- * This module handles:
- * - kit.send() for listing payments (works on testnet + mainnet)
- * - kit.bridge() for cross-chain USDC transfers (works on testnet)
- * - kit.swap() for mainnet token swaps only (Base, Ethereum, etc.)
+ *
+ * Handles:
+ * - kit.send()   – listing payments (testnet + mainnet)
+ * - kit.bridge() – cross-chain USDC transfers (testnet)
+ * - kit.swap()   – token swaps (testnet + mainnet)
  */
 
 import { AppKit } from "@circle-fin/app-kit";
 import { createViemAdapterFromProvider } from "@circle-fin/adapter-viem-v2";
 
 // ── Kit Key ──────────────────────────────────────────────────────────
-export const ARC_KIT_KEY =
+export const ARC_KIT_KEY: string =
   import.meta.env.VITE_ARC_KIT_KEY ||
   "KIT_KEY:0d00dda04082f989e0ca58a639c97cd5:54ceb72723ecb14061b2e263ae03fad1";
 
@@ -28,7 +25,7 @@ export const TREASURY_ADDRESS: `0x${string}` = "0x13fA78AB20762c8F49B58D44dbC177
 // ── Chain helpers ────────────────────────────────────────────────────
 export type PaymentChainId = 8453 | 5042002;
 
-/** Map numeric chain ID to the string literal the Circle SDK expects */
+/** Map numeric chain ID to the exact string literal the Circle SDK expects */
 function chainString(chainId: PaymentChainId): string {
   return chainId === 8453 ? "Base" : "Arc_Testnet";
 }
@@ -54,9 +51,7 @@ export async function createViemAdapterFromWallet(_account?: `0x${string}`) {
     throw new Error("No wallet detected. Please connect MetaMask or another EVM wallet.");
   }
 
-  return await createViemAdapterFromProvider({
-    provider,
-  });
+  return await createViemAdapterFromProvider({ provider });
 }
 
 // ── Singleton AppKit instance ────────────────────────────────────────
@@ -64,14 +59,12 @@ let _kit: AppKit | null = null;
 
 function getAppKit(): AppKit {
   if (!_kit) {
-    _kit = new AppKit({
-      kitKey: ARC_KIT_KEY,
-    } as any);
+    _kit = new AppKit({ kitKey: ARC_KIT_KEY } as any);
   }
   return _kit;
 }
 
-// ── Pay Listing Fee (kit.send — works on testnet) ───────────────────
+// ── Pay Listing Fee (kit.send) ──────────────────────────────────────
 export async function payListingFee(
   adapter: any,
   chainId: PaymentChainId = 5042002,
@@ -94,7 +87,7 @@ export async function payListingFee(
   return { txHash, explorerUrl: getExplorerUrl(chainId, txHash) };
 }
 
-// ── Swap via App Kit (MAINNET ONLY — not available on testnet) ──────
+// ── Swap via App Kit ────────────────────────────────────────────────
 export async function swapViaKit(
   adapter: any,
   chainId: PaymentChainId,
@@ -102,12 +95,6 @@ export async function swapViaKit(
   tokenOut: string,
   amount: string,
 ) {
-  if (chainId === 5042002) {
-    throw new Error(
-      "Swap is not available on Arc Testnet. Circle App Kit Swap only works on mainnet chains."
-    );
-  }
-
   const kit = getAppKit();
   const chain = chainString(chainId);
 
@@ -116,6 +103,7 @@ export async function swapViaKit(
     tokenIn,
     tokenOut,
     amountIn: amount,
+    config: { kitKey: ARC_KIT_KEY },
   } as any);
 
   const txHash =
@@ -125,7 +113,7 @@ export async function swapViaKit(
   return { txHash };
 }
 
-// ── Bridge USDC (works on testnet) ──────────────────────────────────
+// ── Bridge USDC ─────────────────────────────────────────────────────
 export async function bridgeUsdc(
   adapter: any,
   fromChain: any,
@@ -137,13 +125,12 @@ export async function bridgeUsdc(
   // Accept both string literals and Blockchain enum values
   const normalizeChain = (c: any): string => {
     if (typeof c === "string") return c;
-    // Blockchain enum values like Blockchain.Arc_Testnet
     return String(c);
   };
 
   const result = await kit.bridge({
     from: { adapter, chain: normalizeChain(fromChain) },
-    to: { chain: normalizeChain(toChain) },
+    to: { adapter, chain: normalizeChain(toChain) },
     amount,
     token: "USDC",
   } as any);
