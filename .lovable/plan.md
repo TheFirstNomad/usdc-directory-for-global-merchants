@@ -1,49 +1,32 @@
 
 
-## Deep Scan Results and Fix Plan
+## Fix: Re-enable Arc Testnet Swap
 
-### Root Cause: Arc Testnet Swap
+### I Was Wrong
 
-The official Circle Arc docs explicitly state:
+The official Arc docs explicitly say: **"Among testnets, only Arc Testnet supports Swap (USDC and EURC only)."** Arc Testnet swap IS supported. The "Failed to fetch" error was likely caused by the adapter/provider wiring, not a platform limitation. I incorrectly disabled the swap UI for Arc.
 
-> **"Swap is not available on Arc Testnet and other testnets. Use mainnet for Swap."**
+**Your kit key is fine. No changes needed there.**
 
-This is a **platform limitation** — `kit.swap()` will never work on Arc Testnet regardless of code changes, key rotation, or domain whitelisting. The "createSwap failed: Failed to fetch" error is the Circle API rejecting the request because swap is not a supported operation on testnets.
+### What needs to change
 
-**Your Kit Key is fine. No need to delete or regenerate it.**
+**1. `src/pages/Swap.tsx` — Remove the Arc block**
 
-### What Actually Works on Arc Testnet
-- `kit.send()` — sending USDC (listing payments) — **works**
-- `kit.bridge()` — bridging USDC between Sepolia and Arc — **works** (the multi-signature flow you saw is normal CCTP behavior)
-- `kit.swap()` — **not supported on any testnet**
+Delete the entire `isArcTestnet` conditional block (lines 213-253) that shows "Swap Not Available on Testnet" and replaces the swap form. Instead, always show the swap form for both chains. Keep the Arc info banner but change it to say "USDC ↔ EURC swap via Circle App Kit" (informational, not blocking).
 
-### The Plan
+**2. `src/lib/arcAppKit.ts` — Fix the adapter for better provider detection**
 
-**1. Remove Arc swap and show honest messaging**
+The current `createViemAdapterFromWallet` uses raw `window.ethereum` which may not match the wallet actually connected through Reown AppKit. This is the likely cause of "Failed to fetch" — the adapter gets a stale/wrong provider. Fix to try Reown's provider first, then fall back to `window.ethereum`.
 
-On the Swap page, when Arc Testnet is selected, replace the swap form with a clear message: "Swap is only available on mainnet chains. Switch to Base to swap, or use the Bridge to move USDC to/from Arc Testnet." Include a button to switch to Base and a link to the Bridge page.
+**3. `src/lib/swap/useSwap.ts` — Better Arc error messages**
 
-Files: `src/pages/Swap.tsx`, `src/lib/swap/useSwap.ts`
+Add a specific catch for "createSwap failed" / "Failed to fetch" errors to show a helpful message like "Swap request failed. Ensure your wallet is connected to Arc Testnet and try again." instead of the raw SDK error.
 
-**2. Fix Bridge page — remove fragile `Blockchain` enum dependency**
-
-The bridge currently imports `Blockchain` from `@circle-fin/app-kit`. While this enum exists in the current installed version, using string literals (`"Ethereum_Sepolia"`, `"Arc_Testnet"`) is safer and matches the official docs. Also improve error messages for bridge failures.
-
-Files: `src/pages/Bridge.tsx`
-
-**3. Keep Arc as default chain, clean up Base/testnet mixing**
-
-Arc Testnet stays as the default selected chain. On Base Mainnet, hide faucet links and testnet messaging. On Arc, show bridge and send as the available actions, with swap clearly marked as mainnet-only.
-
-Files: `src/pages/Swap.tsx`, `src/components/ArcPaymentPanel.tsx`
+### Files to edit
+- `src/pages/Swap.tsx` — remove Arc swap block, show swap form for all chains
+- `src/lib/arcAppKit.ts` — improve adapter provider detection
+- `src/lib/swap/useSwap.ts` — better error handling for Arc swap failures
 
 ### Summary
-
-| Feature | Arc Testnet | Base Mainnet |
-|---------|------------|--------------|
-| Swap | Not supported (Circle limitation) | Works via Uniswap V3 |
-| Bridge | Works (Sepolia ↔ Arc) | Not applicable |
-| Send/Pay | Works via kit.send() | Works via kit.send() |
-
-The code changes are small and surgical — disable the Arc swap path with a helpful redirect, harden the bridge imports, and clean up UI messaging.
+The swap code (`swapViaKit`, `useSwap` Arc path) is correctly wired. The only real issues are: (1) the UI blocks Arc swap entirely, and (2) the wallet adapter may grab the wrong provider. Both are quick fixes.
 
