@@ -9,7 +9,8 @@ import { createViemAdapterFromProvider, ViemAdapter } from "@circle-fin/adapter-
 
 // ── Client-side publishable key ──────────────────────────────────────
 export const ARC_KIT_KEY =
-  import.meta.env.VITE_ARC_KIT_KEY;
+  import.meta.env.VITE_ARC_KIT_KEY ||
+  "KIT_KEY:0d00dda04082f989e0ca58a639c97cd5:54ceb72723ecb14061b2e263ae03fad1";
 
 // ── Treasury wallet for listing payments ─────────────────────────────
 export const TREASURY_ADDRESS: `0x${string}` =
