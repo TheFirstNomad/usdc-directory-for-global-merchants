@@ -51,7 +51,12 @@ export async function createViemAdapterFromWallet(_account?: `0x${string}`) {
     throw new Error("No wallet detected. Please connect MetaMask or another EVM wallet.");
   }
 
-  return await createViemAdapterFromProvider({ provider });
+  // Request accounts to ensure wallet is unlocked
+  await provider.request({ method: "eth_requestAccounts" });
+
+  return await createViemAdapterFromProvider({
+    provider,
+  } as any);
 }
 
 // ── Singleton AppKit instance ────────────────────────────────────────
