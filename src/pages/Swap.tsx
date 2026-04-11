@@ -209,48 +209,16 @@ const Swap = () => {
             <ChainSelector chainId={selectedChainId} onChange={handleChainChange} />
           </div>
 
-          {/* Arc Testnet: Swap not supported */}
-          {isArcTestnet ? (
-            <div className="w-full max-w-[460px] rounded-2xl border border-border/60 bg-card/95 backdrop-blur-sm p-6 shadow-xl shadow-black/10 animate-scale-in">
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Info className="h-7 w-7 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-foreground mb-1">Swap Not Available on Testnet</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Token swaps are only supported on mainnet chains. Switch to Base to swap, or use the Bridge to move USDC to/from Arc Testnet.
-                  </p>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2 w-full">
-                  <Button
-                    onClick={() => handleChainChange(8453)}
-                    className="flex-1 h-11 rounded-xl bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold"
-                  >
-                    Switch to Base
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => window.location.href = "/bridge"}
-                    className="flex-1 h-11 rounded-xl font-semibold"
-                  >
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    Go to Bridge
-                  </Button>
-                </div>
-                <a
-                  href="https://faucet.circle.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 mt-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Droplets className="h-3 w-3" />
-                  Get Test USDC from Circle Faucet
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
+          {/* Arc Testnet info banner */}
+          {isArcTestnet && (
+            <div className="w-full max-w-[460px] mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3 flex items-center gap-3 animate-fade-in">
+              <Info className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                USDC ↔ EURC swap via Circle App Kit · <a href="https://faucet.circle.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get test USDC</a>
+              </p>
             </div>
-          ) : (<>
+          )}
+
           {/* Popular pairs */}
           {popularPairs.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-5 justify-center">
@@ -548,7 +516,6 @@ const Swap = () => {
               </div>
             )}
           </div>
-          </>)}
         </main>
 
         <Footer />

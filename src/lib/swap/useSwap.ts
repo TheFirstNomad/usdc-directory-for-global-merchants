@@ -47,6 +47,9 @@ const getReadableSwapError = (error: any) => {
   ) {
     return "Swap could not be simulated. Recheck the amount, route, and slippage, then try again.";
   }
+  if (normalized.includes("createswap failed") || normalized.includes("failed to fetch")) {
+    return "Swap request failed. Ensure your wallet is connected to the correct network and try again.";
+  }
   if (normalized.includes("reverted") || normalized.includes("execution reverted")) {
     return normalizedMessage || "Swap reverted on-chain. Try a smaller amount or refresh the quote.";
   }
