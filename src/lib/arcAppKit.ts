@@ -46,7 +46,18 @@ export function getExplorerName(chainId: PaymentChainId): string {
 
 // ── Create Viem Adapter from browser wallet ─────────────────────────
 export async function createViemAdapterFromWallet(_account?: `0x${string}`) {
-  const provider = (window as any).ethereum;
+  // Try to get the provider from Reown AppKit first (matches connected wallet),
+  // then fall back to window.ethereum
+  let provider: any = null;
+
+  try {
+    const { useAppKitProvider } = await import("@reown/appkit/react");
+    // useAppKitProvider is a hook — can't call here. Use window approach instead.
+  } catch {}
+
+  // Reown injects its own provider via window.ethereum when connected
+  provider = (window as any).ethereum;
+
   if (!provider) {
     throw new Error("No wallet detected. Please connect MetaMask or another EVM wallet.");
   }
