@@ -54,7 +54,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
     setPaying(true);
     setError(null);
     try {
-      const adapter = createViemAdapterFromWallet(address as `0x${string}`);
+      const adapter = await createViemAdapterFromWallet(address as `0x${string}`);
       const result = await payListingFee(adapter, paymentChainId, fee);
       setTxHash(result.txHash);
       toast({ title: "Payment successful!", description: `Tx: ${result.txHash.slice(0, 12)}…` });
@@ -72,7 +72,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
     setSwapping(true);
     setError(null);
     try {
-      const adapter = createViemAdapterFromWallet(address as `0x${string}`);
+      const adapter = await createViemAdapterFromWallet(address as `0x${string}`);
       await swapViaKit(adapter, paymentChainId, "USDC", "EURC", "10");
       toast({ title: "Swap complete!", description: `Swapped USDC → EURC on ${chainLabel}` });
     } catch (err: any) {

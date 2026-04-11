@@ -410,14 +410,11 @@ const Swap = () => {
 
             {/* ── Action buttons ── */}
             <div className="mt-5 space-y-2">
-              {swapState === "error" ? (
-                <div className="text-center space-y-2 animate-fade-in">
-                  <p className="text-sm text-red-400">{errorMessage || "Swap failed"}</p>
-                  <Button onClick={() => { reset(); setShowSuccess(false); }} variant="outline" className="w-full">
-                    Try Again
-                  </Button>
-                </div>
-              ) : !isConnected ? (
+              {swapState === "error" && (
+                <p className="text-sm text-destructive text-center animate-fade-in">{errorMessage || "Swap failed"}</p>
+              )}
+
+              {!isConnected ? (
                 <Button
                   onClick={() => openWallet()}
                   className="w-full h-13 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground hover:opacity-90 transition-all duration-200 hover:shadow-lg hover:shadow-primary/20"

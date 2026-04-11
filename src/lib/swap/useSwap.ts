@@ -141,7 +141,7 @@ export function useSwap({
     try {
       if (isArc) {
         // ── Arc Testnet: Use Circle App Kit swap ──
-        const adapter = createViemAdapterFromWallet(userAddress);
+        const adapter = await createViemAdapterFromWallet(userAddress);
         const result = await swapViaKit(
           adapter,
           chainId as PaymentChainId,

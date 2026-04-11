@@ -5,19 +5,11 @@
 
 import { AppKit, Blockchain } from "@circle-fin/app-kit";
 import { ArcTestnet, Base, EthereumSepolia } from "@circle-fin/app-kit/chains";
-import { ViemAdapter } from "@circle-fin/adapter-viem-v2";
-import {
-  createPublicClient,
-  createWalletClient,
-  custom,
-  http,
-  type Chain,
-} from "viem";
+import { createViemAdapterFromProvider, ViemAdapter } from "@circle-fin/adapter-viem-v2";
 
 // ── Client-side publishable key ──────────────────────────────────────
 export const ARC_KIT_KEY =
-  import.meta.env.VITE_ARC_KIT_KEY ||
-  "KIT_KEY:0d00dda04082f989e0ca58a639c97cd5:54ceb72723ecb14061b2e263ae03fad1";
+  import.meta.env.VITE_ARC_KIT_KEY;
 
 // ── Treasury wallet for listing payments ─────────────────────────────
 export const TREASURY_ADDRESS: `0x${string}` =
@@ -26,41 +18,6 @@ export const TREASURY_ADDRESS: `0x${string}` =
 
 // ── Supported chains ─────────────────────────────────────────────────
 export const SUPPORTED_CHAINS = [ArcTestnet, Base, EthereumSepolia] as const;
-
-// ── Viem chain objects for the adapter ───────────────────────────────
-const viemArcTestnet: Chain = {
-  id: 5042002,
-  name: "Arc Testnet",
-  nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
-  rpcUrls: { default: { http: ["https://rpc.testnet.arc.network/"] } },
-  blockExplorers: { default: { name: "ArcScan", url: "https://testnet.arcscan.app" } },
-  testnet: true,
-};
-
-const viemBase: Chain = {
-  id: 8453,
-  name: "Base",
-  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-  rpcUrls: { default: { http: ["https://mainnet.base.org"] } },
-  blockExplorers: { default: { name: "BaseScan", url: "https://basescan.org" } },
-  testnet: false,
-};
-
-const viemEthSepolia: Chain = {
-  id: 11155111,
-  name: "Ethereum Sepolia",
-  nativeCurrency: { name: "Sepolia ETH", symbol: "ETH", decimals: 18 },
-  rpcUrls: { default: { http: ["https://rpc.sepolia.org"] } },
-  blockExplorers: { default: { name: "Etherscan", url: "https://sepolia.etherscan.io" } },
-  testnet: true,
-};
-
-// Map Circle Blockchain enum → viem Chain
-const chainMap: Record<string, Chain> = {
-  [Blockchain.Arc_Testnet]: viemArcTestnet,
-  [Blockchain.Base]: viemBase,
-  [Blockchain.Ethereum_Sepolia]: viemEthSepolia,
-};
 
 // Map our SupportedChainId → Circle Blockchain enum
 export type PaymentChainId = 8453 | 5042002;
@@ -99,26 +56,40 @@ function friendlyError(err: any, chainId: PaymentChainId): string {
 }
 
 // ── Create adapter from the user's browser wallet ────────────────────
-export function createViemAdapterFromWallet(account: `0x${string}`): ViemAdapter {
+type BrowserWalletProvider = {
+  request: (args: { method: string; params?: unknown[] | object }) => Promise<unknown>;
+};
+
+function assertArcKitKey(): string {
+  const kitKey = ARC_KIT_KEY?.trim();
+  if (!kitKey) {
+    throw new Error("Circle App Kit key is missing. Add VITE_ARC_KIT_KEY to the project settings before swapping.");
+  }
+
+  if (!kitKey.startsWith("KIT_KEY:")) {
+    throw new Error("Circle App Kit key format is invalid. It must start with KIT_KEY:.");
+  }
+
+  return kitKey;
+}
+
+export async function createViemAdapterFromWallet(account: `0x${string}`): Promise<ViemAdapter> {
   const provider = (window as any).ethereum;
   if (!provider) throw new Error("No wallet detected. Please install MetaMask or another Web3 wallet.");
 
-  return new ViemAdapter(
-    {
-      getPublicClient: (({ chain }: { chain: any }) => {
-        const viemChain = chainMap[chain as unknown as string] || viemArcTestnet;
-        return createPublicClient({ chain: viemChain, transport: http() });
-      }) as any,
-      getWalletClient: (({ chain }: { chain: any }) => {
-        const viemChain = chainMap[chain as unknown as string] || viemArcTestnet;
-        return createWalletClient({ account, chain: viemChain, transport: custom(provider) });
-      }) as any,
-    },
-    {
+  const accounts = await (provider as BrowserWalletProvider).request({ method: "eth_requestAccounts" });
+  const normalizedAccount = String(Array.isArray(accounts) ? accounts[0] : "").toLowerCase();
+  if (!normalizedAccount || normalizedAccount !== account.toLowerCase()) {
+    throw new Error("Connected wallet address does not match the active account. Reconnect your wallet and try again.");
+  }
+
+  return await createViemAdapterFromProvider({
+    provider: provider as any,
+    capabilities: {
       addressContext: "user-controlled",
-      supportedChains: [ArcTestnet, Base, EthereumSepolia],
-    }
-  );
+      supportedChains: SUPPORTED_CHAINS,
+    } as any,
+  }) as ViemAdapter;
 }
 
 // ── Singleton AppKit instance ────────────────────────────────────────
@@ -126,7 +97,7 @@ let _kit: AppKit | null = null;
 
 export function getAppKit(): AppKit {
   if (!_kit) {
-    _kit = new AppKit({ kitKey: ARC_KIT_KEY } as any);
+    _kit = new AppKit(ARC_KIT_KEY ? ({ kitKey: ARC_KIT_KEY } as any) : undefined);
   }
   return _kit;
 }
@@ -186,14 +157,15 @@ export async function swapViaKit(
   amount: string
 ): Promise<{ txHash: string }> {
   try {
+    const kitKey = assertArcKitKey();
     const kit = getAppKit();
     const chain = toChainString(chainId);
     const result = await kit.swap({
       from: { adapter, chain },
-      amountIn: amount,
       tokenIn,
       tokenOut,
-      config: { kitKey: ARC_KIT_KEY },
+      amountIn: amount,
+      config: { kitKey },
     });
 
     const txHash = (result as any).txHash || (result as any).transactionHash || String(result);
