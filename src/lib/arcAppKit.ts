@@ -31,8 +31,12 @@ export function getExplorerUrl(chainId: PaymentChainId, txHash: string): string 
   return chainId === 8453 ? `https://basescan.org/tx/${txHash}` : `https://testnet.arcscan.app/tx/${txHash}`;
 }
 
+export function getExplorerName(chainId: PaymentChainId): string {
+  return chainId === 8453 ? "BaseScan" : "ArcScan";
+}
+
 // ── Create Viem Adapter from connected wallet ───────────────────────
-export async function createViemAdapterFromWallet() {
+export async function createViemAdapterFromWallet(_account?: `0x${string}`) {
   const provider = (window as any).ethereum;
   if (!provider) throw new Error("No wallet detected. Please connect MetaMask or another EVM wallet.");
 
@@ -73,34 +77,46 @@ export async function payListingFee(adapter: any, chainId: PaymentChainId = 5042
   return { txHash, explorerUrl: getExplorerUrl(chainId, txHash) };
 }
 
-// ── Swap USDC → EURC ─────────────────────────────────────────────────
-export async function swapUsdcToEurc(adapter: any, amount: string, chainId: PaymentChainId = 5042002) {
+// ── Generic swap via App Kit ─────────────────────────────────────────
+export async function swapViaKit(
+  adapter: any,
+  chainId: PaymentChainId,
+  tokenIn: string,
+  tokenOut: string,
+  amount: string,
+) {
   const kit = getAppKit();
   const chain = chainId === 8453 ? Base : ArcTestnet;
 
   const result = await kit.swap({
     from: { adapter, chain },
-    tokenIn: "USDC",
-    tokenOut: "EURC",
+    tokenIn,
+    tokenOut,
     amountIn: amount,
-    config: { kitKey: ARC_KIT_KEY },
-  });
+  } as any);
 
   const txHash = (result as any).txHash || (result as any).transactionHash || String(result);
   return { txHash };
 }
 
 // ── Bridge USDC ──────────────────────────────────────────────────────
-export async function bridgeToArc(adapter: any, amount: string) {
+export async function bridgeUsdc(adapter: any, fromChain: any, toChain: any, amount: string) {
   const kit = getAppKit();
 
+  const chainMap: Record<string, any> = {
+    "Arc_Testnet": ArcTestnet,
+    "Base": Base,
+    "Ethereum_Sepolia": EthereumSepolia,
+  };
+  const from = chainMap[fromChain] || fromChain;
+  const to = chainMap[toChain] || toChain;
+
   const result = await kit.bridge({
-    from: { adapter, chain: EthereumSepolia },
-    to: { adapter, chain: ArcTestnet },
+    from: { adapter, chain: from },
+    to: { adapter, chain: to },
     amount,
     token: "USDC",
-    config: { kitKey: ARC_KIT_KEY },
-  });
+  } as any);
 
   const txHash = (result as any).txHash || (result as any).transactionHash || String(result);
   return { txHash };
