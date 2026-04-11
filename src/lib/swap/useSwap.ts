@@ -63,6 +63,7 @@ export function useSwap({
   amountOutMin,
   chainId,
   userAddress,
+  walletProvider,
 }: {
   tokenIn: TokenInfo | null;
   tokenOut: TokenInfo | null;
@@ -71,6 +72,7 @@ export function useSwap({
   chainId: number;
   userAddress: `0x${string}` | undefined;
   slippage: number;
+  walletProvider?: any;
 }) {
   const [swapState, setSwapState] = useState<SwapState>("idle");
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
@@ -144,7 +146,7 @@ export function useSwap({
     try {
       if (isArc) {
         // ── Arc Testnet: Use Circle App Kit swap ──
-        const adapter = await createViemAdapterFromWallet(userAddress);
+        const adapter = await createViemAdapterFromWallet(walletProvider);
         const result = await swapViaKit(
           adapter,
           chainId as PaymentChainId,
@@ -209,11 +211,12 @@ export function useSwap({
         setSwapState("success");
       }
     } catch (err: any) {
+      console.error("Arc/Base swap raw error:", err);
       setSwapState("error");
       setErrorMessage(getReadableSwapError(err));
       throw err;
     }
-  }, [tokenIn, tokenOut, userAddress, amountInParsed, amountOutMin, amountIn, isNativeIn, isNativeOut, isArc, chainId, writeContractAsync, publicClient]);
+  }, [tokenIn, tokenOut, userAddress, amountInParsed, amountOutMin, amountIn, isNativeIn, isNativeOut, isArc, chainId, writeContractAsync, publicClient, walletProvider]);
 
   const reset = useCallback(() => {
     setSwapState("idle");
