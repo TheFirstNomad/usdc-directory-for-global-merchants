@@ -2,7 +2,7 @@ import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { createAppKit } from "@reown/appkit/react";
-import { base } from "@reown/appkit/networks";
+import { base, sepolia } from "@reown/appkit/networks";
 import type { ReactNode } from "react";
 
 const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID || "3592c16759a9b6907bc4eb5afd455b15";
@@ -18,7 +18,7 @@ const arcTestnet = {
   testnet: true,
 } as any;
 
-const networks = [base, arcTestnet] as const;
+const networks = [base, arcTestnet, sepolia] as const;
 
 const wagmiAdapter = new WagmiAdapter({
   projectId,

@@ -12,7 +12,7 @@ interface ChainContextValue {
 const ChainContext = createContext<ChainContextValue | null>(null);
 
 export const ChainProvider = ({ children }: { children: ReactNode }) => {
-  const [chainId, setChainIdState] = useState<SupportedChainId>(8453);
+  const [chainId, setChainIdState] = useState<SupportedChainId>(5042002);
 
   const setChainId = useCallback((id: SupportedChainId) => {
     setChainIdState(id);

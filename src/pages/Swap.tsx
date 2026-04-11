@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import {
   ArrowDownUp, ChevronDown, ChevronUp, Wallet, Info,
-  ExternalLink, AlertTriangle, Droplets, Loader2,
+  ExternalLink, Droplets, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
@@ -191,7 +191,7 @@ const Swap = () => {
   };
 
   const insufficientBalance = payBalance !== null && payAmountNum > 0 && payAmountNum > parseFloat(payBalance);
-  const swapDisabled = payAmountNum <= 0 || !amountOut || wrongChain || insufficientBalance || isArcTestnet;
+  const swapDisabled = payAmountNum <= 0 || !amountOut || wrongChain || insufficientBalance;
 
   /* ── render ── */
   return (
@@ -209,20 +209,20 @@ const Swap = () => {
             <ChainSelector chainId={selectedChainId} onChange={handleChainChange} />
           </div>
 
-          {/* Testnet banner */}
+          {/* Testnet info */}
           {isArcTestnet && (
-            <div className="w-full max-w-[460px] mb-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 flex items-start gap-3 animate-fade-in">
-              <AlertTriangle className="h-5 w-5 text-yellow-400 shrink-0 mt-0.5" />
+            <div className="w-full max-w-[460px] mb-4 rounded-xl border border-primary/30 bg-primary/5 p-3 flex items-start gap-3 animate-fade-in">
+              <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-yellow-300">Swap Not Available on Testnet</p>
-                <p className="text-xs text-yellow-400/70 mt-0.5">
-                  Circle App Kit Swap only works on mainnet. Switch to Base Mainnet to swap tokens, or use the faucet to get test USDC.
+                <p className="text-sm font-medium text-foreground">Arc Testnet — USDC ↔ EURC</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Swaps on Arc Testnet are executed via Circle App Kit. Tokens have no real value.
                 </p>
                 <a
                   href="https://faucet.circle.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 mt-2 px-3 py-1.5 rounded-lg bg-yellow-500/20 text-yellow-300 text-xs font-medium hover:bg-yellow-500/30 transition-colors"
+                  className="inline-flex items-center gap-1 mt-2 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
                 >
                   <Droplets className="h-3 w-3" />
                   Get Test USDC
@@ -449,8 +449,6 @@ const Swap = () => {
                 >
                   {swapState === "swapping" ? (
                     <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Swapping…</>
-                  ) : isArcTestnet ? (
-                    "Swap Not Available on Testnet"
                   ) : insufficientBalance ? (
                     `Insufficient ${payToken.symbol}`
                   ) : payAmountNum <= 0 ? (
