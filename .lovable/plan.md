@@ -1,32 +1,41 @@
 
 
-## Fix: Re-enable Arc Testnet Swap
+## Fix: Arc Testnet Swap "Failed to fetch"
 
-### I Was Wrong
+### Root cause analysis
 
-The official Arc docs explicitly say: **"Among testnets, only Arc Testnet supports Swap (USDC and EURC only)."** Arc Testnet swap IS supported. The "Failed to fetch" error was likely caused by the adapter/provider wiring, not a platform limitation. I incorrectly disabled the swap UI for Arc.
+The swap SDK call (`kit.swap()`) throws "createSwap failed: Maximum retry attempts (3) exceeded: Failed to fetch". The bridge works with the same adapter, so the adapter creation isn't fundamentally broken. The issue is likely one of two things:
 
-**Your kit key is fine. No changes needed there.**
+1. **Provider mismatch**: `window.ethereum` may not be the same provider that Reown AppKit connected through (especially with multiple wallet extensions). The Circle SDK needs the exact provider that has signing authority on Arc Testnet.
 
-### What needs to change
+2. **Missing `capabilities` on adapter**: The SDK docs show `createViemAdapterFromProvider` accepts `capabilities: { addressContext: 'user-controlled' }` which may affect how the SDK resolves accounts for the swap API call.
 
-**1. `src/pages/Swap.tsx` — Remove the Arc block**
+### Changes
 
-Delete the entire `isArcTestnet` conditional block (lines 213-253) that shows "Swap Not Available on Testnet" and replaces the swap form. Instead, always show the swap form for both chains. Keep the Arc info banner but change it to say "USDC ↔ EURC swap via Circle App Kit" (informational, not blocking).
+**1. `src/lib/arcAppKit.ts` — Use Reown's provider, add capabilities**
 
-**2. `src/lib/arcAppKit.ts` — Fix the adapter for better provider detection**
+Instead of blindly using `window.ethereum`, get the actual provider from Reown AppKit's `getAppKitProvider` (non-hook version) or pass it in. Also add `capabilities: { addressContext: 'user-controlled' }` per the SDK docs.
 
-The current `createViemAdapterFromWallet` uses raw `window.ethereum` which may not match the wallet actually connected through Reown AppKit. This is the likely cause of "Failed to fetch" — the adapter gets a stale/wrong provider. Fix to try Reown's provider first, then fall back to `window.ethereum`.
+Additionally, add detailed `console.error` logging before throwing so we can see the actual SDK error in the console.
 
-**3. `src/lib/swap/useSwap.ts` — Better Arc error messages**
+**2. `src/lib/swap/useSwap.ts` — Log raw errors for debugging**
 
-Add a specific catch for "createSwap failed" / "Failed to fetch" errors to show a helpful message like "Swap request failed. Ensure your wallet is connected to Arc Testnet and try again." instead of the raw SDK error.
+Add `console.error("Arc swap raw error:", err)` before the readable error conversion so we can see the full error object in console on next failure.
+
+**3. `src/pages/Swap.tsx` — Pass wallet provider from Reown hook**
+
+Use `useAppKitProvider('eip155')` in the Swap component to get the actual connected provider and pass it down through useSwap → createViemAdapterFromWallet, ensuring the Circle SDK gets the correct provider.
 
 ### Files to edit
-- `src/pages/Swap.tsx` — remove Arc swap block, show swap form for all chains
-- `src/lib/arcAppKit.ts` — improve adapter provider detection
-- `src/lib/swap/useSwap.ts` — better error handling for Arc swap failures
+- `src/lib/arcAppKit.ts` — accept optional provider param, add capabilities, add logging
+- `src/lib/swap/useSwap.ts` — pass provider, add raw error logging  
+- `src/pages/Swap.tsx` — get provider from `useAppKitProvider` and pass to useSwap
 
-### Summary
-The swap code (`swapViaKit`, `useSwap` Arc path) is correctly wired. The only real issues are: (1) the UI blocks Arc swap entirely, and (2) the wallet adapter may grab the wrong provider. Both are quick fixes.
+### Technical detail
+The key change is threading the Reown provider through:
+```
+Swap.tsx (useAppKitProvider) → useSwap (provider param) → createViemAdapterFromWallet(provider) → createViemAdapterFromProvider({ provider, capabilities })
+```
+
+This ensures the Circle SDK uses the exact wallet connection rather than an arbitrary `window.ethereum` injection.
 
