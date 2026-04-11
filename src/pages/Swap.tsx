@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import {
   ArrowDownUp, ChevronDown, ChevronUp, Wallet, Info,
-  ExternalLink, Droplets, Loader2,
+  ExternalLink, Droplets, Loader2, ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
@@ -209,31 +209,48 @@ const Swap = () => {
             <ChainSelector chainId={selectedChainId} onChange={handleChainChange} />
           </div>
 
-          {/* Testnet info */}
-          {isArcTestnet && (
-            <div className="w-full max-w-[460px] mb-4 rounded-xl border border-primary/30 bg-primary/5 p-3 flex items-start gap-3 animate-fade-in">
-              <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-foreground">Arc Testnet — USDC ↔ EURC</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Swaps on Arc Testnet are executed via Circle App Kit. Tokens have no real value.
-                </p>
+          {/* Arc Testnet: Swap not supported */}
+          {isArcTestnet ? (
+            <div className="w-full max-w-[460px] rounded-2xl border border-border/60 bg-card/95 backdrop-blur-sm p-6 shadow-xl shadow-black/10 animate-scale-in">
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Info className="h-7 w-7 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-foreground mb-1">Swap Not Available on Testnet</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Token swaps are only supported on mainnet chains. Switch to Base to swap, or use the Bridge to move USDC to/from Arc Testnet.
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 w-full">
+                  <Button
+                    onClick={() => handleChainChange(8453)}
+                    className="flex-1 h-11 rounded-xl bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold"
+                  >
+                    Switch to Base
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.location.href = "/bridge"}
+                    className="flex-1 h-11 rounded-xl font-semibold"
+                  >
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    Go to Bridge
+                  </Button>
+                </div>
                 <a
                   href="https://faucet.circle.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 mt-2 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+                  className="inline-flex items-center gap-1.5 mt-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Droplets className="h-3 w-3" />
-                  Get Test USDC
+                  Get Test USDC from Circle Faucet
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
             </div>
-          )}
-
-          {/* ── Swap UI ── */}
-          {(<>
+          ) : (<>
           {/* Popular pairs */}
           {popularPairs.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-5 justify-center">

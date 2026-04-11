@@ -14,15 +14,13 @@ import {
   getChainLabel,
   type PaymentChainId,
 } from "@/lib/arcAppKit";
-import { Blockchain } from "@circle-fin/app-kit";
-
 const BRIDGE_ROUTES = [
   {
     id: "sepolia-to-arc",
     from: "Ethereum Sepolia",
     to: "Arc Testnet",
-    fromEnum: Blockchain.Ethereum_Sepolia,
-    toEnum: Blockchain.Arc_Testnet,
+    fromEnum: "Ethereum_Sepolia",
+    toEnum: "Arc_Testnet",
     fromIcon: "🔷",
     toIcon: "/chains/arc.jpg",
     testnet: true,
@@ -31,8 +29,8 @@ const BRIDGE_ROUTES = [
     id: "arc-to-sepolia",
     from: "Arc Testnet",
     to: "Ethereum Sepolia",
-    fromEnum: Blockchain.Arc_Testnet,
-    toEnum: Blockchain.Ethereum_Sepolia,
+    fromEnum: "Arc_Testnet",
+    toEnum: "Ethereum_Sepolia",
     fromIcon: "/chains/arc.jpg",
     toIcon: "🔷",
     testnet: true,
