@@ -63,6 +63,7 @@ export function useSwap({
   amountOutMin,
   chainId,
   userAddress,
+  walletProvider,
 }: {
   tokenIn: TokenInfo | null;
   tokenOut: TokenInfo | null;
@@ -71,6 +72,7 @@ export function useSwap({
   chainId: number;
   userAddress: `0x${string}` | undefined;
   slippage: number;
+  walletProvider?: any;
 }) {
   const [swapState, setSwapState] = useState<SwapState>("idle");
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
