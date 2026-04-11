@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import {
   ArrowDownUp, ChevronDown, ChevronUp, Wallet, Info,
-  ExternalLink, Droplets, Loader2, ArrowRight,
+  ExternalLink, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
