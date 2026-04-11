@@ -144,7 +144,7 @@ export function useSwap({
     try {
       if (isArc) {
         // ── Arc Testnet: Use Circle App Kit swap ──
-        const adapter = await createViemAdapterFromWallet(userAddress);
+        const adapter = await createViemAdapterFromWallet(walletProvider);
         const result = await swapViaKit(
           adapter,
           chainId as PaymentChainId,
@@ -209,6 +209,7 @@ export function useSwap({
         setSwapState("success");
       }
     } catch (err: any) {
+      console.error("Arc/Base swap raw error:", err);
       setSwapState("error");
       setErrorMessage(getReadableSwapError(err));
       throw err;

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
-import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
+import { useAppKit, useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { useBalance, useReadContract, useChainId, useSwitchChain } from "wagmi";
 import { formatUnits } from "viem";
 
@@ -37,6 +37,7 @@ const fiat = (symbol: string, amount: number) => {
 const Swap = () => {
   const { open: openWallet } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider("eip155");
   const walletChainId = useChainId();
   const { switchChain } = useSwitchChain();
 
@@ -151,6 +152,7 @@ const Swap = () => {
     chainId: selectedChainId,
     userAddress: address as `0x${string}` | undefined,
     slippage,
+    walletProvider,
   });
 
   /* watch for success — open modal */
