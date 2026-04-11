@@ -1,58 +1,49 @@
 
-Goal: make Arc Testnet the default selected chain and ship a working Arc swap, bridge, and listing-payment flow without breaking Base Mainnet.
 
-What the deep scan found
-- `VITE_ARC_KIT_KEY` is not currently present in the Vite-exposed environment, so the browser build is not getting a proper Arc kit key.
-- `src/lib/arcAppKit.ts` explicitly blocks Arc swaps in `swapViaKit()`, even though the Arc quickstart shows Arc Testnet swap is supported with `chain: "Arc_Testnet"` and `config: { kitKey }`.
-- `src/pages/Swap.tsx` also disables Arc swap in the UI and shows a false “not available on testnet” banner.
-- `src/lib/arcAppKit.ts` builds the bridge request incorrectly: `to` is missing `adapter`. The Arc bridge docs/types require `to: { adapter, chain }`. This directly matches your `Invalid parameters: to: Invalid input` screenshot.
-- `src/components/Web3Provider.tsx` only registers Base + Arc. Ethereum Sepolia is missing, so Sepolia↔Arc bridge routes cannot be handled correctly.
-- `createViemAdapterFromWallet()` relies on `window.ethereum`, which is brittle for Reown/Wagmi-connected wallets.
-- Chain state is inconsistent: `ChainContext` defaults to Base, and `Swap.tsx` keeps its own local chain state, so the header toggle and page state can drift and “mix” environments.
+## Deep Scan Results and Fix Plan
 
-Why Arc swap is failing
-- Right now it is not mainly a bad key problem. The app currently disables Arc swap in both the helper and the UI.
-- Based on the current code scan, you do not need to regenerate the kit key first. The bigger issues are wrong request shape, missing environment wiring, missing Sepolia support, and wallet/provider wiring. I would only rotate the key if it still fails after those code fixes with an auth/origin-specific error.
+### Root Cause: Arc Testnet Swap
 
-Implementation plan
-1. Fix the shared Arc App Kit helper
-- Update `src/lib/arcAppKit.ts` to use the documented chain strings:
-  - `8453 -> "Base"`
-  - `5042002 -> "Arc_Testnet"`
-  - bridge route support for `"Ethereum_Sepolia"`
-- Remove the hard-coded Arc swap block.
-- Pass `config: { kitKey: import.meta.env.VITE_ARC_KIT_KEY }` on swap calls.
-- Fix bridge params so both `from` and `to` include the adapter where required.
-- Keep the named exports stable so no earlier TS/build errors come back.
+The official Circle Arc docs explicitly state:
 
-2. Fix environment + wallet wiring
-- Configure `VITE_ARC_KIT_KEY` as a real Vite environment variable for the project, then stop relying on fallback behavior.
-- Refactor adapter creation to use the active connected wallet provider/client from the Reown/Wagmi stack instead of only `window.ethereum`.
-- Keep the wallet flow EVM-only so bridge/swap do not trigger unrelated Bitcoin/Solana/Tron-style prompts.
+> **"Swap is not available on Arc Testnet and other testnets. Use mainnet for Swap."**
 
-3. Repair the Arc product flows
-- `src/pages/Swap.tsx`: re-enable Arc swap, remove the wrong “not available” banner, and restrict Arc to the supported stablecoin route.
-- `src/pages/Bridge.tsx`: fix request construction, add source-chain validation/switching, and support only the intended Sepolia↔Arc routes.
-- `src/components/ArcPaymentPanel.tsx` and `src/pages/SubmitAIAgent.tsx`: keep listing/send payments on Arc working through `kit.send()` with the corrected adapter + chain wiring.
-- Clean up stale Arc UI copy that currently contradicts the actual App Kit flow.
+This is a **platform limitation** — `kit.swap()` will never work on Arc Testnet regardless of code changes, key rotation, or domain whitelisting. The "createSwap failed: Failed to fetch" error is the Circle API rejecting the request because swap is not a supported operation on testnets.
 
-4. Make Arc the default and stop chain mixing
-- Change `src/contexts/ChainContext.tsx` default from Base to Arc Testnet.
-- Sync `/swap` page state with the global chain context so the header toggle and page selector cannot drift apart.
-- Keep Base Mainnet clean when selected: no faucet/testnet bridge messaging on Base screens.
+**Your Kit Key is fine. No need to delete or regenerate it.**
 
-5. Verify before calling it fixed
-- Build/type-check passes with no import/export regressions.
-- Confirm the Arc swap request uses `chain: "Arc_Testnet"` and includes the kit key config.
-- Confirm the bridge request uses a valid `to` object with both `adapter` and `chain`.
-- Manual preview verification:
-  - Arc is preselected on load
-  - Arc swap: `5 USDC -> EURC`
-  - Bridge reaches the wallet signature step correctly for Sepolia↔Arc
-  - Listing payment on Arc requests a wallet signature and returns an explorer link
-  - Base Mainnet still behaves as pure mainnet with no testnet mixing
+### What Actually Works on Arc Testnet
+- `kit.send()` — sending USDC (listing payments) — **works**
+- `kit.bridge()` — bridging USDC between Sepolia and Arc — **works** (the multi-signature flow you saw is normal CCTP behavior)
+- `kit.swap()` — **not supported on any testnet**
 
-Technical details
-- Files to update: `src/lib/arcAppKit.ts`, `src/components/Web3Provider.tsx`, `src/pages/Swap.tsx`, `src/pages/Bridge.tsx`, `src/components/ArcPaymentPanel.tsx`, `src/pages/SubmitAIAgent.tsx`, `src/contexts/ChainContext.tsx`.
-- Most likely root cause of the current bridge error is already visible in code: `bridgeUsdc()` violates the App Kit bridge contract.
-- The current Arc swap failure is also already visible in code: the app is intentionally blocking Arc swaps despite the Arc docs supporting them.
+### The Plan
+
+**1. Remove Arc swap and show honest messaging**
+
+On the Swap page, when Arc Testnet is selected, replace the swap form with a clear message: "Swap is only available on mainnet chains. Switch to Base to swap, or use the Bridge to move USDC to/from Arc Testnet." Include a button to switch to Base and a link to the Bridge page.
+
+Files: `src/pages/Swap.tsx`, `src/lib/swap/useSwap.ts`
+
+**2. Fix Bridge page — remove fragile `Blockchain` enum dependency**
+
+The bridge currently imports `Blockchain` from `@circle-fin/app-kit`. While this enum exists in the current installed version, using string literals (`"Ethereum_Sepolia"`, `"Arc_Testnet"`) is safer and matches the official docs. Also improve error messages for bridge failures.
+
+Files: `src/pages/Bridge.tsx`
+
+**3. Keep Arc as default chain, clean up Base/testnet mixing**
+
+Arc Testnet stays as the default selected chain. On Base Mainnet, hide faucet links and testnet messaging. On Arc, show bridge and send as the available actions, with swap clearly marked as mainnet-only.
+
+Files: `src/pages/Swap.tsx`, `src/components/ArcPaymentPanel.tsx`
+
+### Summary
+
+| Feature | Arc Testnet | Base Mainnet |
+|---------|------------|--------------|
+| Swap | Not supported (Circle limitation) | Works via Uniswap V3 |
+| Bridge | Works (Sepolia ↔ Arc) | Not applicable |
+| Send/Pay | Works via kit.send() | Works via kit.send() |
+
+The code changes are small and surgical — disable the Arc swap path with a helpful redirect, harden the bridge imports, and clean up UI messaging.
+
