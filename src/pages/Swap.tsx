@@ -191,7 +191,7 @@ const Swap = () => {
   };
 
   const insufficientBalance = payBalance !== null && payAmountNum > 0 && payAmountNum > parseFloat(payBalance);
-  const swapDisabled = payAmountNum <= 0 || (!amountOut && !isArcTestnet) || wrongChain || insufficientBalance;
+  const swapDisabled = payAmountNum <= 0 || !amountOut || wrongChain || insufficientBalance || isArcTestnet;
 
   /* ── render ── */
   return (
@@ -214,9 +214,9 @@ const Swap = () => {
             <div className="w-full max-w-[460px] mb-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 flex items-start gap-3 animate-fade-in">
               <AlertTriangle className="h-5 w-5 text-yellow-400 shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-yellow-300">Testnet Mode</p>
+                <p className="text-sm font-medium text-yellow-300">Swap Not Available on Testnet</p>
                 <p className="text-xs text-yellow-400/70 mt-0.5">
-                  All funds and swaps have no real value. Use only test USDC from the Circle faucet.
+                  Circle App Kit Swap only works on mainnet. Switch to Base Mainnet to swap tokens, or use the faucet to get test USDC.
                 </p>
                 <a
                   href="https://faucet.circle.com"
@@ -449,6 +449,8 @@ const Swap = () => {
                 >
                   {swapState === "swapping" ? (
                     <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Swapping…</>
+                  ) : isArcTestnet ? (
+                    "Swap Not Available on Testnet"
                   ) : insufficientBalance ? (
                     `Insufficient ${payToken.symbol}`
                   ) : payAmountNum <= 0 ? (
