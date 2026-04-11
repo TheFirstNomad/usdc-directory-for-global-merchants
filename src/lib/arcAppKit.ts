@@ -56,8 +56,7 @@ export async function createViemAdapterFromWallet(_account?: `0x${string}`) {
 
   return await createViemAdapterFromProvider({
     provider,
-    addressContext: "user-controlled",
-  });
+  } as any);
 }
 
 // ── Singleton AppKit instance ────────────────────────────────────────
