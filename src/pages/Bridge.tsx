@@ -59,7 +59,7 @@ const Bridge = () => {
     setError(null);
     setTxHash(null);
     try {
-      const adapter = createViemAdapterFromWallet(address as `0x${string}`);
+      const adapter = await createViemAdapterFromWallet(address as `0x${string}`);
       const result = await bridgeUsdc(adapter, route.fromEnum, route.toEnum, amount);
       setTxHash(result.txHash);
       toast({ title: "Bridge initiated!", description: `Tx: ${result.txHash.slice(0, 12)}…` });

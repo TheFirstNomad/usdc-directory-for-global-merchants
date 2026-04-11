@@ -6,11 +6,6 @@
 import { AppKit, Blockchain } from "@circle-fin/app-kit";
 import { ArcTestnet, Base, EthereumSepolia } from "@circle-fin/app-kit/chains";
 import { createViemAdapterFromProvider, ViemAdapter } from "@circle-fin/adapter-viem-v2";
-import {
-  createPublicClient,
-  http,
-  type Chain,
-} from "viem";
 
 // ── Client-side publishable key ──────────────────────────────────────
 export const ARC_KIT_KEY =
@@ -23,41 +18,6 @@ export const TREASURY_ADDRESS: `0x${string}` =
 
 // ── Supported chains ─────────────────────────────────────────────────
 export const SUPPORTED_CHAINS = [ArcTestnet, Base, EthereumSepolia] as const;
-
-// ── Viem chain objects for the adapter ───────────────────────────────
-const viemArcTestnet: Chain = {
-  id: 5042002,
-  name: "Arc Testnet",
-  nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
-  rpcUrls: { default: { http: ["https://rpc.testnet.arc.network/"] } },
-  blockExplorers: { default: { name: "ArcScan", url: "https://testnet.arcscan.app" } },
-  testnet: true,
-};
-
-const viemBase: Chain = {
-  id: 8453,
-  name: "Base",
-  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-  rpcUrls: { default: { http: ["https://mainnet.base.org"] } },
-  blockExplorers: { default: { name: "BaseScan", url: "https://basescan.org" } },
-  testnet: false,
-};
-
-const viemEthSepolia: Chain = {
-  id: 11155111,
-  name: "Ethereum Sepolia",
-  nativeCurrency: { name: "Sepolia ETH", symbol: "ETH", decimals: 18 },
-  rpcUrls: { default: { http: ["https://rpc.sepolia.org"] } },
-  blockExplorers: { default: { name: "Etherscan", url: "https://sepolia.etherscan.io" } },
-  testnet: true,
-};
-
-// Map Circle Blockchain enum → viem Chain
-const chainMap: Record<string, Chain> = {
-  [Blockchain.Arc_Testnet]: viemArcTestnet,
-  [Blockchain.Base]: viemBase,
-  [Blockchain.Ethereum_Sepolia]: viemEthSepolia,
-};
 
 // Map our SupportedChainId → Circle Blockchain enum
 export type PaymentChainId = 8453 | 5042002;
@@ -123,17 +83,13 @@ export async function createViemAdapterFromWallet(account: `0x${string}`): Promi
     throw new Error("Connected wallet address does not match the active account. Reconnect your wallet and try again.");
   }
 
-  return createViemAdapterFromProvider({
-    provider,
-    getPublicClient: ({ chain }) => {
-      const viemChain = chainMap[chain as unknown as string] || viemArcTestnet;
-      return createPublicClient({ chain: viemChain, transport: http(viemChain.rpcUrls.default.http[0]) });
-    },
+  return await createViemAdapterFromProvider({
+    provider: provider as any,
     capabilities: {
       addressContext: "user-controlled",
-      supportedChains: [ArcTestnet, Base, EthereumSepolia],
-    },
-  }) as Promise<ViemAdapter>;
+      supportedChains: SUPPORTED_CHAINS,
+    } as any,
+  }) as ViemAdapter;
 }
 
 // ── Singleton AppKit instance ────────────────────────────────────────
@@ -141,7 +97,7 @@ let _kit: AppKit | null = null;
 
 export function getAppKit(): AppKit {
   if (!_kit) {
-    _kit = new AppKit();
+    _kit = new AppKit(ARC_KIT_KEY ? ({ kitKey: ARC_KIT_KEY } as any) : undefined);
   }
   return _kit;
 }
@@ -153,7 +109,6 @@ export async function payListingFee(
   amount: string = "10"
 ): Promise<{ txHash: string; explorerUrl: string }> {
   try {
-    const kitKey = assertArcKitKey();
     const kit = getAppKit();
     const chain = toBlockchainEnum(chainId);
     const result = await kit.send({
@@ -161,7 +116,6 @@ export async function payListingFee(
       to: TREASURY_ADDRESS,
       amount,
       token: "USDC",
-      config: { kitKey },
     });
 
     const txHash = (result as any).txHash || (result as any).transactionHash || String(result);
@@ -179,14 +133,12 @@ export async function bridgeUsdc(
   amount: string
 ): Promise<{ txHash: string }> {
   try {
-    const kitKey = assertArcKitKey();
     const kit = getAppKit();
     const result = await kit.bridge({
       from: { adapter, chain: sourceChain },
       to: { adapter, chain: destChain },
       amount,
       token: "USDC",
-      config: { kitKey },
     });
 
     const txHash = (result as any).txHash || (result as any).transactionHash || String(result);
