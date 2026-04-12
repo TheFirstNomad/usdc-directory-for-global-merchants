@@ -4,18 +4,59 @@ import { useReadContract } from "wagmi";
 import {
   BarChart3, TrendingUp, DollarSign, Droplets, Percent, Activity,
 } from "lucide-react";
-import { ARC_V2_FACTORY } from "@/lib/swap/contracts";
-import { V2_FACTORY_ABI, V2_PAIR_ABI } from "@/lib/swap/contracts";
 import { ARC_TESTNET_TOKENS, PLATFORM_FEE_BPS } from "@/lib/swap/tokens";
+
+// Arc DEX V2 factory on Arc Testnet
+const ARC_V2_FACTORY = "0xBb527D0D58246Fc13Ec6fD9C01dDde4718EE4558" as `0x${string}`;
+
+const V2_FACTORY_ABI = [
+  {
+    name: "getPair",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "tokenA", type: "address" },
+      { name: "tokenB", type: "address" },
+    ],
+    outputs: [{ name: "pair", type: "address" }],
+  },
+] as const;
+
+const V2_PAIR_ABI = [
+  {
+    name: "getReserves",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { name: "reserve0", type: "uint112" },
+      { name: "reserve1", type: "uint112" },
+      { name: "blockTimestampLast", type: "uint32" },
+    ],
+  },
+  {
+    name: "token0",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    name: "totalSupply",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+] as const;
 
 const ZERO = "0x0000000000000000000000000000000000000000" as `0x${string}`;
 const USDC = ARC_TESTNET_TOKENS[0];
 const EURC = ARC_TESTNET_TOKENS[1];
 
-const usdcAddr = "0x3600000000000000000000000000000000000000" as `0x${string}`; // wrapped native
+const usdcAddr = "0x3600000000000000000000000000000000000000" as `0x${string}`;
 const eurcAddr = EURC.address as `0x${string}`;
 
-/** Rough fiat prices for TVL calc */
 const PRICES: Record<string, number> = { USDC: 1, EURC: 1.08 };
 
 const PoolAnalytics = () => {
@@ -67,7 +108,6 @@ const PoolAnalytics = () => {
     const tvl = reserveUSDC * PRICES.USDC + reserveEURC * PRICES.EURC;
 
     const lpSupply = totalSupply ? Number(formatUnits(totalSupply as bigint, 18)).toFixed(6) : "0";
-    // Estimate daily fees: assume ~5% daily volume relative to TVL (placeholder)
     const estDailyVolume = tvl * 0.05;
     const dailyFees = estDailyVolume * 0.003;
 

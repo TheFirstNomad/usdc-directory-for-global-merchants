@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useAccount } from "wagmi";
+import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import {
   createViemAdapterFromWallet,
   payListingFee,
@@ -19,7 +19,8 @@ import {
 import { useChainContext } from "@/contexts/ChainContext";
 
 const SubmitAIAgent = () => {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider("eip155");
   const { chainId } = useChainContext();
   const [agentName, setAgentName] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
@@ -69,7 +70,7 @@ const SubmitAIAgent = () => {
 
     setPaying(true);
     try {
-      const adapter = await createViemAdapterFromWallet(address as `0x${string}`);
+      const adapter = await createViemAdapterFromWallet(walletProvider);
       const { txHash, explorerUrl } = await payListingFee(adapter, paymentChainId);
 
       const logoUrl = await uploadLogo();

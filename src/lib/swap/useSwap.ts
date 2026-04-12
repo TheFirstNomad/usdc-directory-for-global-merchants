@@ -1,12 +1,11 @@
 import { useState, useCallback } from "react";
 import { useWriteContract, useReadContract, usePublicClient } from "wagmi";
-import { parseUnits } from "viem";
+import { parseUnits, encodeFunctionData } from "viem";
 import {
   UNISWAP_V3_ROUTER, SWAP_ROUTER_ABI, ERC20_ABI,
 } from "./contracts";
 import type { TokenInfo } from "./tokens";
 import { WETH_ADDRESS, getPoolFee } from "./tokens";
-import { encodeFunctionData } from "viem";
 import { createViemAdapterFromWallet, swapViaKit, type PaymentChainId } from "@/lib/arcAppKit";
 
 export type SwapState = "idle" | "approving" | "swapping" | "success" | "error";
@@ -17,15 +16,18 @@ const normalizeErrorMessage = (message: string) =>
     .replace(/^The contract function "[^"]+" reverted with the following reason:\s*/i, "")
     .trim();
 
-const getReadableSwapError = (error: any) => {
+const getReadableSwapError = (error: unknown) => {
+  const err = error as Record<string, unknown> | null;
+  const cause = err?.cause as Record<string, unknown> | undefined;
+
   const combinedMessage = [
-    error?.cause?.reason,
-    error?.shortMessage,
-    error?.message,
-    error?.details,
-    error?.cause?.shortMessage,
-    error?.cause?.message,
-    error?.cause?.details,
+    cause?.reason,
+    err?.shortMessage,
+    err?.message,
+    err?.details,
+    cause?.shortMessage,
+    cause?.message,
+    cause?.details,
   ]
     .filter(Boolean)
     .join(" | ");
@@ -47,13 +49,16 @@ const getReadableSwapError = (error: any) => {
   ) {
     return "Swap could not be simulated. Recheck the amount, route, and slippage, then try again.";
   }
-  if (normalized.includes("createswap failed") || normalized.includes("failed to fetch")) {
+  if (normalized.includes("failed to fetch") || normalized.includes("networkerror") || normalized.includes("cors")) {
+    return "Swap service unavailable — this may be a domain configuration issue. Please contact the admin or try again later.";
+  }
+  if (normalized.includes("createswap failed")) {
     return "Swap request failed. Ensure your wallet is connected to the correct network and try again.";
   }
   if (normalized.includes("reverted") || normalized.includes("execution reverted")) {
     return normalizedMessage || "Swap reverted on-chain. Try a smaller amount or refresh the quote.";
   }
-  return normalizedMessage || error?.shortMessage || error?.message || "Swap failed";
+  return normalizedMessage || (err?.shortMessage as string) || (err?.message as string) || "Swap failed";
 };
 
 export function useSwap({
@@ -72,7 +77,7 @@ export function useSwap({
   chainId: number;
   userAddress: `0x${string}` | undefined;
   slippage: number;
-  walletProvider?: any;
+  walletProvider?: unknown;
 }) {
   const [swapState, setSwapState] = useState<SwapState>("idle");
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
@@ -101,7 +106,7 @@ export function useSwap({
     }
   })();
 
-  // Check ERC20 allowance (only for Base V3 router — Arc uses App Kit)
+  // Check ERC20 allowance (only for Base V3 router)
   const { data: allowance } = useReadContract({
     address: actualTokenIn,
     abi: ERC20_ABI,
@@ -111,7 +116,6 @@ export function useSwap({
     chainId,
   });
 
-  // Arc uses App Kit swap (no approval needed from our side)
   const needsApproval =
     isBase && !isNativeIn && amountInParsed > 0n && ((allowance as bigint) ?? 0n) < amountInParsed;
 
@@ -132,7 +136,7 @@ export function useSwap({
         await publicClient.waitForTransactionReceipt({ hash });
       }
       setSwapState("idle");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setSwapState("error");
       setErrorMessage(getReadableSwapError(err));
     }
@@ -145,19 +149,19 @@ export function useSwap({
 
     try {
       if (isArc) {
-        // ── Arc Testnet: Use Circle App Kit swap ──
+        // ── Arc Testnet: Circle App Kit swap ──
         const adapter = await createViemAdapterFromWallet(walletProvider);
         const result = await swapViaKit(
           adapter,
           chainId as PaymentChainId,
           tokenIn.symbol,
           tokenOut.symbol,
-          amountIn
+          amountIn,
         );
         setTxHash(result.txHash as `0x${string}`);
         setSwapState("success");
       } else {
-        // ── Uniswap V3 swap on Base ──
+        // ── Base Mainnet: Uniswap V3 direct execution ──
         if (!amountOutMin) return;
         const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
         const poolFee = getPoolFee(tokenIn.symbol, tokenOut.symbol);
@@ -210,8 +214,8 @@ export function useSwap({
         }
         setSwapState("success");
       }
-    } catch (err: any) {
-      console.error("Arc/Base swap raw error:", err);
+    } catch (err: unknown) {
+      console.error("Swap error (full object):", err);
       setSwapState("error");
       setErrorMessage(getReadableSwapError(err));
       throw err;

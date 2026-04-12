@@ -15,7 +15,7 @@ import {
   Droplets,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAppKitAccount } from "@reown/appkit/react";
+import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { useAppKit } from "@reown/appkit/react";
 import {
   createViemAdapterFromWallet,
@@ -37,6 +37,7 @@ interface ArcPaymentPanelProps {
 const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelProps) => {
   const { toast } = useToast();
   const { isConnected, address } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider("eip155");
   const { open } = useAppKit();
   const { chainId } = useChainContext();
 
@@ -54,7 +55,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
     setPaying(true);
     setError(null);
     try {
-      const adapter = await createViemAdapterFromWallet(address as `0x${string}`);
+      const adapter = await createViemAdapterFromWallet(walletProvider);
       const result = await payListingFee(adapter, paymentChainId, fee);
       setTxHash(result.txHash);
       toast({ title: "Payment successful!", description: `Tx: ${result.txHash.slice(0, 12)}…` });
@@ -72,7 +73,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
     setSwapping(true);
     setError(null);
     try {
-      const adapter = await createViemAdapterFromWallet(address as `0x${string}`);
+      const adapter = await createViemAdapterFromWallet(walletProvider);
       await swapViaKit(adapter, paymentChainId, "USDC", "EURC", "10");
       toast({ title: "Swap complete!", description: `Swapped USDC → EURC on ${chainLabel}` });
     } catch (err: any) {

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
-import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
+import { useAppKit, useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { useChainContext } from "@/contexts/ChainContext";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -40,6 +40,7 @@ const BRIDGE_ROUTES = [
 const Bridge = () => {
   const { open: openWallet } = useAppKit();
   const { isConnected, address } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider("eip155");
   const { chainId } = useChainContext();
   const { toast } = useToast();
 
@@ -57,7 +58,7 @@ const Bridge = () => {
     setError(null);
     setTxHash(null);
     try {
-      const adapter = await createViemAdapterFromWallet(address as `0x${string}`);
+      const adapter = await createViemAdapterFromWallet(walletProvider);
       const result = await bridgeUsdc(adapter, route.fromEnum, route.toEnum, amount);
       setTxHash(result.txHash);
       toast({ title: "Bridge initiated!", description: `Tx: ${result.txHash.slice(0, 12)}…` });
