@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
-import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
+import { useAppKit, useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { useChainContext } from "@/contexts/ChainContext";
 import { useToast } from "@/hooks/use-toast";
 import {

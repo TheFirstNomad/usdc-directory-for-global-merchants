@@ -41,7 +41,7 @@ export const ARC_WRAPPED_NATIVE: `0x${string}` = "0x3600000000000000000000000000
 
 // Platform fee wallet (1% on swaps/liquidity removal)
 export const PLATFORM_FEE_BPS = 100; // 1%
-export const PLATFORM_FEE_WALLET: `0x${string}` = "0x13fA78AB20762c8F49B58D44dbC177d2adB94D7C";
+export const PLATFORM_FEE_WALLET: `0x${string}` = "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c";
 
 export const POOL_FEES: Record<string, number> = {
   "ETH-USDC": 500, "USDC-ETH": 500,

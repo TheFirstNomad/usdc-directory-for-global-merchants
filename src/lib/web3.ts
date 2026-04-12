@@ -25,7 +25,7 @@ export const baseMainnet = defineChain({
 // Treasury wallet — set via env or fallback
 export const TREASURY_ADDRESS: `0x${string}` =
   (import.meta.env.VITE_TREASURY_ADDRESS as `0x${string}`) ||
-  "0x13fA78AB20762c8F49B58D44dbC177d2adB94D7C";
+  "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c";
 
 // Listing fee in USDC (6 decimals)
 export const LISTING_FEE = 10_000_000n; // 10 USDC
