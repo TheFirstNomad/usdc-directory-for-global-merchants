@@ -88,6 +88,8 @@ const SuccessModal = forwardRef<HTMLDivElement, SuccessModalProps>(({
       </div>
     </div>
   );
-};
+});
+
+SuccessModal.displayName = "SuccessModal";
 
 export default SuccessModal;
