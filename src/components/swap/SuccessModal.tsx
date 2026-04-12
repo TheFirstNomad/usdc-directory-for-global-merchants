@@ -1,6 +1,6 @@
 import { CheckCircle2, ExternalLink, X, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, forwardRef } from "react";
+import { useState } from "react";
 
 export type SuccessMode = "swap" | "add-liquidity" | "remove-liquidity";
 
@@ -17,7 +17,7 @@ interface SuccessModalProps {
   onClose: () => void;
 }
 
-const SuccessModal = forwardRef<HTMLDivElement, SuccessModalProps>(({
+const SuccessModal = ({
   open,
   txHash,
   explorerUrl,
@@ -28,7 +28,7 @@ const SuccessModal = forwardRef<HTMLDivElement, SuccessModalProps>(({
   receiveAmount,
   mode = "swap",
   onClose,
-}, ref) => {
+}: SuccessModalProps) => {
   const [copied, setCopied] = useState(false);
   if (!open) return null;
 
@@ -88,8 +88,6 @@ const SuccessModal = forwardRef<HTMLDivElement, SuccessModalProps>(({
       </div>
     </div>
   );
-});
-
-SuccessModal.displayName = "SuccessModal";
+};
 
 export default SuccessModal;
