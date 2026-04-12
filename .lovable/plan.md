@@ -1,20 +1,28 @@
 
 
-## Add VITE_ARC_KIT_KEY to .env
+## Temporary: Disable Swap on Arc Testnet with "Coming Soon" State
 
-### What needs to happen
+### Summary
+When the user selects Arc Testnet on the Swap page, replace the entire swap form with a clean "Coming Soon" banner. Base mainnet swap remains fully functional. Also fix the runtime error ("Component is not a function") likely caused by the `forwardRef` wrapper on `SuccessModal`.
 
-1. **Update `.env`** — Add `VITE_ARC_KIT_KEY=KIT_KEY:0d00dda04082f989e0ca58a639c97cd5:54ceb72723ecb14061b2e263ae03fad1` to the existing `.env` file (which already has the Supabase variables)
+### Changes
 
-2. **Verify `src/lib/arcAppKit.ts`** — Already correct. Line 17 reads `import.meta.env.VITE_ARC_KIT_KEY` with no hardcoded fallback. The runtime guard on lines 19-24 logs an error if the key is missing or malformed. No changes needed here.
+**1. `src/pages/Swap.tsx`**
+- After the chain selector and Arc Testnet info banner, add a conditional: if `isArcTestnet`, render a "Coming Soon" card instead of the swap form
+- The card will include:
+  - Heading: "USDC ↔ EURC Swap on Arc Testnet — Coming Soon"
+  - Subtext explaining Circle App Kit integration is in progress, with suggestion to swap on Base
+  - Disabled purple gradient button: "Swap Coming Soon"
+  - "Get test USDC" faucet link
+  - Static rate display: "1 USDC ≈ 0.926 EURC"
+- All existing swap UI (pay/receive inputs, action buttons, details, modals) wrapped in `!isArcTestnet` condition
+- No other pages or components touched
 
-### What's already done
-- The hardcoded key was removed in the previous round of changes
-- The runtime validation is already in place
-- The code reads from `import.meta.env.VITE_ARC_KIT_KEY` correctly
+**2. `src/components/swap/SuccessModal.tsx`** (runtime error fix)
+- The `forwardRef` wrap may be causing the "Component is not a function" error since the parent doesn't pass a ref. Revert to a plain function component (remove `forwardRef`) to fix the crash.
 
-### Single change
-- Append `VITE_ARC_KIT_KEY=KIT_KEY:0d00dda04082f989e0ca58a639c97cd5:54ceb72723ecb14061b2e263ae03fad1` to `.env`
-
-This will make Vite inject the key at build time so the frontend can access it.
+### What stays untouched
+- Base mainnet swap — fully operational
+- Bridge, directory, maps, admin, listings — all unchanged
+- All hooks, tokens, chains, contracts — unchanged
 
