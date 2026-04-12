@@ -75,7 +75,7 @@ function extractTxHash(result: unknown): string {
  * @throws If no provider is available.
  */
 export async function createViemAdapterFromWallet(passedProvider?: unknown) {
-  const provider = (passedProvider as Record<string, unknown>) || (window as Record<string, unknown>).ethereum;
+  const provider = (passedProvider as Record<string, unknown>) || (window as unknown as Record<string, unknown>).ethereum;
 
   if (!provider || typeof (provider as Record<string, unknown>).request !== "function") {
     throw new Error(

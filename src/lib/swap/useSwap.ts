@@ -131,7 +131,7 @@ export function useSwap({
         args: [routerAddress as `0x${string}`, amountInParsed],
         account: userAddress,
         chainId,
-      } as Parameters<typeof writeContractAsync>[0]);
+      } as any);
       if (publicClient) {
         await publicClient.waitForTransactionReceipt({ hash });
       }
@@ -206,7 +206,7 @@ export function useSwap({
           value: isNativeIn ? amountInParsed : undefined,
           account: userAddress,
           chainId: 8453,
-        } as Parameters<typeof writeContractAsync>[0]);
+        } as any);
 
         setTxHash(hash);
         if (publicClient) {
