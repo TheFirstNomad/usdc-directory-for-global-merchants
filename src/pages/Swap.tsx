@@ -456,7 +456,7 @@ const Swap = () => {
                 </div>
 
                 <p className="text-center text-[11px] text-muted-foreground/60 mt-3">
-                  Fees on Base · Low slippage · {chainConfig.dexName}
+                  {chainConfig.shortName} · Low slippage · {chainConfig.dexName}
                 </p>
 
                 {/* Collapsible details */}
