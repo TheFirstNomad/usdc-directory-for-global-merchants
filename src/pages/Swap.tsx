@@ -227,7 +227,6 @@ const Swap = () => {
           )}
 
           {/* ── Swap UI (both chains) ── */}
-            <>
               {/* Popular pairs */}
               {popularPairs.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-5 justify-center">
