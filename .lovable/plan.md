@@ -1,28 +1,56 @@
 
 
-## Temporary: Disable Swap on Arc Testnet with "Coming Soon" State
+## Restore Arc Testnet Swap via Server-Side Proxy
 
-### Summary
-When the user selects Arc Testnet on the Swap page, replace the entire swap form with a clean "Coming Soon" banner. Base mainnet swap remains fully functional. Also fix the runtime error ("Component is not a function") likely caused by the `forwardRef` wrapper on `SuccessModal`.
+### The real problem
+
+The Circle App Kit SDK's `kit.swap()` makes an HTTP request from the browser to `api.circle.com`. That request gets blocked by CORS because Circle's API doesn't include your domain in its allowed origins. The Circle Console doesn't expose a setting to whitelist origins for Kit Keys, so there's no way to fix this from the console side.
+
+### About Build Secrets
+
+The `.env` file in your project already contains `VITE_ARC_KIT_KEY` and it works — Vite injects it at build time. The "Build Secrets" tab in Workspace Settings was a separate feature for private npm packages; it's not needed here. Your current setup is correct.
+
+### Solution: Edge Function proxy
+
+Instead of the browser calling Circle's API directly (which gets CORS-blocked), we route that call through a backend function that runs on your server. Server-to-server calls have no CORS restrictions.
+
+```text
+ BEFORE (broken):
+ Browser → api.circle.com  ← CORS blocked
+
+ AFTER (working):
+ Browser → Your Edge Function → api.circle.com → response back
+              (no CORS)         (server-to-server)
+```
+
+The wallet signing still happens in the user's browser — only the Circle API call is proxied.
 
 ### Changes
 
-**1. `src/pages/Swap.tsx`**
-- After the chain selector and Arc Testnet info banner, add a conditional: if `isArcTestnet`, render a "Coming Soon" card instead of the swap form
-- The card will include:
-  - Heading: "USDC ↔ EURC Swap on Arc Testnet — Coming Soon"
-  - Subtext explaining Circle App Kit integration is in progress, with suggestion to swap on Base
-  - Disabled purple gradient button: "Swap Coming Soon"
-  - "Get test USDC" faucet link
-  - Static rate display: "1 USDC ≈ 0.926 EURC"
-- All existing swap UI (pay/receive inputs, action buttons, details, modals) wrapped in `!isArcTestnet` condition
-- No other pages or components touched
+**1. Create Edge Function `circle-proxy`** (`supabase/functions/circle-proxy/index.ts`)
+- Generic proxy that forwards requests to `api.circle.com`
+- Uses the `ARC_KIT_KEY` secret already stored in Cloud
+- Adds proper CORS headers so the browser can call it
+- Validates the request and passes it through
 
-**2. `src/components/swap/SuccessModal.tsx`** (runtime error fix)
-- The `forwardRef` wrap may be causing the "Component is not a function" error since the parent doesn't pass a ref. Revert to a plain function component (remove `forwardRef`) to fix the crash.
+**2. Update `src/lib/arcAppKit.ts`**
+- Replace the `swapViaKit()` implementation for Arc Testnet
+- Instead of calling `kit.swap()` (which triggers the CORS-blocked API call), use a custom flow:
+  - Call our `circle-proxy` Edge Function to get swap transaction parameters from Circle's API
+  - Use the Viem adapter to sign and submit the transaction directly to Arc Testnet's RPC
+- Keep `kit.swap()` as-is for Base Mainnet (it may work there, or can be proxied too)
+
+**3. Restore swap UI in `src/pages/Swap.tsx`**
+- Remove the `isArcTestnet` conditional that shows "Coming Soon"
+- Show the full swap form for both Base and Arc Testnet
+- Everything else stays the same (token selector, quote display, slippage, success modal)
 
 ### What stays untouched
-- Base mainnet swap — fully operational
-- Bridge, directory, maps, admin, listings — all unchanged
-- All hooks, tokens, chains, contracts — unchanged
+- Base Mainnet swap — no changes
+- Bridge page — no changes
+- Directory, admin, maps, listings — no changes
+- All secrets and environment variables — already configured correctly
+
+### Implementation note
+During implementation, I'll need to inspect the exact request format the Circle SDK sends to `api.circle.com` (endpoint path, headers, body structure) so the proxy can forward it correctly. This may require examining the SDK's network calls or source code. If the exact API format differs from what I expect, I'll adapt the proxy accordingly.
 
