@@ -133,17 +133,54 @@ export async function payListingFee(
   return { txHash, explorerUrl: getExplorerUrl(chainId, txHash) };
 }
 
+// ── Fetch-intercepting proxy for Circle API ────────────────────────
+/**
+ * The Circle SDK calls `https://api.circle.com/v1/stablecoinKits/*` from
+ * the browser, which is blocked by CORS on custom domains.
+ *
+ * This wrapper temporarily patches `globalThis.fetch` so that any request
+ * to `api.circle.com` is transparently routed through our Edge Function
+ * (`circle-proxy`). The SDK's signing & on-chain execution stays untouched.
+ */
+const CIRCLE_API_ORIGIN = "https://api.circle.com";
+const PROXY_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/circle-proxy`;
+
+function withCircleProxy<T>(fn: () => Promise<T>): Promise<T> {
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : (input as Request).url;
+
+    if (url.startsWith(CIRCLE_API_ORIGIN)) {
+      const path = new URL(url).pathname + new URL(url).search;
+      const method = init?.method ?? (typeof input !== "string" && !(input instanceof URL) ? (input as Request).method : "GET");
+      let body: unknown;
+      if (init?.body) {
+        try { body = JSON.parse(init.body as string); } catch { body = init.body; }
+      }
+
+      console.log(`[circle-proxy] Intercepting ${method} ${path}`);
+
+      return originalFetch(PROXY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method, path, body }),
+      });
+    }
+
+    return originalFetch(input, init);
+  };
+
+  return fn().finally(() => {
+    globalThis.fetch = originalFetch;
+  });
+}
+
 // ── Swap via App Kit ────────────────────────────────────────────────
 /**
  * Executes a token swap via Circle App Kit.
- * Works on both Base Mainnet and Arc Testnet.
- *
- * @param adapter  - Viem adapter created by `createViemAdapterFromWallet`.
- * @param chainId  - Target chain.
- * @param tokenIn  - Input token symbol (e.g. "USDC").
- * @param tokenOut - Output token symbol (e.g. "EURC").
- * @param amount   - Input amount as a decimal string.
- * @returns Transaction hash.
+ * On Arc Testnet, API calls are routed through the circle-proxy Edge Function
+ * to bypass CORS. On Base Mainnet, calls go direct (or also proxied).
  */
 export async function swapViaKit(
   adapter: Awaited<ReturnType<typeof createViemAdapterFromWallet>>,
@@ -155,13 +192,17 @@ export async function swapViaKit(
   const kit = getAppKit();
   const chain = chainString(chainId);
 
-  const result = await kit.swap({
-    from: { adapter, chain },
-    tokenIn,
-    tokenOut,
-    amountIn: amount,
-    config: { kitKey: ARC_KIT_KEY },
-  } as Parameters<typeof kit.swap>[0]);
+  const doSwap = () =>
+    kit.swap({
+      from: { adapter, chain },
+      tokenIn,
+      tokenOut,
+      amountIn: amount,
+      config: { kitKey: ARC_KIT_KEY },
+    } as Parameters<typeof kit.swap>[0]);
+
+  // Always proxy to avoid CORS on any domain
+  const result = await withCircleProxy(doSwap);
 
   const txHash = extractTxHash(result);
   return { txHash };

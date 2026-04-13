@@ -211,57 +211,22 @@ const Swap = () => {
             <ChainSelector chainId={selectedChainId} onChange={handleChainChange} />
           </div>
 
-          {/* Arc Testnet — Coming Soon */}
+          {/* Arc Testnet info banner */}
           {isArcTestnet && (
-            <div className="w-full max-w-[460px] animate-fade-in">
-              <div className="rounded-2xl border border-border/60 bg-card/95 backdrop-blur-sm p-6 shadow-xl shadow-black/10">
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <ArrowDownUp className="h-7 w-7 text-primary" />
-                  </div>
-                  <h2 className="text-xl font-bold text-foreground mb-2">
-                    USDC ↔ EURC Swap on Arc Testnet — Coming Soon
-                  </h2>
-                  <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-                    We're working on getting Circle App Kit fully live on Arc Testnet. In the meantime, you can still swap on Base.
-                  </p>
-
-                  <Button
-                    disabled
-                    className="w-full h-13 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground opacity-60 cursor-not-allowed mb-5"
-                  >
-                    Swap Coming Soon
-                  </Button>
-
-                  <div className="w-full rounded-xl bg-muted/20 border border-border/40 p-4 space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Indicative Rate</span>
-                      <span className="text-foreground font-medium">1 USDC ≈ 0.926 EURC</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Network</span>
-                      <span className="text-foreground font-medium">Arc Testnet</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Test Tokens</span>
-                      <a
-                        href="https://faucet.circle.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline font-medium flex items-center gap-1"
-                      >
-                        Get test USDC <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
+            <div className="w-full max-w-[460px] mb-4 animate-fade-in">
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex items-start gap-2">
+                <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  Swaps on Arc Testnet are routed through Circle App Kit.{" "}
+                  <a href="https://faucet.circle.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                    Get test USDC
+                  </a>
+                </p>
               </div>
             </div>
           )}
 
-          {/* ── Base Mainnet: full swap UI ── */}
-          {!isArcTestnet && (
-            <>
+          {/* ── Swap UI (both chains) ── */}
               {/* Popular pairs */}
               {popularPairs.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-5 justify-center">
@@ -491,7 +456,7 @@ const Swap = () => {
                 </div>
 
                 <p className="text-center text-[11px] text-muted-foreground/60 mt-3">
-                  Fees on Base · Low slippage · {chainConfig.dexName}
+                  {chainConfig.shortName} · Low slippage · {chainConfig.dexName}
                 </p>
 
                 {/* Collapsible details */}
@@ -553,8 +518,6 @@ const Swap = () => {
                   </div>
                 )}
               </div>
-            </>
-          )}
         </main>
 
         <Footer />
