@@ -1,56 +1,62 @@
 
 
-## Restore Arc Testnet Swap via Server-Side Proxy
+## Full Project Audit & Bug Fix Plan
 
-### The real problem
+### Bugs Found
 
-The Circle App Kit SDK's `kit.swap()` makes an HTTP request from the browser to `api.circle.com`. That request gets blocked by CORS because Circle's API doesn't include your domain in its allowed origins. The Circle Console doesn't expose a setting to whitelist origins for Kit Keys, so there's no way to fix this from the console side.
+**Critical Bugs:**
 
-### About Build Secrets
+1. **ArcPaymentPanel never saves data to the database** — The `submissionData` prop is received but completely unused. When a user pays 10 USDC to list or 5 USDC to edit, the payment goes through but no submission or partner record is ever created/updated. This means:
+   - New listings are paid for but never appear in the directory
+   - Edit updates are paid for but never applied
+   - The Payment Monitor is empty because the submissions table has 0 rows (not a display bug — data was never written)
 
-The `.env` file in your project already contains `VITE_ARC_KIT_KEY` and it works — Vite injects it at build time. The "Build Secrets" tab in Workspace Settings was a separate feature for private npm packages; it's not needed here. Your current setup is correct.
+2. **Admin Edit Listing fails ("Failed to update listing")** — The `admin-listings` edge function uses `ethers@6.13.1` via esm.sh which produces module warnings (`bufferutil`, `utf-8-validate`). The PUT handler itself looks correct, but the signature verification may be failing intermittently. Need to add better error logging and potentially switch to a lighter verification method.
 
-### Solution: Edge Function proxy
+3. **Admin GET returns only 1000 of 1176 listings** — Supabase has a default 1000-row limit. The admin-listings edge function doesn't paginate, so 176 listings are invisible in the admin dashboard.
 
-Instead of the browser calling Circle's API directly (which gets CORS-blocked), we route that call through a backend function that runs on your server. Server-to-server calls have no CORS restrictions.
+**Minor Issues:**
 
-```text
- BEFORE (broken):
- Browser → api.circle.com  ← CORS blocked
+4. **Partner view uses `use_cases` for networks display** — MerchantDetail shows `use_cases` as "Supported Networks" but the actual networks data is in the `networks` column.
 
- AFTER (working):
- Browser → Your Edge Function → api.circle.com → response back
-              (no CORS)         (server-to-server)
-```
+5. **No `wallet_address` column exposed in `partners_public` view** — User edit ownership check via `is_listing_owner` queries the base `partners` table directly, which works because it's a SECURITY DEFINER function. This is fine.
 
-The wallet signing still happens in the user's browser — only the Circle API call is proxied.
+### Fixes
 
-### Changes
+**1. ArcPaymentPanel — Create submission record after payment**
+- After successful `payListingFee`, call a new edge function (or the existing `circle-proxy` repurposed) to create a submission record in the database
+- For new listings: insert into `submissions` table with all form data + wallet address + tx hash, then insert into `partners` table
+- For updates: insert into `submissions` as an update record, then update the existing partner
+- The `submissionData` prop + `address` + `txHash` are all available — they just need to be sent to the backend
 
-**1. Create Edge Function `circle-proxy`** (`supabase/functions/circle-proxy/index.ts`)
-- Generic proxy that forwards requests to `api.circle.com`
-- Uses the `ARC_KIT_KEY` secret already stored in Cloud
-- Adds proper CORS headers so the browser can call it
-- Validates the request and passes it through
+**2. Create `submit-listing` edge function**
+- Accepts POST with listing data + wallet address + tx hash
+- Inserts into `submissions` table (for payment tracking)
+- Inserts/updates `partners` table (for directory display)
+- Sets `payment_status` to `confirmed` and `wallet_address` to the payer
+- No admin signature required — any wallet can submit (they're paying)
 
-**2. Update `src/lib/arcAppKit.ts`**
-- Replace the `swapViaKit()` implementation for Arc Testnet
-- Instead of calling `kit.swap()` (which triggers the CORS-blocked API call), use a custom flow:
-  - Call our `circle-proxy` Edge Function to get swap transaction parameters from Circle's API
-  - Use the Viem adapter to sign and submit the transaction directly to Arc Testnet's RPC
-- Keep `kit.swap()` as-is for Base Mainnet (it may work there, or can be proxied too)
+**3. Fix admin-listings edge function**
+- Add `.limit(2000)` to the GET query to return all 1176 partners
+- Add detailed error logging to the PUT handler to diagnose the "Failed to update" error
+- Add `console.log` for the verification step and the Supabase update result
 
-**3. Restore swap UI in `src/pages/Swap.tsx`**
-- Remove the `isArcTestnet` conditional that shows "Coming Soon"
-- Show the full swap form for both Base and Arc Testnet
-- Everything else stays the same (token selector, quote display, slippage, success modal)
+**4. Fix MerchantDetail networks display**
+- Change from `partner.use_cases` to `(partner as any).networks` for the "Supported Networks" section
+
+**5. Payment Monitor will self-fix**
+- Once ArcPaymentPanel starts creating submission records (fix #1), the Payment Monitor will show data automatically — no changes needed to AdminPayments
+
+### Files to create/modify
+- **Create** `supabase/functions/submit-listing/index.ts` — new edge function to persist listings
+- **Edit** `src/components/ArcPaymentPanel.tsx` — call submit-listing after payment success
+- **Edit** `supabase/functions/admin-listings/index.ts` — increase limit, add logging
+- **Edit** `src/pages/MerchantDetail.tsx` — fix networks display
+- **Edit** `src/lib/partners.ts` — add `networks` to Partner interface
 
 ### What stays untouched
-- Base Mainnet swap — no changes
-- Bridge page — no changes
-- Directory, admin, maps, listings — no changes
-- All secrets and environment variables — already configured correctly
-
-### Implementation note
-During implementation, I'll need to inspect the exact request format the Circle SDK sends to `api.circle.com` (endpoint path, headers, body structure) so the proxy can forward it correctly. This may require examining the SDK's network calls or source code. If the exact API format differs from what I expect, I'll adapt the proxy accordingly.
+- Swap page, Bridge page — working correctly
+- Admin Featured, Admin Payments UI — no code changes needed
+- Directory, Map, Insights — no changes needed
+- All existing edge functions except admin-listings — unchanged
 
