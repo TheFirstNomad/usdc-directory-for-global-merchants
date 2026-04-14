@@ -204,7 +204,7 @@ const MerchantDetail = () => {
             <div className="bg-card border border-border rounded-xl p-5">
               <h3 className="font-semibold text-foreground mb-3 text-sm">Supported Networks</h3>
               <div className="flex flex-wrap gap-2">
-                {(partner.use_cases || []).map((chain, i) => (
+                {(((partner as any).networks as string[]) || []).map((chain, i) => (
                   <span
                     key={i}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${chainColors[chain] || "bg-muted text-muted-foreground"}`}
@@ -212,7 +212,7 @@ const MerchantDetail = () => {
                     {chain}
                   </span>
                 ))}
-                {(!partner.use_cases || partner.use_cases.length === 0) && (
+                {(!((partner as any).networks as string[]) || ((partner as any).networks as string[]).length === 0) && (
                   <span className="text-sm text-muted-foreground">No network data available</span>
                 )}
               </div>

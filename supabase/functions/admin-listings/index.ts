@@ -56,8 +56,9 @@ Deno.serve(async (req: Request) => {
     if (req.method === "GET") {
       const { data, error } = await supabase
         .from("partners")
-        .select("id, name, description, logo_url, logo_emoji, website, categories, region, featured, payment_status, created_at")
-        .order("name", { ascending: true });
+        .select("id, name, description, logo_url, logo_emoji, website, categories, region, featured, payment_status, created_at, networks, wallet_address")
+        .order("name", { ascending: true })
+        .limit(2000);
 
       if (error) throw error;
       return new Response(
@@ -84,7 +85,9 @@ Deno.serve(async (req: Request) => {
       if (region !== undefined) updates.region = region;
       if (featured !== undefined) updates.featured = featured;
 
-      const { error } = await supabase.from("partners").update(updates).eq("id", id);
+      console.log("[admin-listings] PUT id:", id, "updates:", JSON.stringify(updates));
+      const { error, data: updateData } = await supabase.from("partners").update(updates).eq("id", id).select("id");
+      console.log("[admin-listings] PUT result:", JSON.stringify({ error, updateData }));
       if (error) throw error;
 
       return new Response(JSON.stringify({ success: true }), {
