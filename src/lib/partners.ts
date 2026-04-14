@@ -13,6 +13,7 @@ export interface Partner {
   featured: boolean;
   created_at: string;
   usdc_score?: number;
+  networks?: string[];
 }
 
 export async function fetchPartners(): Promise<Partner[]> {
