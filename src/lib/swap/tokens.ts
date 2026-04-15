@@ -39,8 +39,8 @@ export const WETH_ADDRESS: `0x${string}` = "0x4200000000000000000000000000000000
 // This directly affects native USDC balance — approve/transferFrom work against the native balance.
 export const ARC_WRAPPED_NATIVE: `0x${string}` = "0x3600000000000000000000000000000000000000";
 
-// Platform fee wallet (1% on swaps/liquidity removal)
-export const PLATFORM_FEE_BPS = 100; // 1%
+// No platform fee — users swap for free
+export const PLATFORM_FEE_BPS = 0;
 export const PLATFORM_FEE_WALLET: `0x${string}` = "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c";
 
 export const POOL_FEES: Record<string, number> = {

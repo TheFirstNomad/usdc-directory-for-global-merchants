@@ -185,7 +185,7 @@ const PoolAnalytics = () => {
       </div>
 
       <p className="text-[10px] text-muted-foreground/50 mt-2 text-center">
-        {stats.platformFee}% platform fee applied on swaps & liquidity removal
+        Zero platform fees · 0.3% DEX trading fee
       </p>
     </div>
   );
