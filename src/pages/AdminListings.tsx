@@ -90,7 +90,7 @@ const AdminListings = () => {
         `https://${projectId}.supabase.co/functions/v1/admin-listings`,
         {
           method: "DELETE",
-          headers,
+          headers: { ...headers, "Content-Type": "application/json" },
           body: JSON.stringify({ id }),
         }
       );
@@ -120,7 +120,7 @@ const AdminListings = () => {
         `https://${projectId}.supabase.co/functions/v1/admin-listings`,
         {
           method: "PUT",
-          headers,
+          headers: { ...headers, "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }
       );
@@ -149,7 +149,7 @@ const AdminListings = () => {
         `https://${projectId}.supabase.co/functions/v1/admin-listings`,
         {
           method: "PUT",
-          headers,
+          headers: { ...headers, "Content-Type": "application/json" },
           body: JSON.stringify({ id, featured }),
         }
       );

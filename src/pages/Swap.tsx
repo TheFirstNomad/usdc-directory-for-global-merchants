@@ -56,7 +56,8 @@ const Swap = () => {
   const chainConfig = CHAINS[selectedChainId];
   const popularPairs = POPULAR_PAIRS[selectedChainId] ?? [];
   const isArcTestnet = selectedChainId === 5042002;
-  const wrongChain = isConnected && walletChainId !== selectedChainId;
+  // Skip wrong-chain check on Arc Testnet — Circle SDK handles chain context
+  const wrongChain = isConnected && !isArcTestnet && walletChainId !== selectedChainId;
 
   /* ── chain switch ── */
   const handleChainChange = useCallback((id: SupportedChainId) => {
@@ -456,7 +457,7 @@ const Swap = () => {
                 </div>
 
                 <p className="text-center text-[11px] text-muted-foreground/60 mt-3">
-                  {chainConfig.shortName} · Low slippage · {chainConfig.dexName}
+                  {chainConfig.shortName} · Zero platform fees · {chainConfig.dexName}
                 </p>
 
                 {/* Collapsible details */}
@@ -497,10 +498,12 @@ const Swap = () => {
                             </span>
                           </div>
                         )}
-                        <div className="flex justify-between">
-                          <span>Pool Fee</span>
-                          <span className="text-foreground">{poolFee / 10000}%</span>
-                        </div>
+                        {!isArcTestnet && (
+                          <div className="flex justify-between">
+                            <span>DEX Fee (Uniswap)</span>
+                            <span className="text-foreground">{poolFee / 10000}%</span>
+                          </div>
+                        )}
                         <div className="flex justify-between">
                           <span>Route</span>
                           <span className="text-foreground font-mono text-[11px]">{routeDisplay}</span>
