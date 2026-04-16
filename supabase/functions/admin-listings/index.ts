@@ -11,7 +11,7 @@ const corsHeaders = {
 const OWNER_WALLET = "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c".toLowerCase();
 const MAX_AGE_MS = 5 * 60 * 1000;
 
-function verifyAdmin(req: Request): boolean {
+async function verifyAdmin(req: Request): Promise<boolean> {
   const address = req.headers.get("x-admin-address")?.toLowerCase();
   const timestamp = req.headers.get("x-admin-timestamp");
   const signature = req.headers.get("x-admin-signature");
@@ -27,9 +27,14 @@ function verifyAdmin(req: Request): boolean {
 
   try {
     const message = `USDC Directory Admin\nTimestamp: ${ts}`;
-    const recovered = ethers.verifyMessage(message, signature).toLowerCase();
-    return recovered === OWNER_WALLET;
-  } catch {
+    const valid = await verifyMessage({
+      address: address as `0x${string}`,
+      message,
+      signature: signature as `0x${string}`,
+    });
+    return valid;
+  } catch (e) {
+    console.error("[admin-listings] verifyMessage error:", e);
     return false;
   }
 }
