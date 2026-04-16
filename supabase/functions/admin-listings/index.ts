@@ -1,6 +1,6 @@
 // Admin Manage Listings edge function — full CRUD for the partners table
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { ethers } from "https://esm.sh/ethers@6.13.1";
+import { verifyMessage } from "npm:viem@2.21.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,7 +11,7 @@ const corsHeaders = {
 const OWNER_WALLET = "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c".toLowerCase();
 const MAX_AGE_MS = 5 * 60 * 1000;
 
-function verifyAdmin(req: Request): boolean {
+async function verifyAdmin(req: Request): Promise<boolean> {
   const address = req.headers.get("x-admin-address")?.toLowerCase();
   const timestamp = req.headers.get("x-admin-timestamp");
   const signature = req.headers.get("x-admin-signature");
@@ -27,9 +27,14 @@ function verifyAdmin(req: Request): boolean {
 
   try {
     const message = `USDC Directory Admin\nTimestamp: ${ts}`;
-    const recovered = ethers.verifyMessage(message, signature).toLowerCase();
-    return recovered === OWNER_WALLET;
-  } catch {
+    const valid = await verifyMessage({
+      address: address as `0x${string}`,
+      message,
+      signature: signature as `0x${string}`,
+    });
+    return valid;
+  } catch (e) {
+    console.error("[admin-listings] verifyMessage error:", e);
     return false;
   }
 }
@@ -39,7 +44,7 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (!verifyAdmin(req)) {
+  if (!(await verifyAdmin(req))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 403,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -58,7 +63,7 @@ Deno.serve(async (req: Request) => {
         .from("partners")
         .select("id, name, description, logo_url, logo_emoji, website, categories, region, featured, payment_status, created_at, networks, wallet_address")
         .order("name", { ascending: true })
-        .limit(2000);
+        .range(0, 2999);
 
       if (error) throw error;
       return new Response(
@@ -119,9 +124,9 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("Error:", err);
+    console.error("[admin-listings] Error:", err, (err as Error)?.message, (err as Error)?.stack);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: (err as Error)?.message || "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

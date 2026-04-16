@@ -135,7 +135,7 @@ const AdminListings = () => {
       toast({ title: "Updated", description: "Listing saved" });
     } catch (err) {
       console.error("[AdminListings] Save error:", err);
-      toast({ title: "Error", description: "Failed to update listing", variant: "destructive" });
+      toast({ title: "Error", description: (err as Error)?.message || "Failed to update listing", variant: "destructive" });
     } finally {
       setSaving(false);
     }
