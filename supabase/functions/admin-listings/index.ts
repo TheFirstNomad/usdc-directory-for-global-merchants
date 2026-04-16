@@ -1,6 +1,6 @@
 // Admin Manage Listings edge function — full CRUD for the partners table
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { ethers } from "https://esm.sh/ethers@6.13.1";
+import { verifyMessage } from "npm:viem@2.21.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
