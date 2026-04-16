@@ -44,7 +44,7 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (!verifyAdmin(req)) {
+  if (!(await verifyAdmin(req))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 403,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -63,7 +63,7 @@ Deno.serve(async (req: Request) => {
         .from("partners")
         .select("id, name, description, logo_url, logo_emoji, website, categories, region, featured, payment_status, created_at, networks, wallet_address")
         .order("name", { ascending: true })
-        .limit(2000);
+        .range(0, 2999);
 
       if (error) throw error;
       return new Response(
