@@ -1,16 +1,17 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { ethers } from "https://esm.sh/ethers@6.13.1";
+import { recoverMessageAddress } from "npm:viem@2.21.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-admin-address, x-admin-timestamp, x-admin-signature, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
 };
 
 const OWNER_ADDRESS = "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c".toLowerCase();
 const MAX_AGE_MS = 5 * 60 * 1000;
 
-function verifyAdmin(req: Request): boolean {
+async function verifyAdmin(req: Request): Promise<boolean> {
   const address = req.headers.get("x-admin-address")?.toLowerCase();
   const timestamp = req.headers.get("x-admin-timestamp");
   const signature = req.headers.get("x-admin-signature");
@@ -26,9 +27,13 @@ function verifyAdmin(req: Request): boolean {
 
   try {
     const message = `USDC Directory Admin\nTimestamp: ${ts}`;
-    const recovered = ethers.verifyMessage(message, signature).toLowerCase();
+    const recovered = (await recoverMessageAddress({
+      message,
+      signature: signature as `0x${string}`,
+    })).toLowerCase();
     return recovered === OWNER_ADDRESS;
-  } catch {
+  } catch (e) {
+    console.error("[admin-payments] recover error:", e);
     return false;
   }
 }
