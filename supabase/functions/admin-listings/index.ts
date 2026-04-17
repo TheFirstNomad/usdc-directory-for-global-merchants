@@ -1,11 +1,12 @@
 // Admin Manage Listings edge function — full CRUD for the partners table
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { verifyMessage } from "npm:viem@2.21.0";
+import { recoverMessageAddress } from "npm:viem@2.21.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-admin-address, x-admin-timestamp, x-admin-signature, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
 };
 
 const OWNER_WALLET = "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c".toLowerCase();
@@ -17,24 +18,29 @@ async function verifyAdmin(req: Request): Promise<boolean> {
   const signature = req.headers.get("x-admin-signature");
 
   if (!address || !timestamp || !signature || address !== OWNER_WALLET) {
+    console.log("[admin-listings] auth header check failed", { address, hasTs: !!timestamp, hasSig: !!signature });
     return false;
   }
 
   const ts = Number(timestamp);
   if (isNaN(ts) || Math.abs(Date.now() - ts) > MAX_AGE_MS) {
+    console.log("[admin-listings] timestamp out of window");
     return false;
   }
 
   try {
     const message = `USDC Directory Admin\nTimestamp: ${ts}`;
-    const valid = await verifyMessage({
-      address: address as `0x${string}`,
+    const recovered = (await recoverMessageAddress({
       message,
       signature: signature as `0x${string}`,
-    });
-    return valid;
+    })).toLowerCase();
+    if (recovered !== OWNER_WALLET) {
+      console.log("[admin-listings] recovered mismatch", { recovered, expected: OWNER_WALLET });
+      return false;
+    }
+    return true;
   } catch (e) {
-    console.error("[admin-listings] verifyMessage error:", e);
+    console.error("[admin-listings] recoverMessageAddress error:", e);
     return false;
   }
 }
