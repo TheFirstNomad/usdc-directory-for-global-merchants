@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import ShimmerCard from "@/components/ShimmerCard";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import CategoryFilter from "@/components/CategoryFilter";
+import CategoryChips from "@/components/CategoryChips";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
@@ -147,6 +148,12 @@ const Index = () => {
           </aside>
 
           <div className="flex-1">
+            <div className="mb-4">
+              <CategoryChips
+                selectedCategories={selectedCategories}
+                onToggleCategory={toggleCategory}
+              />
+            </div>
             <div className="flex items-center justify-between mb-5">
               <p className="text-sm text-muted-foreground font-medium">
                 {loading ? "Loading…" : `${filteredPartners.length} merchants`}
