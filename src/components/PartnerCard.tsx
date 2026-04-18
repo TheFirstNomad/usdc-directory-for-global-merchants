@@ -52,6 +52,11 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
               Featured
             </div>
           )}
+          {isNew && !partner.featured && (
+            <div className="absolute top-3 left-3 text-[10px] font-bold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+              ✨ New
+            </div>
+          )}
           <img
             src={logoUrl}
             alt={`${partner.name} logo`}
