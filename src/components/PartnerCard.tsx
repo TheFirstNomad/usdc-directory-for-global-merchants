@@ -31,6 +31,10 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
       ? partner.logo_url
       : `https://logo.clearbit.com/${partner.website?.replace(/https?:\/\//, "").replace(/\/.*/, "") || partner.name.toLowerCase().replace(/\s+/g, "") + ".com"}`;
 
+  const isNew = partner.created_at
+    ? Date.now() - new Date(partner.created_at).getTime() < 7 * 24 * 60 * 60 * 1000
+    : false;
+
   return (
     <div
       className="partner-card group relative bg-card rounded-2xl overflow-hidden h-full flex flex-col border border-border hover:border-primary/30 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
