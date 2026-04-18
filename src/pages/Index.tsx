@@ -23,7 +23,7 @@ const Index = () => {
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [selectedNetworks, setSelectedNetworks] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
-  const [sortBy, setSortBy] = useState<"name" | "newest" | "score">("name");
+  const [sortBy, setSortBy] = useState<"name" | "newest" | "score">("newest");
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -159,8 +159,8 @@ const Index = () => {
                     onChange={(e) => setSortBy(e.target.value as "name" | "newest" | "score")}
                     className="bg-transparent text-sm text-foreground font-medium outline-none cursor-pointer pr-1"
                   >
-                    <option value="name">Name A–Z</option>
                     <option value="newest">Newest</option>
+                    <option value="name">Name A–Z</option>
                     <option value="score">USDC Score</option>
                   </select>
                 </div>
