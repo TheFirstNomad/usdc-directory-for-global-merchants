@@ -157,6 +157,13 @@ const Index = () => {
           </aside>
 
           <div className="flex-1">
+            <div className="mb-4">
+              <CategoryChips
+                selectedCategories={selectedCategories}
+                onToggleCategory={toggleCategory}
+                counts={categoryCounts}
+              />
+            </div>
             <div className="flex items-center justify-between mb-5">
               <p className="text-sm text-muted-foreground font-medium">
                 {loading ? "Loading…" : `${filteredPartners.length} merchants`}
