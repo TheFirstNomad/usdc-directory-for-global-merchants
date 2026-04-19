@@ -56,6 +56,15 @@ const Index = () => {
 
   const featuredPartners = useMemo(() => uniquePartners.filter((p) => p.featured), [uniquePartners]);
   const partnerNames = useMemo(() => uniquePartners.map((p) => p.name), [uniquePartners]);
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    uniquePartners.forEach((p) => {
+      p.categories.forEach((c) => {
+        counts[c] = (counts[c] ?? 0) + 1;
+      });
+    });
+    return counts;
+  }, [uniquePartners]);
 
   const filteredPartners = useMemo(() => {
     const filtered = uniquePartners.filter((p) => {
