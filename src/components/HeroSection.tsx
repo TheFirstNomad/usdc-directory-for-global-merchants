@@ -126,23 +126,6 @@ const HeroSection = ({
           )}
         </div>
 
-        {/* Category pills */}
-        <div className="mt-8 flex gap-2 overflow-x-auto scrollbar-hide justify-start sm:justify-center px-2 pb-2">
-          {CATEGORIES.slice(0, 9).map((cat) => (
-            <button
-              key={cat}
-              onClick={() => onCategorySelect(cat)}
-              className={`tag flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition-all ${
-                selectedCategories.includes(cat)
-                  ? "bg-primary text-primary-foreground border-primary shadow-md"
-                  : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground hover:shadow-sm"
-              }`}
-            >
-              <span>{CATEGORY_EMOJIS[cat] || "📦"}</span>
-              {cat}
-            </button>
-          ))}
-        </div>
       </div>
     </section>
   );
