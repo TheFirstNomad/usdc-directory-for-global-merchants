@@ -3,13 +3,15 @@ import { CATEGORIES, CATEGORY_EMOJIS } from "@/lib/partners";
 interface CategoryChipsProps {
   selectedCategories: string[];
   onToggleCategory: (cat: string) => void;
+  counts?: Record<string, number>;
 }
 
-const CategoryChips = ({ selectedCategories, onToggleCategory }: CategoryChipsProps) => {
+const CategoryChips = ({ selectedCategories, onToggleCategory, counts = {} }: CategoryChipsProps) => {
   return (
     <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin">
       {CATEGORIES.map((cat) => {
         const active = selectedCategories.includes(cat);
+        const count = counts[cat] ?? 0;
         return (
           <button
             key={cat}
@@ -22,6 +24,17 @@ const CategoryChips = ({ selectedCategories, onToggleCategory }: CategoryChipsPr
           >
             <span>{CATEGORY_EMOJIS[cat] || "📦"}</span>
             <span>{cat}</span>
+            {count > 0 && (
+              <span
+                className={`ml-0.5 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[10px] font-bold ${
+                  active
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {count}
+              </span>
+            )}
           </button>
         );
       })}
