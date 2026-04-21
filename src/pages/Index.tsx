@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, lazy, Suspense } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { SearchX, LayoutGrid, Map as MapIcon, ArrowUpDown, Bot } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
@@ -9,14 +9,10 @@ import CategoryChips from "@/components/CategoryChips";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import HeroSection from "@/components/HeroSection";
+import PartnerCard from "@/components/PartnerCard";
 import { fetchPartners, type Partner } from "@/lib/partners";
-
-const HeroSection = lazy(() => import("@/components/HeroSection"));
-const PartnerCard = lazy(() => import("@/components/PartnerCard"));
-
-const LazyFallback = () => (
-  <div className="animate-pulse bg-muted rounded-2xl h-24 w-full" />
-);
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -110,17 +106,15 @@ const Index = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <SEO path="/" />
       <Header />
-      <Suspense fallback={<LazyFallback />}>
-        <HeroSection
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onSearch={() => {}}
-          partnerCount={uniquePartners.length}
-          onCategorySelect={toggleCategory}
-          selectedCategories={selectedCategories}
-          partnerNames={partnerNames}
-        />
-      </Suspense>
+      <HeroSection
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onSearch={() => {}}
+        partnerCount={uniquePartners.length}
+        onCategorySelect={toggleCategory}
+        selectedCategories={selectedCategories}
+        partnerNames={partnerNames}
+      />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8">
         <FeaturedCarousel partners={featuredPartners} />
@@ -169,17 +163,18 @@ const Index = () => {
                 {loading ? "Loading…" : `${filteredPartners.length} merchants`}
               </p>
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 bg-card border border-border rounded-lg px-2 py-1">
+                <div className="flex items-center gap-1.5 bg-card border border-border rounded-lg pl-2.5">
                   <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as "name" | "newest" | "score")}
-                    className="bg-transparent text-sm text-foreground font-medium outline-none cursor-pointer pr-1"
-                  >
-                    <option value="newest">Newest</option>
-                    <option value="name">Name A–Z</option>
-                    <option value="score">USDC Score</option>
-                  </select>
+                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as "name" | "newest" | "score")}>
+                    <SelectTrigger className="h-8 border-0 bg-transparent text-sm font-medium focus:ring-0 focus:ring-offset-0 px-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest</SelectItem>
+                      <SelectItem value="name">Name A–Z</SelectItem>
+                      <SelectItem value="score">USDC Score</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex items-center bg-card border border-border rounded-lg overflow-hidden">
                   <button
@@ -224,9 +219,7 @@ const Index = () => {
             ) : filteredPartners.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredPartners.map((partner, i) => (
-                  <Suspense key={partner.id} fallback={<ShimmerCard />}>
-                    <PartnerCard partner={partner} index={i} />
-                  </Suspense>
+                  <PartnerCard key={partner.id} partner={partner} index={i} />
                 ))}
               </div>
             ) : (

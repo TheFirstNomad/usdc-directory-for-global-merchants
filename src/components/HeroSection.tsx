@@ -11,6 +11,8 @@ interface HeroSectionProps {
   onCategorySelect: (cat: string) => void;
   selectedCategories: string[];
   partnerNames?: string[];
+  countryCount?: number;
+  networkCount?: number;
 }
 
 const AnimatedCounter = ({ target }: { target: number }) => {
