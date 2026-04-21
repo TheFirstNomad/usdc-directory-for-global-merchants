@@ -2,7 +2,7 @@ const Footer = () => {
   return (
     <footer className="bg-card/50 border-t border-border py-10 px-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row items-start justify-between gap-10">
+        <div className="flex flex-col md:flex-row items-start justify-between gap-12">
           <div className="max-w-md">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex flex-col">
@@ -18,7 +18,7 @@ const Footer = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-10 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 md:gap-12 text-sm">
             <div>
               <h4 className="font-semibold text-foreground mb-3">Directory</h4>
               <ul className="space-y-2 text-muted-foreground">

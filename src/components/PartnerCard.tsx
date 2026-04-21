@@ -5,9 +5,11 @@ import { Link } from "react-router-dom";
 
 const categoryColors: Record<string, string> = {
   "AI & Agentic Platforms": "bg-cyan-500/10 text-cyan-400",
+  "AI Agents": "bg-cyan-500/10 text-cyan-400",
   "Bridge Apps": "bg-indigo-500/10 text-indigo-400",
   "Bridge SDKs": "bg-blue-500/10 text-blue-400",
   "DeFi Apps": "bg-fuchsia-500/10 text-fuchsia-400",
+  "DeFi": "bg-fuchsia-500/10 text-fuchsia-400",
   "Digital Wallets": "bg-violet-500/10 text-violet-400",
   "Due Diligence & Advisory": "bg-slate-500/10 text-slate-400",
   "Ecommerce": "bg-orange-500/10 text-orange-400",
@@ -19,10 +21,15 @@ const categoryColors: Record<string, string> = {
   "Marketplaces": "bg-lime-500/10 text-lime-400",
   "Neobanks": "bg-indigo-500/10 text-indigo-400",
   "OTC Desks": "bg-purple-500/10 text-purple-400",
+  "Onramp": "bg-emerald-500/10 text-emerald-400",
+  "Offramp": "bg-pink-500/10 text-pink-400",
   "Payments": "bg-primary/10 text-primary",
   "PR & Communications": "bg-rose-500/10 text-rose-400",
   "Remittances": "bg-emerald-500/10 text-emerald-400",
   "Security": "bg-yellow-500/10 text-yellow-400",
+  "Stablecoin Issuers": "bg-blue-500/10 text-blue-400",
+  "Custody": "bg-zinc-500/10 text-zinc-400",
+  "Analytics": "bg-sky-500/10 text-sky-400",
 };
 
 const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) => {

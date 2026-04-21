@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (!verifyAdmin(req)) {
+    if (!(await verifyAdmin(req))) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
