@@ -128,6 +128,18 @@ const HeroSection = ({
           )}
         </div>
 
+        {partnerCount > 0 && (
+          <div className="mt-7 flex items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground flex-wrap">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span><span className="font-semibold text-foreground"><AnimatedCounter target={partnerCount} />+</span> merchants</span>
+            </span>
+            <span className="text-muted-foreground/40">•</span>
+            <span><span className="font-semibold text-foreground">7</span> regions</span>
+            <span className="text-muted-foreground/40">•</span>
+            <span><span className="font-semibold text-foreground">15+</span> networks</span>
+          </div>
+        )}
       </div>
     </section>
   );
