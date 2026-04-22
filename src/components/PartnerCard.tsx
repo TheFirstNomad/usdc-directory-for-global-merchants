@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { Partner, REGION_FLAGS, CATEGORY_EMOJIS } from "@/lib/partners";
 import { Button } from "@/components/ui/button";
 import { BadgeCheck } from "lucide-react";
@@ -32,7 +33,7 @@ const categoryColors: Record<string, string> = {
   "Analytics": "bg-sky-500/10 text-sky-400",
 };
 
-const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) => {
+const PartnerCard = forwardRef<HTMLDivElement, { partner: Partner; index: number }>(({ partner, index }, ref) => {
   const logoUrl =
     partner.logo_url && partner.logo_url !== ""
       ? partner.logo_url
@@ -44,6 +45,7 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
 
   return (
     <div
+      ref={ref}
       className="partner-card group relative bg-card rounded-2xl overflow-hidden h-full flex flex-col border border-border hover:border-primary/30 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
       style={{ animationDelay: `${Math.min(index * 30, 500)}ms` }}
     >
@@ -116,6 +118,7 @@ const PartnerCard = ({ partner, index }: { partner: Partner; index: number }) =>
       </Link>
     </div>
   );
-};
+});
+PartnerCard.displayName = "PartnerCard";
 
 export default PartnerCard;
