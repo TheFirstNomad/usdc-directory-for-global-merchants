@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, lazy, Suspense } from "react";
+import { useState, useMemo, useEffect } from "react";
+import PartnerCard from "@/components/PartnerCard";
 import { SearchX, ArrowUpDown, Bot, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
@@ -8,8 +9,6 @@ import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fetchPartners, type Partner } from "@/lib/partners";
-
-const PartnerCard = lazy(() => import("@/components/PartnerCard"));
 
 const AIAgents = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -120,9 +119,7 @@ const AIAgents = () => {
         ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {filtered.map((partner, i) => (
-              <Suspense key={partner.id} fallback={<ShimmerCard />}>
-                <PartnerCard partner={partner} index={i} />
-              </Suspense>
+              <PartnerCard key={partner.id} partner={partner} index={i} />
             ))}
           </div>
         ) : (
