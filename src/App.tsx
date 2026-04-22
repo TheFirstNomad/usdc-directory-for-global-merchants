@@ -1,4 +1,3 @@
-import { forwardRef } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -24,7 +23,7 @@ import AdminFeatured from "./pages/AdminFeatured.tsx";
 import AdminListings from "./pages/AdminListings.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
-const App = forwardRef<HTMLDivElement>((_props, _ref) => (
+const App = () => (
   <HelmetProvider>
     <ThemeProvider>
     <Web3Provider>
@@ -57,7 +56,6 @@ const App = forwardRef<HTMLDivElement>((_props, _ref) => (
     </Web3Provider>
     </ThemeProvider>
   </HelmetProvider>
-));
-App.displayName = "App";
+);
 
 export default App;
