@@ -1,7 +1,7 @@
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CATEGORIES, CATEGORY_EMOJIS } from "@/lib/partners";
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, forwardRef } from "react";
 
 interface HeroSectionProps {
   searchQuery: string;
@@ -36,7 +36,7 @@ const AnimatedCounter = ({ target }: { target: number }) => {
   return <span>{count}</span>;
 };
 
-const HeroSection = ({
+const HeroSection = forwardRef<HTMLElement, HeroSectionProps>(({
   searchQuery,
   onSearchChange,
   onSearch,
@@ -44,7 +44,7 @@ const HeroSection = ({
   onCategorySelect,
   selectedCategories,
   partnerNames = [],
-}: HeroSectionProps) => {
+}, ref) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -57,7 +57,7 @@ const HeroSection = ({
   }, [searchQuery, partnerNames]);
 
   return (
-    <section className="relative overflow-hidden pt-20 pb-14 sm:pt-28 sm:pb-20">
+    <section ref={ref} className="relative overflow-hidden pt-20 pb-14 sm:pt-28 sm:pb-20">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.07] via-background to-[hsl(275,80%,55%)]/[0.04]" />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
       <div
@@ -143,6 +143,7 @@ const HeroSection = ({
       </div>
     </section>
   );
-};
+});
+HeroSection.displayName = "HeroSection";
 
 export default HeroSection;
