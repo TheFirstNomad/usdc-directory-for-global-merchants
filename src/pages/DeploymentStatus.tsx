@@ -92,7 +92,7 @@ export default function DeploymentStatus() {
             <div className="space-y-6">
               <div className="flex items-center gap-4">
                 {ok ? (
-                  <CheckCircle2 className="w-12 h-12 text-green-500" />
+                  <CheckCircle2 className="w-12 h-12 text-success" />
                 ) : (
                   <XCircle className="w-12 h-12 text-destructive" />
                 )}
@@ -155,7 +155,7 @@ function Stat({ label, value, good }: { label: string; value: React.ReactNode; g
   return (
     <div>
       <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className={`text-lg font-semibold ${good === true ? "text-green-500" : good === false ? "text-destructive" : ""}`}>
+      <div className={`text-lg font-semibold ${good === true ? "text-success" : good === false ? "text-destructive" : ""}`}>
         {value}
       </div>
     </div>
