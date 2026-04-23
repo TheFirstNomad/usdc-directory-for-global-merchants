@@ -351,3 +351,40 @@ function Stat({ label, value, good }: { label: string; value: React.ReactNode; g
     </div>
   );
 }
+
+interface TrendPoint {
+  checked_at: string;
+  duration: number;
+  mount_success: boolean;
+  status_code: number | null;
+  error: string | null;
+}
+
+function TrendTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: TrendPoint }> }) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0].payload;
+  return (
+    <div className="rounded-md border border-border bg-popover px-3 py-2 text-xs shadow-md">
+      <div className="font-medium text-foreground">
+        {new Date(p.checked_at).toLocaleString()}
+      </div>
+      <div className="mt-1 flex items-center gap-2">
+        <span
+          className={`inline-block w-2 h-2 rounded-full ${
+            p.mount_success ? "bg-success" : "bg-destructive"
+          }`}
+        />
+        <span className={p.mount_success ? "text-success" : "text-destructive"}>
+          {p.mount_success ? "Mount OK" : "Mount FAIL"}
+        </span>
+        <span className="text-muted-foreground">· HTTP {p.status_code ?? "—"}</span>
+      </div>
+      <div className="mt-1 font-mono text-muted-foreground">
+        Duration: <span className="text-foreground">{p.duration}ms</span>
+      </div>
+      {p.error && (
+        <div className="mt-1 max-w-[260px] text-destructive/90 break-words">{p.error}</div>
+      )}
+    </div>
+  );
+}
