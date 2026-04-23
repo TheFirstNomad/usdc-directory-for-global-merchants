@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      deployment_checks: {
+        Row: {
+          checked_at: string
+          duration_ms: number | null
+          error: string | null
+          has_module_script: boolean | null
+          has_root: boolean | null
+          html_bytes: number | null
+          id: string
+          mount_success: boolean
+          script_count: number | null
+          status_code: number | null
+          url: string
+        }
+        Insert: {
+          checked_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          has_module_script?: boolean | null
+          has_root?: boolean | null
+          html_bytes?: number | null
+          id?: string
+          mount_success?: boolean
+          script_count?: number | null
+          status_code?: number | null
+          url: string
+        }
+        Update: {
+          checked_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          has_module_script?: boolean | null
+          has_root?: boolean | null
+          html_bytes?: number | null
+          id?: string
+          mount_success?: boolean
+          script_count?: number | null
+          status_code?: number | null
+          url?: string
+        }
+        Relationships: []
+      }
       partners: {
         Row: {
           categories: string[]
