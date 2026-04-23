@@ -7,6 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, RefreshCw, Loader2, ExternalLink } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RTooltip,
+  ResponsiveContainer,
+  Dot,
+} from "recharts";
 
 interface CheckResult {
   url: string;
@@ -203,6 +213,67 @@ export default function DeploymentStatus() {
             </div>
           ) : (
             <>
+              {/* Line chart of duration over time, oldest left → newest right */}
+              <div className="h-56 mb-4 -ml-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={[...history].reverse().map((h) => ({
+                      id: h.id,
+                      ts: new Date(h.checked_at).getTime(),
+                      time: new Date(h.checked_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }),
+                      checked_at: h.checked_at,
+                      duration: h.duration_ms ?? 0,
+                      mount_success: h.mount_success,
+                      status_code: h.status_code,
+                      error: h.error,
+                    }))}
+                    margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
+                    <XAxis
+                      dataKey="time"
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                      stroke="hsl(var(--border))"
+                      minTickGap={32}
+                    />
+                    <YAxis
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                      stroke="hsl(var(--border))"
+                      width={48}
+                      tickFormatter={(v) => `${v}ms`}
+                    />
+                    <RTooltip content={<TrendTooltip />} cursor={{ stroke: "hsl(var(--primary))", strokeOpacity: 0.3 }} />
+                    <Line
+                      type="monotone"
+                      dataKey="duration"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      isAnimationActive={false}
+                      dot={(props: { cx?: number; cy?: number; payload?: { mount_success?: boolean; id?: string } }) => {
+                        const { cx, cy, payload } = props;
+                        if (cx == null || cy == null) return <g key={payload?.id ?? `${cx}-${cy}`} />;
+                        const ok = payload?.mount_success;
+                        return (
+                          <Dot
+                            key={payload?.id ?? `${cx}-${cy}`}
+                            cx={cx}
+                            cy={cy}
+                            r={3}
+                            fill={ok ? "hsl(var(--success))" : "hsl(var(--destructive))"}
+                            stroke="hsl(var(--background))"
+                            strokeWidth={1}
+                          />
+                        );
+                      }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
               {/* Bar trend, oldest left → newest right */}
               <div className="flex items-end gap-[2px] h-16 mb-4 bg-muted/30 rounded p-2">
                 {[...history].reverse().map((h) => (
@@ -277,6 +348,43 @@ function Stat({ label, value, good }: { label: string; value: React.ReactNode; g
       >
         {value}
       </div>
+    </div>
+  );
+}
+
+interface TrendPoint {
+  checked_at: string;
+  duration: number;
+  mount_success: boolean;
+  status_code: number | null;
+  error: string | null;
+}
+
+function TrendTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: TrendPoint }> }) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0].payload;
+  return (
+    <div className="rounded-md border border-border bg-popover px-3 py-2 text-xs shadow-md">
+      <div className="font-medium text-foreground">
+        {new Date(p.checked_at).toLocaleString()}
+      </div>
+      <div className="mt-1 flex items-center gap-2">
+        <span
+          className={`inline-block w-2 h-2 rounded-full ${
+            p.mount_success ? "bg-success" : "bg-destructive"
+          }`}
+        />
+        <span className={p.mount_success ? "text-success" : "text-destructive"}>
+          {p.mount_success ? "Mount OK" : "Mount FAIL"}
+        </span>
+        <span className="text-muted-foreground">· HTTP {p.status_code ?? "—"}</span>
+      </div>
+      <div className="mt-1 font-mono text-muted-foreground">
+        Duration: <span className="text-foreground">{p.duration}ms</span>
+      </div>
+      {p.error && (
+        <div className="mt-1 max-w-[260px] text-destructive/90 break-words">{p.error}</div>
+      )}
     </div>
   );
 }
