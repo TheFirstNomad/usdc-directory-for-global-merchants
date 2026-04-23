@@ -21,6 +21,7 @@ import Swap from "./pages/Swap.tsx";
 import Bridge from "./pages/Bridge.tsx";
 import AdminFeatured from "./pages/AdminFeatured.tsx";
 import AdminListings from "./pages/AdminListings.tsx";
+import DeploymentStatus from "./pages/DeploymentStatus.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const App = () => (
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/admin/payments" element={<AdminPayments />} />
             <Route path="/admin/featured" element={<AdminFeatured />} />
             <Route path="/admin/listings" element={<AdminListings />} />
+            <Route path="/deployment-status" element={<DeploymentStatus />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
