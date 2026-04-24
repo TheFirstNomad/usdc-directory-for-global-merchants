@@ -1,6 +1,6 @@
-import { Buffer } from "buffer";
-(window as any).Buffer = (window as any).Buffer || Buffer;
-(window as any).global = (window as any).global || window;
+// Polyfills MUST be the very first import — they patch globals that other deps
+// (Coinbase Wallet SDK, etc.) read at module-evaluation time.
+import "./polyfills";
 
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "./components/ErrorBoundary";
