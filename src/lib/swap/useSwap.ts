@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useWriteContract, useReadContract, usePublicClient } from "wagmi";
+import { useSendTransaction, useReadContract, usePublicClient } from "wagmi";
 import { parseUnits, encodeFunctionData } from "viem";
 import {
   UNISWAP_V3_ROUTER, SWAP_ROUTER_ABI, ERC20_ABI,
@@ -7,6 +7,7 @@ import {
 import type { TokenInfo } from "./tokens";
 import { WETH_ADDRESS, getPoolFee } from "./tokens";
 import { createViemAdapterFromWallet, swapViaKit, type PaymentChainId } from "@/lib/arcAppKit";
+import { withAttribution } from "@/lib/builderCode";
 
 export type SwapState = "idle" | "approving" | "swapping" | "success" | "error";
 
@@ -84,7 +85,7 @@ export function useSwap({
   const [errorMessage, setErrorMessage] = useState("");
 
   const publicClient = usePublicClient({ chainId });
-  const { writeContractAsync } = useWriteContract();
+  const { sendTransactionAsync } = useSendTransaction();
 
   const isBase = chainId === 8453;
   const isArc = chainId === 5042002;
@@ -124,11 +125,14 @@ export function useSwap({
     setSwapState("approving");
     setErrorMessage("");
     try {
-      const hash = await writeContractAsync({
-        address: actualTokenIn,
+      const approveData = encodeFunctionData({
         abi: ERC20_ABI,
         functionName: "approve",
         args: [routerAddress as `0x${string}`, amountInParsed],
+      });
+      const hash = await sendTransactionAsync({
+        to: actualTokenIn,
+        data: withAttribution(approveData),
         account: userAddress,
         chainId,
       } as any);
@@ -140,7 +144,7 @@ export function useSwap({
       setSwapState("error");
       setErrorMessage(getReadableSwapError(err));
     }
-  }, [tokenIn, isNativeIn, userAddress, actualTokenIn, amountInParsed, writeContractAsync, publicClient, routerAddress, chainId]);
+  }, [tokenIn, isNativeIn, userAddress, actualTokenIn, amountInParsed, sendTransactionAsync, publicClient, routerAddress, chainId]);
 
   const swap = useCallback(async () => {
     if (!tokenIn || !tokenOut || !userAddress || amountInParsed <= 0n) return;
@@ -198,12 +202,16 @@ export function useSwap({
           );
         }
 
-        const hash = await writeContractAsync({
-          address: UNISWAP_V3_ROUTER as `0x${string}`,
+        const multicallData = encodeFunctionData({
           abi: SWAP_ROUTER_ABI,
           functionName: "multicall",
           args: [deadline, calls],
-          value: isNativeIn ? amountInParsed : undefined,
+        });
+
+        const hash = await sendTransactionAsync({
+          to: UNISWAP_V3_ROUTER as `0x${string}`,
+          data: withAttribution(multicallData),
+          value: isNativeIn ? amountInParsed : 0n,
           account: userAddress,
           chainId: 8453,
         } as any);
@@ -220,7 +228,7 @@ export function useSwap({
       setErrorMessage(getReadableSwapError(err));
       throw err;
     }
-  }, [tokenIn, tokenOut, userAddress, amountInParsed, amountOutMin, amountIn, isNativeIn, isNativeOut, isArc, chainId, writeContractAsync, publicClient, walletProvider]);
+  }, [tokenIn, tokenOut, userAddress, amountInParsed, amountOutMin, amountIn, isNativeIn, isNativeOut, isArc, chainId, sendTransactionAsync, publicClient, walletProvider]);
 
   const reset = useCallback(() => {
     setSwapState("idle");
