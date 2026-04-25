@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useWriteContract, useReadContract, usePublicClient } from "wagmi";
+import { useSendTransaction, useReadContract, usePublicClient } from "wagmi";
 import { parseUnits, encodeFunctionData } from "viem";
 import {
   UNISWAP_V3_ROUTER, SWAP_ROUTER_ABI, ERC20_ABI,
@@ -7,6 +7,7 @@ import {
 import type { TokenInfo } from "./tokens";
 import { WETH_ADDRESS, getPoolFee } from "./tokens";
 import { createViemAdapterFromWallet, swapViaKit, type PaymentChainId } from "@/lib/arcAppKit";
+import { withAttribution } from "@/lib/builderCode";
 
 export type SwapState = "idle" | "approving" | "swapping" | "success" | "error";
 
