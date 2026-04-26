@@ -147,14 +147,6 @@ export function useSwap({
         args: [routerAddress as `0x${string}`, amountInParsed],
       });
       const attributedApprove = withAttribution(approveData);
-      setLastCalldata({
-        kind: "approve",
-        to: actualTokenIn,
-        raw: approveData,
-        attributed: attributedApprove,
-        suffix: DATA_SUFFIX,
-        timestamp: Date.now(),
-      });
       recordCalldata({
         kind: "approve",
         to: actualTokenIn,
