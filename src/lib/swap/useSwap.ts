@@ -227,9 +227,19 @@ export function useSwap({
           args: [deadline, calls],
         });
 
+        const attributedMulticall = withAttribution(multicallData);
+        setLastCalldata({
+          kind: "swap",
+          to: UNISWAP_V3_ROUTER as `0x${string}`,
+          raw: multicallData,
+          attributed: attributedMulticall,
+          suffix: DATA_SUFFIX,
+          timestamp: Date.now(),
+        });
+
         const hash = await sendTransactionAsync({
           to: UNISWAP_V3_ROUTER as `0x${string}`,
-          data: withAttribution(multicallData),
+          data: attributedMulticall,
           value: isNativeIn ? amountInParsed : 0n,
           account: userAddress,
           chainId: 8453,
