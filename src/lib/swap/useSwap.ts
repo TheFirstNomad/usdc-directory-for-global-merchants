@@ -140,9 +140,18 @@ export function useSwap({
         functionName: "approve",
         args: [routerAddress as `0x${string}`, amountInParsed],
       });
+      const attributedApprove = withAttribution(approveData);
+      setLastCalldata({
+        kind: "approve",
+        to: actualTokenIn,
+        raw: approveData,
+        attributed: attributedApprove,
+        suffix: DATA_SUFFIX,
+        timestamp: Date.now(),
+      });
       const hash = await sendTransactionAsync({
         to: actualTokenIn,
-        data: withAttribution(approveData),
+        data: attributedApprove,
         account: userAddress,
         chainId,
       } as any);
