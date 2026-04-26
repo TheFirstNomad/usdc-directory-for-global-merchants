@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Copy, Check } from "lucide-react";
 import type { CalldataDebug } from "@/lib/swap/useSwap";
 import { BUILDER_CODE } from "@/lib/builderCode";
 
 interface Props {
   data: CalldataDebug | null;
+  history?: CalldataDebug[];
 }
 
 const truncate = (hex: string, head = 18, tail = 8) =>
@@ -14,7 +15,8 @@ const CopyButton = ({ value }: { value: string }) => {
   const [copied, setCopied] = useState(false);
   return (
     <button
-      onClick={async () => {
+      onClick={async (e) => {
+        e.stopPropagation();
         await navigator.clipboard.writeText(value);
         setCopied(true);
         setTimeout(() => setCopied(false), 1200);
@@ -39,14 +41,26 @@ const Row = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
-export default function CalldataDebugPanel({ data }: Props) {
+export default function CalldataDebugPanel({ data, history = [] }: Props) {
   const [open, setOpen] = useState(true);
+  const [selectedTs, setSelectedTs] = useState<number | null>(null);
 
-  if (!data) return null;
+  // Default to latest entry whenever data changes
+  useEffect(() => {
+    if (data) setSelectedTs(data.timestamp);
+  }, [data?.timestamp]);
+
+  const list: CalldataDebug[] =
+    history.length > 0 ? history : data ? [data] : [];
+
+  const active =
+    list.find((e) => e.timestamp === selectedTs) ?? list[0] ?? null;
+
+  if (!active) return null;
 
   const matches =
-    data.attributed.toLowerCase().endsWith(data.suffix.slice(2).toLowerCase()) &&
-    data.attributed.length === data.raw.length + data.suffix.length - 2;
+    active.attributed.toLowerCase().endsWith(active.suffix.slice(2).toLowerCase()) &&
+    active.attributed.length === active.raw.length + active.suffix.length - 2;
 
   return (
     <div className="w-full max-w-[460px] mt-4 rounded-2xl border border-border/60 bg-card/95 backdrop-blur-sm shadow-xl shadow-black/10 animate-fade-in">
@@ -58,12 +72,12 @@ export default function CalldataDebugPanel({ data }: Props) {
           <span className="font-semibold text-foreground">ERC-8021 Debug</span>
           <span
             className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
-              data.kind === "approve"
+              active.kind === "approve"
                 ? "bg-yellow-500/15 text-yellow-400"
                 : "bg-primary/15 text-primary"
             }`}
           >
-            {data.kind}
+            {active.kind}
           </span>
           {matches ? (
             <span className="text-[10px] text-green-400 font-medium">✓ suffix attached</span>
@@ -76,6 +90,38 @@ export default function CalldataDebugPanel({ data }: Props) {
 
       {open && (
         <div className="px-4 pb-4 space-y-3 border-t border-border/30 pt-3">
+          {list.length > 1 && (
+            <div className="space-y-1.5">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                History · last {list.length}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {list.map((entry, i) => {
+                  const isActive = entry.timestamp === active.timestamp;
+                  return (
+                    <button
+                      key={entry.timestamp}
+                      onClick={() => setSelectedTs(entry.timestamp)}
+                      className={`text-[10px] font-mono px-2 py-1 rounded border transition-colors ${
+                        isActive
+                          ? "bg-primary/15 text-primary border-primary/40"
+                          : "bg-muted/30 text-muted-foreground border-border/40 hover:bg-muted/60 hover:text-foreground"
+                      }`}
+                      title={new Date(entry.timestamp).toLocaleString()}
+                    >
+                      #{list.length - i} · {entry.kind} ·{" "}
+                      {new Date(entry.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                      })}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3 text-[11px]">
             <div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mb-0.5">Builder Code</div>
@@ -83,16 +129,16 @@ export default function CalldataDebugPanel({ data }: Props) {
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mb-0.5">Captured</div>
-              <span className="text-foreground">{new Date(data.timestamp).toLocaleTimeString()}</span>
+              <span className="text-foreground">{new Date(active.timestamp).toLocaleTimeString()}</span>
             </div>
           </div>
 
-          <Row label={`To (${data.kind === "approve" ? "Token" : "Router"})`} value={data.to} />
-          <Row label={`Raw calldata · ${(data.raw.length - 2) / 2} bytes`} value={truncate(data.raw, 30, 12)} />
-          <Row label={`Suffix · ${(data.suffix.length - 2) / 2} bytes`} value={data.suffix} />
+          <Row label={`To (${active.kind === "approve" ? "Token" : "Router"})`} value={active.to} />
+          <Row label={`Raw calldata · ${(active.raw.length - 2) / 2} bytes`} value={truncate(active.raw, 30, 12)} />
+          <Row label={`Suffix · ${(active.suffix.length - 2) / 2} bytes`} value={active.suffix} />
           <Row
-            label={`Attributed (sent on-chain) · ${(data.attributed.length - 2) / 2} bytes`}
-            value={truncate(data.attributed, 30, 24)}
+            label={`Attributed (sent on-chain) · ${(active.attributed.length - 2) / 2} bytes`}
+            value={truncate(active.attributed, 30, 24)}
           />
 
           <p className="text-[10px] text-muted-foreground/80 leading-relaxed pt-1">
