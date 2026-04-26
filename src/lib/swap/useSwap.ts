@@ -92,6 +92,7 @@ export function useSwap({
   const [swapState, setSwapState] = useState<SwapState>("idle");
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const [errorMessage, setErrorMessage] = useState("");
+  const [lastCalldata, setLastCalldata] = useState<CalldataDebug | null>(null);
 
   const publicClient = usePublicClient({ chainId });
   const { sendTransactionAsync } = useSendTransaction();
