@@ -155,6 +155,14 @@ export function useSwap({
         suffix: DATA_SUFFIX,
         timestamp: Date.now(),
       });
+      recordCalldata({
+        kind: "approve",
+        to: actualTokenIn,
+        raw: approveData,
+        attributed: attributedApprove,
+        suffix: DATA_SUFFIX,
+        timestamp: Date.now(),
+      });
       const hash = await sendTransactionAsync({
         to: actualTokenIn,
         data: attributedApprove,
