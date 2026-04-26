@@ -93,6 +93,12 @@ export function useSwap({
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const [errorMessage, setErrorMessage] = useState("");
   const [lastCalldata, setLastCalldata] = useState<CalldataDebug | null>(null);
+  const [calldataHistory, setCalldataHistory] = useState<CalldataDebug[]>([]);
+
+  const recordCalldata = useCallback((entry: CalldataDebug) => {
+    setLastCalldata(entry);
+    setCalldataHistory((prev) => [entry, ...prev].slice(0, 5));
+  }, []);
 
   const publicClient = usePublicClient({ chainId });
   const { sendTransactionAsync } = useSendTransaction();
@@ -141,7 +147,7 @@ export function useSwap({
         args: [routerAddress as `0x${string}`, amountInParsed],
       });
       const attributedApprove = withAttribution(approveData);
-      setLastCalldata({
+      recordCalldata({
         kind: "approve",
         to: actualTokenIn,
         raw: approveData,
@@ -163,7 +169,7 @@ export function useSwap({
       setSwapState("error");
       setErrorMessage(getReadableSwapError(err));
     }
-  }, [tokenIn, isNativeIn, userAddress, actualTokenIn, amountInParsed, sendTransactionAsync, publicClient, routerAddress, chainId]);
+  }, [tokenIn, isNativeIn, userAddress, actualTokenIn, amountInParsed, sendTransactionAsync, publicClient, routerAddress, chainId, recordCalldata]);
 
   const swap = useCallback(async () => {
     if (!tokenIn || !tokenOut || !userAddress || amountInParsed <= 0n) return;
@@ -228,7 +234,7 @@ export function useSwap({
         });
 
         const attributedMulticall = withAttribution(multicallData);
-        setLastCalldata({
+        recordCalldata({
           kind: "swap",
           to: UNISWAP_V3_ROUTER as `0x${string}`,
           raw: multicallData,
@@ -257,7 +263,7 @@ export function useSwap({
       setErrorMessage(getReadableSwapError(err));
       throw err;
     }
-  }, [tokenIn, tokenOut, userAddress, amountInParsed, amountOutMin, amountIn, isNativeIn, isNativeOut, isArc, chainId, sendTransactionAsync, publicClient, walletProvider]);
+  }, [tokenIn, tokenOut, userAddress, amountInParsed, amountOutMin, amountIn, isNativeIn, isNativeOut, isArc, chainId, sendTransactionAsync, publicClient, walletProvider, recordCalldata]);
 
   const reset = useCallback(() => {
     setSwapState("idle");
@@ -265,5 +271,5 @@ export function useSwap({
     setErrorMessage("");
   }, []);
 
-  return { swapState, txHash, errorMessage, needsApproval, approve, swap, reset, lastCalldata };
+  return { swapState, txHash, errorMessage, needsApproval, approve, swap, reset, lastCalldata, calldataHistory };
 }

@@ -146,7 +146,7 @@ const Swap = () => {
   );
 
   /* ── swap execution ── */
-  const { swapState, txHash, errorMessage, needsApproval, approve, swap, reset, lastCalldata } = useSwap({
+  const { swapState, txHash, errorMessage, needsApproval, approve, swap, reset, lastCalldata, calldataHistory } = useSwap({
     tokenIn: payToken,
     tokenOut: receiveToken,
     amountIn: payAmount,
@@ -523,7 +523,7 @@ const Swap = () => {
                 )}
               </div>
               {/* ERC-8021 calldata debug panel (Base mainnet only) */}
-              {!isArcTestnet && <CalldataDebugPanel data={lastCalldata} />}
+              {!isArcTestnet && <CalldataDebugPanel data={lastCalldata} history={calldataHistory} />}
         </main>
 
         <Footer />
