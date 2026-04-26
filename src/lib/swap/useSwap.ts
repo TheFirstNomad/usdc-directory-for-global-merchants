@@ -93,6 +93,12 @@ export function useSwap({
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const [errorMessage, setErrorMessage] = useState("");
   const [lastCalldata, setLastCalldata] = useState<CalldataDebug | null>(null);
+  const [calldataHistory, setCalldataHistory] = useState<CalldataDebug[]>([]);
+
+  const recordCalldata = useCallback((entry: CalldataDebug) => {
+    setLastCalldata(entry);
+    setCalldataHistory((prev) => [entry, ...prev].slice(0, 5));
+  }, []);
 
   const publicClient = usePublicClient({ chainId });
   const { sendTransactionAsync } = useSendTransaction();
