@@ -15,6 +15,7 @@ import ChainSelector from "@/components/swap/ChainSelector";
 import TokenSearchModal from "@/components/swap/TokenSearchModal";
 import SlippagePopover from "@/components/swap/SlippagePopover";
 import SuccessModal from "@/components/swap/SuccessModal";
+import CalldataDebugPanel from "@/components/swap/CalldataDebugPanel";
 import QuoteTimer from "@/components/swap/QuoteTimer";
 import { TOKENS_BY_CHAIN, POPULAR_PAIRS, getRouteDisplay, type TokenInfo } from "@/lib/swap/tokens";
 import { CHAINS, type SupportedChainId } from "@/lib/swap/chains";
@@ -145,7 +146,7 @@ const Swap = () => {
   );
 
   /* ── swap execution ── */
-  const { swapState, txHash, errorMessage, needsApproval, approve, swap, reset } = useSwap({
+  const { swapState, txHash, errorMessage, needsApproval, approve, swap, reset, lastCalldata } = useSwap({
     tokenIn: payToken,
     tokenOut: receiveToken,
     amountIn: payAmount,
@@ -521,6 +522,8 @@ const Swap = () => {
                   </div>
                 )}
               </div>
+              {/* ERC-8021 calldata debug panel (Base mainnet only) */}
+              {!isArcTestnet && <CalldataDebugPanel data={lastCalldata} />}
         </main>
 
         <Footer />

@@ -7,9 +7,18 @@ import {
 import type { TokenInfo } from "./tokens";
 import { WETH_ADDRESS, getPoolFee } from "./tokens";
 import { createViemAdapterFromWallet, swapViaKit, type PaymentChainId } from "@/lib/arcAppKit";
-import { withAttribution } from "@/lib/builderCode";
+import { withAttribution, DATA_SUFFIX } from "@/lib/builderCode";
 
 export type SwapState = "idle" | "approving" | "swapping" | "success" | "error";
+
+export type CalldataDebug = {
+  kind: "approve" | "swap";
+  to: `0x${string}`;
+  raw: `0x${string}`;
+  attributed: `0x${string}`;
+  suffix: `0x${string}`;
+  timestamp: number;
+};
 
 const normalizeErrorMessage = (message: string) =>
   message
@@ -83,6 +92,7 @@ export function useSwap({
   const [swapState, setSwapState] = useState<SwapState>("idle");
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const [errorMessage, setErrorMessage] = useState("");
+  const [lastCalldata, setLastCalldata] = useState<CalldataDebug | null>(null);
 
   const publicClient = usePublicClient({ chainId });
   const { sendTransactionAsync } = useSendTransaction();
@@ -130,9 +140,18 @@ export function useSwap({
         functionName: "approve",
         args: [routerAddress as `0x${string}`, amountInParsed],
       });
+      const attributedApprove = withAttribution(approveData);
+      setLastCalldata({
+        kind: "approve",
+        to: actualTokenIn,
+        raw: approveData,
+        attributed: attributedApprove,
+        suffix: DATA_SUFFIX,
+        timestamp: Date.now(),
+      });
       const hash = await sendTransactionAsync({
         to: actualTokenIn,
-        data: withAttribution(approveData),
+        data: attributedApprove,
         account: userAddress,
         chainId,
       } as any);
@@ -208,9 +227,19 @@ export function useSwap({
           args: [deadline, calls],
         });
 
+        const attributedMulticall = withAttribution(multicallData);
+        setLastCalldata({
+          kind: "swap",
+          to: UNISWAP_V3_ROUTER as `0x${string}`,
+          raw: multicallData,
+          attributed: attributedMulticall,
+          suffix: DATA_SUFFIX,
+          timestamp: Date.now(),
+        });
+
         const hash = await sendTransactionAsync({
           to: UNISWAP_V3_ROUTER as `0x${string}`,
-          data: withAttribution(multicallData),
+          data: attributedMulticall,
           value: isNativeIn ? amountInParsed : 0n,
           account: userAddress,
           chainId: 8453,
@@ -236,5 +265,5 @@ export function useSwap({
     setErrorMessage("");
   }, []);
 
-  return { swapState, txHash, errorMessage, needsApproval, approve, swap, reset };
+  return { swapState, txHash, errorMessage, needsApproval, approve, swap, reset, lastCalldata };
 }
