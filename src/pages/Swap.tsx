@@ -15,6 +15,7 @@ import ChainSelector from "@/components/swap/ChainSelector";
 import TokenSearchModal from "@/components/swap/TokenSearchModal";
 import SlippagePopover from "@/components/swap/SlippagePopover";
 import SuccessModal from "@/components/swap/SuccessModal";
+import CalldataDebugPanel from "@/components/swap/CalldataDebugPanel";
 import QuoteTimer from "@/components/swap/QuoteTimer";
 import { TOKENS_BY_CHAIN, POPULAR_PAIRS, getRouteDisplay, type TokenInfo } from "@/lib/swap/tokens";
 import { CHAINS, type SupportedChainId } from "@/lib/swap/chains";
