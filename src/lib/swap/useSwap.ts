@@ -169,7 +169,7 @@ export function useSwap({
       setSwapState("error");
       setErrorMessage(getReadableSwapError(err));
     }
-  }, [tokenIn, isNativeIn, userAddress, actualTokenIn, amountInParsed, sendTransactionAsync, publicClient, routerAddress, chainId]);
+  }, [tokenIn, isNativeIn, userAddress, actualTokenIn, amountInParsed, sendTransactionAsync, publicClient, routerAddress, chainId, recordCalldata]);
 
   const swap = useCallback(async () => {
     if (!tokenIn || !tokenOut || !userAddress || amountInParsed <= 0n) return;
