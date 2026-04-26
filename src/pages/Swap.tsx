@@ -146,7 +146,7 @@ const Swap = () => {
   );
 
   /* ── swap execution ── */
-  const { swapState, txHash, errorMessage, needsApproval, approve, swap, reset } = useSwap({
+  const { swapState, txHash, errorMessage, needsApproval, approve, swap, reset, lastCalldata } = useSwap({
     tokenIn: payToken,
     tokenOut: receiveToken,
     amountIn: payAmount,
