@@ -265,5 +265,5 @@ export function useSwap({
     setErrorMessage("");
   }, []);
 
-  return { swapState, txHash, errorMessage, needsApproval, approve, swap, reset };
+  return { swapState, txHash, errorMessage, needsApproval, approve, swap, reset, lastCalldata };
 }
