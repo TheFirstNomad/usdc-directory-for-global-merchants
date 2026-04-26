@@ -234,7 +234,7 @@ export function useSwap({
         });
 
         const attributedMulticall = withAttribution(multicallData);
-        setLastCalldata({
+        recordCalldata({
           kind: "swap",
           to: UNISWAP_V3_ROUTER as `0x${string}`,
           raw: multicallData,
