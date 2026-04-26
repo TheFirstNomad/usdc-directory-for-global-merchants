@@ -522,6 +522,8 @@ const Swap = () => {
                   </div>
                 )}
               </div>
+              {/* ERC-8021 calldata debug panel (Base mainnet only) */}
+              {!isArcTestnet && <CalldataDebugPanel data={lastCalldata} />}
         </main>
 
         <Footer />
