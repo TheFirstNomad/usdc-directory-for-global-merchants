@@ -263,7 +263,7 @@ export function useSwap({
       setErrorMessage(getReadableSwapError(err));
       throw err;
     }
-  }, [tokenIn, tokenOut, userAddress, amountInParsed, amountOutMin, amountIn, isNativeIn, isNativeOut, isArc, chainId, sendTransactionAsync, publicClient, walletProvider]);
+  }, [tokenIn, tokenOut, userAddress, amountInParsed, amountOutMin, amountIn, isNativeIn, isNativeOut, isArc, chainId, sendTransactionAsync, publicClient, walletProvider, recordCalldata]);
 
   const reset = useCallback(() => {
     setSwapState("idle");
