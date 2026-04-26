@@ -9,9 +9,21 @@
  * this helper is Base-mainnet only.
  */
 import { encodeFunctionData, parseUnits } from "viem";
-import { ERC20_ABI } from "@/lib/swap/contracts";
 import { withAttribution, DATA_SUFFIX } from "@/lib/builderCode";
 import { TREASURY_ADDRESS } from "@/lib/arcAppKit";
+
+const ERC20_TRANSFER_ABI = [
+  {
+    name: "transfer",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+] as const;
 
 // Base mainnet USDC (native, Circle-issued)
 export const BASE_USDC_ADDRESS: `0x${string}` =
