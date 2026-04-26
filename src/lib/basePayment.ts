@@ -41,7 +41,7 @@ export type BasePaymentDebug = {
 export function buildBaseUsdcTransferCalldata(amountUsdc: string): BasePaymentDebug {
   const amount = parseUnits(amountUsdc, 6);
   const raw = encodeFunctionData({
-    abi: ERC20_ABI,
+    abi: ERC20_TRANSFER_ABI,
     functionName: "transfer",
     args: [TREASURY_ADDRESS, amount],
   });
