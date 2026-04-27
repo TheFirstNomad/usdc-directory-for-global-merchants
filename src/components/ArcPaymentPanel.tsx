@@ -228,6 +228,18 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
 
   // ── Chain gating: only Base + Arc supported for payments ──
   const isSupportedChain = isBase || isArc;
+  const walletOnCorrectChain = walletChainId === paymentChainId;
+  const needsSwitch = isSupportedChain && !walletOnCorrectChain;
+
+  const handleSwitch = async () => {
+    try {
+      await switchChainAsync({ chainId: paymentChainId });
+      toast({ title: `Switched to ${chainLabel}` });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to switch network";
+      toast({ title: "Network switch failed", description: msg, variant: "destructive" });
+    }
+  };
 
   // ── Main payment UI ──
   return (
