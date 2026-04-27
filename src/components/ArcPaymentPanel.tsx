@@ -23,6 +23,7 @@ import {
   Droplets,
   AlertTriangle,
   ShieldCheck,
+  RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAppKitAccount, useAppKitProvider, useAppKit } from "@reown/appkit/react";
