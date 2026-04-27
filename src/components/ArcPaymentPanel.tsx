@@ -88,6 +88,8 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
 
   const { sendTransactionAsync } = useSendTransaction();
   const basePublicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
+  const walletChainId = useChainId();
+  const { switchChainAsync, isPending: switching } = useSwitchChain();
 
   const [paying, setPaying] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
