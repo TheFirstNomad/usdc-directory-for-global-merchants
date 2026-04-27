@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAppKitAccount, useAppKitProvider, useAppKit } from "@reown/appkit/react";
-import { useSendTransaction, usePublicClient } from "wagmi";
+import { useSendTransaction, usePublicClient, useChainId, useSwitchChain } from "wagmi";
 import {
   createViemAdapterFromWallet,
   payListingFee,
