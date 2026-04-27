@@ -23,10 +23,11 @@ import {
   Droplets,
   AlertTriangle,
   ShieldCheck,
+  RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAppKitAccount, useAppKitProvider, useAppKit } from "@reown/appkit/react";
-import { useSendTransaction, usePublicClient } from "wagmi";
+import { useSendTransaction, usePublicClient, useChainId, useSwitchChain } from "wagmi";
 import {
   createViemAdapterFromWallet,
   payListingFee,
@@ -87,6 +88,8 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
 
   const { sendTransactionAsync } = useSendTransaction();
   const basePublicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
+  const walletChainId = useChainId();
+  const { switchChainAsync, isPending: switching } = useSwitchChain();
 
   const [paying, setPaying] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -225,6 +228,18 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
 
   // ── Chain gating: only Base + Arc supported for payments ──
   const isSupportedChain = isBase || isArc;
+  const walletOnCorrectChain = walletChainId === paymentChainId;
+  const needsSwitch = isSupportedChain && !walletOnCorrectChain;
+
+  const handleSwitch = async () => {
+    try {
+      await switchChainAsync({ chainId: paymentChainId });
+      toast({ title: `Switched to ${chainLabel}` });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to switch network";
+      toast({ title: "Network switch failed", description: msg, variant: "destructive" });
+    }
+  };
 
   // ── Main payment UI ──
   return (
@@ -257,13 +272,40 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
         </div>
       )}
 
+      {needsSwitch && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+            <p className="text-xs text-foreground/90">
+              Your wallet is on a different network. Switch to <strong>{chainLabel}</strong> to pay
+              {isBase ? " with ERC-8021 attribution." : "."}
+            </p>
+          </div>
+          <Button
+            onClick={handleSwitch}
+            disabled={switching}
+            variant="outline"
+            className="w-full rounded-lg border-amber-500/40 hover:bg-amber-500/10"
+            size="sm"
+          >
+            {switching ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Switching…</>
+            ) : (
+              <><RefreshCw className="h-4 w-4 mr-2" /> Switch wallet to {chainLabel}</>
+            )}
+          </Button>
+        </div>
+      )}
+
       <Button
         onClick={handlePay}
-        disabled={paying || !isSupportedChain}
+        disabled={paying || !isSupportedChain || needsSwitch || switching}
         className="w-full bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold py-6 rounded-xl text-base"
       >
         {paying ? (
           <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Processing Payment…</>
+        ) : needsSwitch ? (
+          <>Switch to {chainLabel} to continue</>
         ) : (
           <>💰 Pay {fee} USDC on {chainLabel}</>
         )}
