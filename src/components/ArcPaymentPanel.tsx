@@ -272,13 +272,40 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
         </div>
       )}
 
+      {needsSwitch && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+            <p className="text-xs text-foreground/90">
+              Your wallet is on a different network. Switch to <strong>{chainLabel}</strong> to pay
+              {isBase ? " with ERC-8021 attribution." : "."}
+            </p>
+          </div>
+          <Button
+            onClick={handleSwitch}
+            disabled={switching}
+            variant="outline"
+            className="w-full rounded-lg border-amber-500/40 hover:bg-amber-500/10"
+            size="sm"
+          >
+            {switching ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Switching…</>
+            ) : (
+              <><RefreshCw className="h-4 w-4 mr-2" /> Switch wallet to {chainLabel}</>
+            )}
+          </Button>
+        </div>
+      )}
+
       <Button
         onClick={handlePay}
-        disabled={paying || !isSupportedChain}
+        disabled={paying || !isSupportedChain || needsSwitch || switching}
         className="w-full bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold py-6 rounded-xl text-base"
       >
         {paying ? (
           <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Processing Payment…</>
+        ) : needsSwitch ? (
+          <>Switch to {chainLabel} to continue</>
         ) : (
           <>💰 Pay {fee} USDC on {chainLabel}</>
         )}
