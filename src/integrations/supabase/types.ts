@@ -58,6 +58,10 @@ export type Database = {
       }
       partners: {
         Row: {
+          badge_nonce: number
+          badge_token_id: number | null
+          badge_tx_hash: string | null
+          badge_voucher_issued_at: string | null
           categories: string[]
           created_at: string
           description: string
@@ -77,6 +81,10 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          badge_nonce?: number
+          badge_token_id?: number | null
+          badge_tx_hash?: string | null
+          badge_voucher_issued_at?: string | null
           categories?: string[]
           created_at?: string
           description: string
@@ -96,6 +104,10 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          badge_nonce?: number
+          badge_token_id?: number | null
+          badge_tx_hash?: string | null
+          badge_voucher_issued_at?: string | null
           categories?: string[]
           created_at?: string
           description?: string
