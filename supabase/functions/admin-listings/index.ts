@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
 
     // PUT — update a partner
     if (req.method === "PUT") {
-      const { id, name, description, website, categories, region, featured } = await req.json();
+      const { id, name, description, website, categories, region, featured, payment_status, action } = await req.json();
       if (!id) {
         return new Response(JSON.stringify({ error: "Missing partner id" }), {
           status: 400,
@@ -95,6 +95,18 @@ Deno.serve(async (req: Request) => {
       if (categories !== undefined) updates.categories = categories;
       if (region !== undefined) updates.region = region;
       if (featured !== undefined) updates.featured = featured;
+      if (payment_status !== undefined) updates.payment_status = payment_status;
+
+      // Convenience: action="approve" promotes a pending_review listing to live
+      if (action === "approve") {
+        updates.payment_status = "confirmed";
+        // Mirror onto the submission row if present
+        await supabase.from("submissions").update({ status: "approved" }).eq("partner_id", id);
+      }
+      if (action === "reject") {
+        updates.payment_status = "rejected";
+        await supabase.from("submissions").update({ status: "rejected" }).eq("partner_id", id);
+      }
 
       console.log("[admin-listings] PUT id:", id, "updates:", JSON.stringify(updates));
       const { error, data: updateData } = await supabase.from("partners").update(updates).eq("id", id).select("id");

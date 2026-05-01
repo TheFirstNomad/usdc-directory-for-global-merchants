@@ -24,7 +24,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ShieldAlert, RefreshCw, Pencil, Trash2, Loader2, Star, DollarSign, ArrowLeft } from "lucide-react";
+import { ShieldAlert, RefreshCw, Pencil, Trash2, Loader2, Star, DollarSign, ArrowLeft, Check, X, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORIES as ALL_CATEGORIES } from "@/lib/partners";
@@ -50,8 +50,10 @@ const AdminListings = () => {
   const [partners, setPartners] = useState<PartnerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending_review" | "confirmed">("all");
   const [editPartner, setEditPartner] = useState<PartnerRow | null>(null);
   const [saving, setSaving] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const isOwner = isConnected && address?.toLowerCase() === TREASURY_ADDRESS.toLowerCase();
 
@@ -160,9 +162,37 @@ const AdminListings = () => {
     }
   }, [toast, getHeaders]);
 
-  const filtered = partners.filter(
-    (p) => !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.description.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleModerate = useCallback(async (id: string, action: "approve" | "reject") => {
+    setActionLoadingId(id);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const headers = await getHeaders();
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/admin-listings`,
+        {
+          method: "PUT",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({ id, action }),
+        }
+      );
+      if (!res.ok) throw new Error("Failed");
+      const newStatus = action === "approve" ? "confirmed" : "rejected";
+      setPartners((prev) => prev.map((p) => (p.id === id ? { ...p, payment_status: newStatus } : p)));
+      toast({ title: action === "approve" ? "Approved" : "Rejected", description: `Listing ${action === "approve" ? "is now live" : "has been rejected"}` });
+    } catch {
+      toast({ title: "Error", description: `Failed to ${action} listing`, variant: "destructive" });
+    } finally {
+      setActionLoadingId(null);
+    }
+  }, [toast, getHeaders]);
+
+  const filtered = partners.filter((p) => {
+    if (statusFilter !== "all" && p.payment_status !== statusFilter) return false;
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.description.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const pendingCount = partners.filter((p) => p.payment_status === "pending_review").length;
 
   if (!isConnected || !isOwner) {
     return (
@@ -217,12 +247,21 @@ const AdminListings = () => {
           </Button>
         </div>
 
-        <Input
-          placeholder="Search listings…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="Search listings…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-sm"
+          />
+          <div className="flex gap-1 ml-auto">
+            <Button size="sm" variant={statusFilter === "all" ? "secondary" : "ghost"} onClick={() => setStatusFilter("all")}>All ({partners.length})</Button>
+            <Button size="sm" variant={statusFilter === "pending_review" ? "secondary" : "ghost"} onClick={() => setStatusFilter("pending_review")} className="gap-1.5">
+              <Clock className="h-3.5 w-3.5" /> Pending {pendingCount > 0 && <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-[10px]">{pendingCount}</Badge>}
+            </Button>
+            <Button size="sm" variant={statusFilter === "confirmed" ? "secondary" : "ghost"} onClick={() => setStatusFilter("confirmed")}>Live</Button>
+          </div>
+        </div>
 
         <Card>
           <CardContent className="p-0">
@@ -277,6 +316,30 @@ const AdminListings = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
+                            {p.payment_status === "pending_review" && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-success"
+                                  onClick={() => handleModerate(p.id, "approve")}
+                                  disabled={actionLoadingId === p.id}
+                                  title="Approve"
+                                >
+                                  {actionLoadingId === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  onClick={() => handleModerate(p.id, "reject")}
+                                  disabled={actionLoadingId === p.id}
+                                  title="Reject"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"

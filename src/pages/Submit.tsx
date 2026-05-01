@@ -9,26 +9,33 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS } from "@/lib/partners";
-import { CheckCircle2, ArrowRight, ArrowLeft, Upload, Eye } from "lucide-react";
-import { useAppKitAccount } from "@reown/appkit/react";
+import { CheckCircle2, ArrowRight, ArrowLeft, Upload, Eye, Zap, Clock, Loader2 } from "lucide-react";
+import { useAppKitAccount, useAppKit } from "@reown/appkit/react";
 
 
 const STEPS = [
   { title: "Business Info", description: "Tell us about your business" },
   { title: "Location", description: "Where are your customers?" },
-  { title: "Preview", description: "Review your listing before payment" },
-  { title: "Payment", description: "Pay 10 USDC to list" },
+  { title: "Preview", description: "Review your listing" },
+  { title: "Choose Tier", description: "Free review queue or instant paid listing" },
+  { title: "Submit", description: "" },
 ];
 
 const PRESENCE_TYPES = ["Online Only", "Physical Locations", "Both"];
+
+type Tier = "free" | "paid";
 
 const Submit = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const { address, isConnected } = useAppKitAccount();
+  const { open } = useAppKit();
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(searchParams.get("success") === "true");
   const [orderId, setOrderId] = useState(searchParams.get("order") || "");
+  const [tier, setTier] = useState<Tier>("free");
+  const [submittedTier, setSubmittedTier] = useState<Tier>("paid");
+  const [submittingFree, setSubmittingFree] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [form, setForm] = useState({
@@ -109,7 +116,38 @@ const Submit = () => {
 
   const handlePaymentSuccess = (txHash: string) => {
     setOrderId(txHash);
+    setSubmittedTier("paid");
     setSubmitted(true);
+  };
+
+  const handleFreeSubmit = async () => {
+    if (!isConnected || !address) {
+      toast({ title: "Connect your wallet to submit", variant: "destructive" });
+      open();
+      return;
+    }
+    setSubmittingFree(true);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || `https://${projectId}.supabase.co`;
+      const res = await fetch(`${supabaseUrl}/functions/v1/submit-free-listing`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet_address: address,
+          data: submissionData,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "Submission failed");
+      setOrderId(body.partner_id);
+      setSubmittedTier("free");
+      setSubmitted(true);
+    } catch (err) {
+      toast({ title: "Submission failed", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setSubmittingFree(false);
+    }
   };
 
   const submissionData = {
@@ -123,21 +161,28 @@ const Submit = () => {
   };
 
   if (submitted) {
+    const isFree = submittedTier === "free";
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <SEO title="Listed Successfully" description="Your business has been listed on USDC Directory." path="/submit" />
+        <SEO title={isFree ? "Submitted for Review" : "Listed Successfully"} description="Your business has been submitted to USDC Directory." path="/submit" />
         <Header />
         <main className="flex-1 flex items-center justify-center px-6 py-20">
           <div className="max-w-md text-center">
-            <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 className="h-10 w-10 text-success" />
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${isFree ? "bg-primary/10" : "bg-success/10"}`}>
+              {isFree ? <Clock className="h-10 w-10 text-primary" /> : <CheckCircle2 className="h-10 w-10 text-success" />}
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-3">🎉 Payment Submitted!</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-3">
+              {isFree ? "✅ Submitted for Review" : "🎉 Payment Submitted!"}
+            </h1>
             <p className="text-muted-foreground mb-4">
-              Your listing will go live automatically once payment is confirmed (usually 1-5 minutes).
+              {isFree
+                ? "Thanks! Your listing is in our admin review queue. We'll publish approved listings within 1–3 business days."
+                : "Your listing will go live automatically once payment is confirmed (usually 1-5 minutes)."}
             </p>
             {orderId && (
-              <p className="text-xs text-muted-foreground font-mono break-all mb-6">Order: {orderId}</p>
+              <p className="text-xs text-muted-foreground font-mono break-all mb-6">
+                {isFree ? "Submission ID" : "Order"}: {orderId}
+              </p>
             )}
             <a href="/" className="text-primary text-sm font-medium hover:underline">← Back to Directory</a>
           </div>
@@ -149,14 +194,14 @@ const Submit = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <SEO title="List Your Business — 10 USDC" description="Add your business to the USDC Directory for just 10 USDC." path="/submit" />
+      <SEO title="List Your Business — Free or 10 USDC" description="Add your business to the USDC Directory. Free with admin review or 10 USDC for instant listing." path="/submit" />
       <Header />
 
       <section className="bg-gradient-to-b from-primary/5 to-background py-14 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-3xl md:text-4xl font-extrabold text-foreground mb-3">List Your Business</h1>
           <p className="text-muted-foreground text-base max-w-xl mx-auto">
-            Get discovered by thousands of USDC users worldwide. <span className="font-semibold text-foreground">Just 10 USDC</span> for a permanent listing.
+            Get discovered by thousands of USDC users worldwide. <span className="font-semibold text-foreground">Free with admin review</span> or <span className="font-semibold text-foreground">10 USDC for instant listing</span>.
           </p>
         </div>
       </section>
@@ -313,13 +358,66 @@ const Submit = () => {
 
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
                 <Eye className="h-5 w-5 text-primary mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">This is how your listing will appear. Continue to pay and publish.</p>
+                <p className="text-sm text-muted-foreground">This is how your listing will appear. Continue to choose a tier.</p>
               </div>
             </div>
           )}
 
-          {/* Step 3: Payment */}
+          {/* Step 3: Choose Tier */}
           {step === 3 && (
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => setTier("free")}
+                className={`w-full text-left p-5 rounded-2xl border-2 transition-all ${tier === "free" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Clock className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-foreground">Free</h3>
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">Admin review</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">Submit at no cost. Our team reviews and approves quality listings within 1–3 business days.</p>
+                    <ul className="text-xs text-muted-foreground space-y-0.5">
+                      <li>✓ No payment required</li>
+                      <li>✓ Same listing features once approved</li>
+                      <li>✗ Manual review (1–3 days)</li>
+                    </ul>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTier("paid")}
+                className={`w-full text-left p-5 rounded-2xl border-2 transition-all ${tier === "paid" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-[hsl(275,80%,55%)] flex items-center justify-center flex-shrink-0">
+                    <Zap className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-foreground">Instant — 10 USDC</h3>
+                      <span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full font-medium">No review</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">Skip the queue. Pay 10 USDC and your listing goes live as soon as the payment confirms (~1–5 min).</p>
+                    <ul className="text-xs text-muted-foreground space-y-0.5">
+                      <li>✓ Live in minutes</li>
+                      <li>✓ Eligible for homepage featuring</li>
+                      <li>✓ Permanent listing</li>
+                    </ul>
+                  </div>
+                </div>
+              </button>
+            </div>
+          )}
+
+          {/* Step 4: Submit (free or paid) */}
+          {step === 4 && tier === "paid" && (
             <div className="space-y-6">
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
                 <ArcPaymentPanel
@@ -333,8 +431,44 @@ const Submit = () => {
                 <ul className="space-y-1.5 text-sm text-muted-foreground">
                   <li>✅ Permanent listing in the global directory</li>
                   <li>✅ Searchable by category, region, and network</li>
-                  <li>✅ Featured on the USDC Directory homepage</li>
+                  <li>✅ Eligible for homepage featuring</li>
                   <li>✅ Instant approval after payment</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {step === 4 && tier === "free" && (
+            <div className="space-y-6">
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 text-center">
+                <Clock className="h-8 w-8 text-primary mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-foreground mb-2">Submit for Free Review</h3>
+                <p className="text-sm text-muted-foreground mb-5">
+                  Your listing will join the admin review queue. We'll notify you on-chain (via your connected wallet) once it's approved and live.
+                </p>
+                {!isConnected ? (
+                  <Button onClick={() => open()} className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold w-full">
+                    Connect Wallet to Submit
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleFreeSubmit}
+                    disabled={submittingFree}
+                    className="bg-primary text-primary-foreground font-semibold w-full"
+                  >
+                    {submittingFree ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting…</> : "Submit for Review"}
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground mt-3">
+                  Wallet: {address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "not connected"}
+                </p>
+              </div>
+              <div className="bg-card border border-border rounded-xl p-4">
+                <h4 className="font-semibold text-foreground text-sm mb-2">Review guidelines</h4>
+                <ul className="space-y-1.5 text-sm text-muted-foreground">
+                  <li>✅ Real, operational businesses accepting USDC</li>
+                  <li>✅ Clear description and a working website</li>
+                  <li>❌ No spam, scams, or duplicate submissions</li>
                 </ul>
               </div>
             </div>
