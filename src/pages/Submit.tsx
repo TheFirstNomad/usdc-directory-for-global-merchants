@@ -29,9 +29,13 @@ const Submit = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const { address, isConnected } = useAppKitAccount();
+  const { open } = useAppKit();
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(searchParams.get("success") === "true");
   const [orderId, setOrderId] = useState(searchParams.get("order") || "");
+  const [tier, setTier] = useState<Tier>("free");
+  const [submittedTier, setSubmittedTier] = useState<Tier>("paid");
+  const [submittingFree, setSubmittingFree] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [form, setForm] = useState({
