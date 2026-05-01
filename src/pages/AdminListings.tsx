@@ -50,8 +50,10 @@ const AdminListings = () => {
   const [partners, setPartners] = useState<PartnerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending_review" | "confirmed">("all");
   const [editPartner, setEditPartner] = useState<PartnerRow | null>(null);
   const [saving, setSaving] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const isOwner = isConnected && address?.toLowerCase() === TREASURY_ADDRESS.toLowerCase();
 
