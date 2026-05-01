@@ -24,7 +24,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ShieldAlert, RefreshCw, Pencil, Trash2, Loader2, Star, DollarSign, ArrowLeft } from "lucide-react";
+import { ShieldAlert, RefreshCw, Pencil, Trash2, Loader2, Star, DollarSign, ArrowLeft, Check, X, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORIES as ALL_CATEGORIES } from "@/lib/partners";
