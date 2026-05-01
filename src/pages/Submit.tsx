@@ -358,13 +358,66 @@ const Submit = () => {
 
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
                 <Eye className="h-5 w-5 text-primary mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">This is how your listing will appear. Continue to pay and publish.</p>
+                <p className="text-sm text-muted-foreground">This is how your listing will appear. Continue to choose a tier.</p>
               </div>
             </div>
           )}
 
-          {/* Step 3: Payment */}
+          {/* Step 3: Choose Tier */}
           {step === 3 && (
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => setTier("free")}
+                className={`w-full text-left p-5 rounded-2xl border-2 transition-all ${tier === "free" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Clock className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-foreground">Free</h3>
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">Admin review</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">Submit at no cost. Our team reviews and approves quality listings within 1–3 business days.</p>
+                    <ul className="text-xs text-muted-foreground space-y-0.5">
+                      <li>✓ No payment required</li>
+                      <li>✓ Same listing features once approved</li>
+                      <li>✗ Manual review (1–3 days)</li>
+                    </ul>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTier("paid")}
+                className={`w-full text-left p-5 rounded-2xl border-2 transition-all ${tier === "paid" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-[hsl(275,80%,55%)] flex items-center justify-center flex-shrink-0">
+                    <Zap className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-foreground">Instant — 10 USDC</h3>
+                      <span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full font-medium">No review</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">Skip the queue. Pay 10 USDC and your listing goes live as soon as the payment confirms (~1–5 min).</p>
+                    <ul className="text-xs text-muted-foreground space-y-0.5">
+                      <li>✓ Live in minutes</li>
+                      <li>✓ Eligible for homepage featuring</li>
+                      <li>✓ Permanent listing</li>
+                    </ul>
+                  </div>
+                </div>
+              </button>
+            </div>
+          )}
+
+          {/* Step 4: Submit (free or paid) */}
+          {step === 4 && tier === "paid" && (
             <div className="space-y-6">
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
                 <ArcPaymentPanel
@@ -378,8 +431,44 @@ const Submit = () => {
                 <ul className="space-y-1.5 text-sm text-muted-foreground">
                   <li>✅ Permanent listing in the global directory</li>
                   <li>✅ Searchable by category, region, and network</li>
-                  <li>✅ Featured on the USDC Directory homepage</li>
+                  <li>✅ Eligible for homepage featuring</li>
                   <li>✅ Instant approval after payment</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {step === 4 && tier === "free" && (
+            <div className="space-y-6">
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 text-center">
+                <Clock className="h-8 w-8 text-primary mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-foreground mb-2">Submit for Free Review</h3>
+                <p className="text-sm text-muted-foreground mb-5">
+                  Your listing will join the admin review queue. We'll notify you on-chain (via your connected wallet) once it's approved and live.
+                </p>
+                {!isConnected ? (
+                  <Button onClick={() => open()} className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold w-full">
+                    Connect Wallet to Submit
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleFreeSubmit}
+                    disabled={submittingFree}
+                    className="bg-primary text-primary-foreground font-semibold w-full"
+                  >
+                    {submittingFree ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting…</> : "Submit for Review"}
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground mt-3">
+                  Wallet: {address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "not connected"}
+                </p>
+              </div>
+              <div className="bg-card border border-border rounded-xl p-4">
+                <h4 className="font-semibold text-foreground text-sm mb-2">Review guidelines</h4>
+                <ul className="space-y-1.5 text-sm text-muted-foreground">
+                  <li>✅ Real, operational businesses accepting USDC</li>
+                  <li>✅ Clear description and a working website</li>
+                  <li>❌ No spam, scams, or duplicate submissions</li>
                 </ul>
               </div>
             </div>
