@@ -116,7 +116,38 @@ const Submit = () => {
 
   const handlePaymentSuccess = (txHash: string) => {
     setOrderId(txHash);
+    setSubmittedTier("paid");
     setSubmitted(true);
+  };
+
+  const handleFreeSubmit = async () => {
+    if (!isConnected || !address) {
+      toast({ title: "Connect your wallet to submit", variant: "destructive" });
+      open();
+      return;
+    }
+    setSubmittingFree(true);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || `https://${projectId}.supabase.co`;
+      const res = await fetch(`${supabaseUrl}/functions/v1/submit-free-listing`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet_address: address,
+          data: submissionData,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "Submission failed");
+      setOrderId(body.partner_id);
+      setSubmittedTier("free");
+      setSubmitted(true);
+    } catch (err) {
+      toast({ title: "Submission failed", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setSubmittingFree(false);
+    }
   };
 
   const submissionData = {
@@ -130,21 +161,28 @@ const Submit = () => {
   };
 
   if (submitted) {
+    const isFree = submittedTier === "free";
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <SEO title="Listed Successfully" description="Your business has been listed on USDC Directory." path="/submit" />
+        <SEO title={isFree ? "Submitted for Review" : "Listed Successfully"} description="Your business has been submitted to USDC Directory." path="/submit" />
         <Header />
         <main className="flex-1 flex items-center justify-center px-6 py-20">
           <div className="max-w-md text-center">
-            <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 className="h-10 w-10 text-success" />
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${isFree ? "bg-primary/10" : "bg-success/10"}`}>
+              {isFree ? <Clock className="h-10 w-10 text-primary" /> : <CheckCircle2 className="h-10 w-10 text-success" />}
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-3">🎉 Payment Submitted!</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-3">
+              {isFree ? "✅ Submitted for Review" : "🎉 Payment Submitted!"}
+            </h1>
             <p className="text-muted-foreground mb-4">
-              Your listing will go live automatically once payment is confirmed (usually 1-5 minutes).
+              {isFree
+                ? "Thanks! Your listing is in our admin review queue. We'll publish approved listings within 1–3 business days."
+                : "Your listing will go live automatically once payment is confirmed (usually 1-5 minutes)."}
             </p>
             {orderId && (
-              <p className="text-xs text-muted-foreground font-mono break-all mb-6">Order: {orderId}</p>
+              <p className="text-xs text-muted-foreground font-mono break-all mb-6">
+                {isFree ? "Submission ID" : "Order"}: {orderId}
+              </p>
             )}
             <a href="/" className="text-primary text-sm font-medium hover:underline">← Back to Directory</a>
           </div>
