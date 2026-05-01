@@ -316,6 +316,30 @@ const AdminListings = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
+                            {p.payment_status === "pending_review" && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-success"
+                                  onClick={() => handleModerate(p.id, "approve")}
+                                  disabled={actionLoadingId === p.id}
+                                  title="Approve"
+                                >
+                                  {actionLoadingId === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  onClick={() => handleModerate(p.id, "reject")}
+                                  disabled={actionLoadingId === p.id}
+                                  title="Reject"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
