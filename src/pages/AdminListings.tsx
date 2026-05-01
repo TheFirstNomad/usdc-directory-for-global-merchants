@@ -247,12 +247,21 @@ const AdminListings = () => {
           </Button>
         </div>
 
-        <Input
-          placeholder="Search listings…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="Search listings…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-sm"
+          />
+          <div className="flex gap-1 ml-auto">
+            <Button size="sm" variant={statusFilter === "all" ? "secondary" : "ghost"} onClick={() => setStatusFilter("all")}>All ({partners.length})</Button>
+            <Button size="sm" variant={statusFilter === "pending_review" ? "secondary" : "ghost"} onClick={() => setStatusFilter("pending_review")} className="gap-1.5">
+              <Clock className="h-3.5 w-3.5" /> Pending {pendingCount > 0 && <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-[10px]">{pendingCount}</Badge>}
+            </Button>
+            <Button size="sm" variant={statusFilter === "confirmed" ? "secondary" : "ghost"} onClick={() => setStatusFilter("confirmed")}>Live</Button>
+          </div>
+        </div>
 
         <Card>
           <CardContent className="p-0">
