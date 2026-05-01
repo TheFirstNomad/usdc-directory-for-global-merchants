@@ -194,14 +194,14 @@ const Submit = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <SEO title="List Your Business — 10 USDC" description="Add your business to the USDC Directory for just 10 USDC." path="/submit" />
+      <SEO title="List Your Business — Free or 10 USDC" description="Add your business to the USDC Directory. Free with admin review or 10 USDC for instant listing." path="/submit" />
       <Header />
 
       <section className="bg-gradient-to-b from-primary/5 to-background py-14 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-3xl md:text-4xl font-extrabold text-foreground mb-3">List Your Business</h1>
           <p className="text-muted-foreground text-base max-w-xl mx-auto">
-            Get discovered by thousands of USDC users worldwide. <span className="font-semibold text-foreground">Just 10 USDC</span> for a permanent listing.
+            Get discovered by thousands of USDC users worldwide. <span className="font-semibold text-foreground">Free with admin review</span> or <span className="font-semibold text-foreground">10 USDC for instant listing</span>.
           </p>
         </div>
       </section>
