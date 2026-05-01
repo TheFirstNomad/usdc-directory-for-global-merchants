@@ -9,18 +9,21 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS } from "@/lib/partners";
-import { CheckCircle2, ArrowRight, ArrowLeft, Upload, Eye } from "lucide-react";
-import { useAppKitAccount } from "@reown/appkit/react";
+import { CheckCircle2, ArrowRight, ArrowLeft, Upload, Eye, Zap, Clock, Loader2 } from "lucide-react";
+import { useAppKitAccount, useAppKit } from "@reown/appkit/react";
 
 
 const STEPS = [
   { title: "Business Info", description: "Tell us about your business" },
   { title: "Location", description: "Where are your customers?" },
-  { title: "Preview", description: "Review your listing before payment" },
-  { title: "Payment", description: "Pay 10 USDC to list" },
+  { title: "Preview", description: "Review your listing" },
+  { title: "Choose Tier", description: "Free review queue or instant paid listing" },
+  { title: "Submit", description: "" },
 ];
 
 const PRESENCE_TYPES = ["Online Only", "Physical Locations", "Both"];
+
+type Tier = "free" | "paid";
 
 const Submit = () => {
   const { toast } = useToast();
