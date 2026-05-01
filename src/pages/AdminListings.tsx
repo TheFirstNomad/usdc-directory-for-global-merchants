@@ -162,9 +162,37 @@ const AdminListings = () => {
     }
   }, [toast, getHeaders]);
 
-  const filtered = partners.filter(
-    (p) => !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.description.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleModerate = useCallback(async (id: string, action: "approve" | "reject") => {
+    setActionLoadingId(id);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const headers = await getHeaders();
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/admin-listings`,
+        {
+          method: "PUT",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({ id, action }),
+        }
+      );
+      if (!res.ok) throw new Error("Failed");
+      const newStatus = action === "approve" ? "confirmed" : "rejected";
+      setPartners((prev) => prev.map((p) => (p.id === id ? { ...p, payment_status: newStatus } : p)));
+      toast({ title: action === "approve" ? "Approved" : "Rejected", description: `Listing ${action === "approve" ? "is now live" : "has been rejected"}` });
+    } catch {
+      toast({ title: "Error", description: `Failed to ${action} listing`, variant: "destructive" });
+    } finally {
+      setActionLoadingId(null);
+    }
+  }, [toast, getHeaders]);
+
+  const filtered = partners.filter((p) => {
+    if (statusFilter !== "all" && p.payment_status !== statusFilter) return false;
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.description.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const pendingCount = partners.filter((p) => p.payment_status === "pending_review").length;
 
   if (!isConnected || !isOwner) {
     return (
