@@ -24,7 +24,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ShieldAlert, RefreshCw, Pencil, Trash2, Loader2, Star, DollarSign, ArrowLeft, Check, X, Clock } from "lucide-react";
+import { ShieldAlert, RefreshCw, Pencil, Trash2, Loader2, Star, DollarSign, ArrowLeft, Check, X, Clock, FileText } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORIES as ALL_CATEGORIES } from "@/lib/partners";
@@ -54,6 +55,13 @@ const AdminListings = () => {
   const [editPartner, setEditPartner] = useState<PartnerRow | null>(null);
   const [saving, setSaving] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [rejectTarget, setRejectTarget] = useState<{ ids: string[]; names: string } | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [auditEntries, setAuditEntries] = useState<any[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   const isOwner = isConnected && address?.toLowerCase() === TREASURY_ADDRESS.toLowerCase();
 
@@ -162,7 +170,7 @@ const AdminListings = () => {
     }
   }, [toast, getHeaders]);
 
-  const handleModerate = useCallback(async (id: string, action: "approve" | "reject") => {
+  const handleModerate = useCallback(async (id: string, action: "approve" | "reject", reason?: string) => {
     setActionLoadingId(id);
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -172,19 +180,91 @@ const AdminListings = () => {
         {
           method: "PUT",
           headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify({ id, action }),
+          body: JSON.stringify({ id, action, reason }),
         }
       );
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed");
+      }
       const newStatus = action === "approve" ? "confirmed" : "rejected";
       setPartners((prev) => prev.map((p) => (p.id === id ? { ...p, payment_status: newStatus } : p)));
       toast({ title: action === "approve" ? "Approved" : "Rejected", description: `Listing ${action === "approve" ? "is now live" : "has been rejected"}` });
-    } catch {
-      toast({ title: "Error", description: `Failed to ${action} listing`, variant: "destructive" });
+    } catch (err) {
+      toast({ title: "Error", description: (err as Error).message || `Failed to ${action} listing`, variant: "destructive" });
     } finally {
       setActionLoadingId(null);
     }
   }, [toast, getHeaders]);
+
+  const runBulk = useCallback(async (action: "approve" | "reject" | "delete", reason?: string) => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const headers = await getHeaders();
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/admin-listings`,
+        {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({ ids, action, reason }),
+        }
+      );
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "Bulk action failed");
+      if (action === "delete") {
+        setPartners((prev) => prev.filter((p) => !selected.has(p.id)));
+      } else {
+        const newStatus = action === "approve" ? "confirmed" : "rejected";
+        setPartners((prev) => prev.map((p) => (selected.has(p.id) ? { ...p, payment_status: newStatus } : p)));
+      }
+      setSelected(new Set());
+      toast({ title: "Done", description: `${ids.length} listing(s) ${action}d` });
+    } catch (err) {
+      toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setBulkBusy(false);
+    }
+  }, [selected, toast, getHeaders]);
+
+  const fetchAudit = useCallback(async () => {
+    setAuditLoading(true);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const headers = await getHeaders();
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/admin-listings?resource=audit`,
+        { headers }
+      );
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "Failed");
+      setAuditEntries(body.entries || []);
+    } catch (err) {
+      toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setAuditLoading(false);
+    }
+  }, [toast, getHeaders]);
+
+  const openAudit = useCallback(() => {
+    setAuditOpen(true);
+    fetchAudit();
+  }, [fetchAudit]);
+
+  const submitReject = useCallback(async () => {
+    if (!rejectTarget || !rejectReason.trim()) return;
+    if (rejectTarget.ids.length === 1) {
+      await handleModerate(rejectTarget.ids[0], "reject", rejectReason.trim());
+    } else {
+      // bulk: temporarily inject ids
+      setSelected(new Set(rejectTarget.ids));
+      await runBulk("reject", rejectReason.trim());
+    }
+    setRejectTarget(null);
+    setRejectReason("");
+  }, [rejectTarget, rejectReason, handleModerate, runBulk]);
 
   const filtered = partners.filter((p) => {
     if (statusFilter !== "all" && p.payment_status !== statusFilter) return false;
@@ -225,10 +305,15 @@ const AdminListings = () => {
             <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
             <p className="text-sm text-muted-foreground">{partners.length} total listings</p>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="gap-2">
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={openAudit} className="gap-2">
+              <FileText className="h-4 w-4" /> Audit Log
+            </Button>
+            <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="gap-2">
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <div className="flex gap-2 border-b border-border pb-3">
@@ -263,6 +348,43 @@ const AdminListings = () => {
           </div>
         </div>
 
+        {selected.size > 0 && (
+          <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
+            <span className="text-sm font-medium text-foreground">{selected.size} selected</span>
+            <div className="flex gap-2 ml-auto">
+              <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={bulkBusy}>Clear</Button>
+              <Button size="sm" variant="secondary" className="gap-1.5" onClick={() => runBulk("approve")} disabled={bulkBusy}>
+                {bulkBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Approve
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => {
+                const ids = Array.from(selected);
+                const names = filtered.filter((p) => selected.has(p.id)).map((p) => p.name).join(", ");
+                setRejectTarget({ ids, names });
+                setRejectReason("");
+              }} disabled={bulkBusy}>
+                <X className="h-3.5 w-3.5" /> Reject
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="destructive" className="gap-1.5" disabled={bulkBusy}>
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {selected.size} listing(s)?</AlertDialogTitle>
+                    <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => runBulk("delete")} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        )}
+
         <Card>
           <CardContent className="p-0">
             {loading ? (
@@ -276,6 +398,15 @@ const AdminListings = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={filtered.length > 0 && filtered.every((p) => selected.has(p.id))}
+                          onCheckedChange={(val) => {
+                            if (val) setSelected(new Set(filtered.map((p) => p.id)));
+                            else setSelected(new Set());
+                          }}
+                        />
+                      </TableHead>
                       <TableHead className="w-12"></TableHead>
                       <TableHead>Business Name</TableHead>
                       <TableHead className="hidden md:table-cell">Description</TableHead>
@@ -287,6 +418,18 @@ const AdminListings = () => {
                   <TableBody>
                     {filtered.map((p) => (
                       <TableRow key={p.id} className={p.featured ? "bg-primary/5" : ""}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selected.has(p.id)}
+                            onCheckedChange={(val) => {
+                              setSelected((prev) => {
+                                const next = new Set(prev);
+                                if (val) next.add(p.id); else next.delete(p.id);
+                                return next;
+                              });
+                            }}
+                          />
+                        </TableCell>
                         <TableCell>
                           {p.logo_url ? (
                             <img
@@ -332,7 +475,7 @@ const AdminListings = () => {
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                  onClick={() => handleModerate(p.id, "reject")}
+                                  onClick={() => { setRejectTarget({ ids: [p.id], names: p.name }); setRejectReason(""); }}
                                   disabled={actionLoadingId === p.id}
                                   title="Reject"
                                 >
@@ -448,6 +591,80 @@ const AdminListings = () => {
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!rejectTarget} onOpenChange={(open) => { if (!open) { setRejectTarget(null); setRejectReason(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reject {rejectTarget && rejectTarget.ids.length > 1 ? `${rejectTarget.ids.length} listings` : "listing"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground line-clamp-2">{rejectTarget?.names}</p>
+            <div>
+              <label className="text-sm font-medium text-foreground">Reason (visible to submitter)</label>
+              <Textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={4}
+                placeholder="e.g. Description doesn't clearly explain USDC integration."
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground mt-1">{rejectReason.length}/500</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRejectTarget(null); setRejectReason(""); }}>Cancel</Button>
+            <Button variant="destructive" onClick={submitReject} disabled={!rejectReason.trim() || bulkBusy || actionLoadingId !== null}>
+              {(bulkBusy || actionLoadingId) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Reject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={auditOpen} onOpenChange={setAuditOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5" /> Audit Log</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto -mx-6 px-6">
+            {auditLoading ? (
+              <div className="space-y-2">
+                {[...Array(6)].map((_, i) => <div key={i} className="h-10 rounded bg-muted animate-pulse" />)}
+              </div>
+            ) : auditEntries.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No audit entries yet.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>When</TableHead>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Listing</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead>Admin</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {auditEntries.map((e) => (
+                    <TableRow key={e.id}>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</TableCell>
+                      <TableCell><Badge variant="outline" className="text-[10px] capitalize">{e.action.replace(/_/g, " ")}</Badge></TableCell>
+                      <TableCell className="text-sm max-w-[180px] truncate">{e.partner_name || e.partner_id?.slice(0, 8) || "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[220px] truncate">{e.reason || "—"}</TableCell>
+                      <TableCell className="text-xs font-mono text-muted-foreground">{e.admin_address.slice(0, 6)}…{e.admin_address.slice(-4)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={fetchAudit} disabled={auditLoading} className="gap-2">
+              <RefreshCw className={`h-4 w-4 ${auditLoading ? "animate-spin" : ""}`} /> Refresh
             </Button>
           </DialogFooter>
         </DialogContent>
