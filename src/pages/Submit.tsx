@@ -429,10 +429,10 @@ const Submit = () => {
               <div className="bg-card border border-border rounded-xl p-4">
                 <h4 className="font-semibold text-foreground text-sm mb-2">What you get:</h4>
                 <ul className="space-y-1.5 text-sm text-muted-foreground">
-                  <li>✅ Permanent listing in the global directory</li>
+                  <li>✅ Permanent listing in the global directory once approved</li>
                   <li>✅ Searchable by category, region, and network</li>
                   <li>✅ Eligible for homepage featuring</li>
-                  <li>✅ Instant approval after payment</li>
+                  <li>✅ Priority admin review (typically within hours)</li>
                 </ul>
               </div>
             </div>
