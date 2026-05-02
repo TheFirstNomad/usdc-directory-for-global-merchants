@@ -348,6 +348,43 @@ const AdminListings = () => {
           </div>
         </div>
 
+        {selected.size > 0 && (
+          <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
+            <span className="text-sm font-medium text-foreground">{selected.size} selected</span>
+            <div className="flex gap-2 ml-auto">
+              <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={bulkBusy}>Clear</Button>
+              <Button size="sm" variant="secondary" className="gap-1.5" onClick={() => runBulk("approve")} disabled={bulkBusy}>
+                {bulkBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Approve
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => {
+                const ids = Array.from(selected);
+                const names = filtered.filter((p) => selected.has(p.id)).map((p) => p.name).join(", ");
+                setRejectTarget({ ids, names });
+                setRejectReason("");
+              }} disabled={bulkBusy}>
+                <X className="h-3.5 w-3.5" /> Reject
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="destructive" className="gap-1.5" disabled={bulkBusy}>
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {selected.size} listing(s)?</AlertDialogTitle>
+                    <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => runBulk("delete")} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        )}
+
         <Card>
           <CardContent className="p-0">
             {loading ? (
