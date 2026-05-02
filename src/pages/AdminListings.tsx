@@ -400,10 +400,24 @@ const AdminListings = () => {
                     <TableRow>
                       <TableHead className="w-10">
                         <Checkbox
-                          checked={filtered.length > 0 && filtered.every((p) => selected.has(p.id))}
+                          checked={
+                            filtered.length > 0 && filtered.every((p) => selected.has(p.id))
+                              ? true
+                              : filtered.some((p) => selected.has(p.id))
+                                ? "indeterminate"
+                                : false
+                          }
+                          disabled={filtered.length === 0}
                           onCheckedChange={(val) => {
-                            if (val) setSelected(new Set(filtered.map((p) => p.id)));
-                            else setSelected(new Set());
+                            setSelected((prev) => {
+                              const next = new Set(prev);
+                              if (val) {
+                                filtered.forEach((p) => next.add(p.id));
+                              } else {
+                                filtered.forEach((p) => next.delete(p.id));
+                              }
+                              return next;
+                            });
                           }}
                         />
                       </TableHead>
