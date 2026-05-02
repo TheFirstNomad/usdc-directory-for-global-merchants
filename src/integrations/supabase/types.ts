@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_address: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          partner_id: string | null
+          partner_name: string | null
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          admin_address: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          partner_id?: string | null
+          partner_name?: string | null
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          admin_address?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          partner_id?: string | null
+          partner_name?: string | null
+          reason?: string | null
+        }
+        Relationships: []
+      }
       deployment_checks: {
         Row: {
           checked_at: string
@@ -142,6 +175,7 @@ export type Database = {
           payment_id: string | null
           payment_status: string
           region: string | null
+          reject_reason: string | null
           status: string
           wallet_address: string | null
           website: string
@@ -159,6 +193,7 @@ export type Database = {
           payment_id?: string | null
           payment_status?: string
           region?: string | null
+          reject_reason?: string | null
           status?: string
           wallet_address?: string | null
           website: string
@@ -176,6 +211,7 @@ export type Database = {
           payment_id?: string | null
           payment_status?: string
           region?: string | null
+          reject_reason?: string | null
           status?: string
           wallet_address?: string | null
           website?: string
