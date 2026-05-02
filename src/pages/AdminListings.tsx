@@ -398,6 +398,15 @@ const AdminListings = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={filtered.length > 0 && filtered.every((p) => selected.has(p.id))}
+                          onCheckedChange={(val) => {
+                            if (val) setSelected(new Set(filtered.map((p) => p.id)));
+                            else setSelected(new Set());
+                          }}
+                        />
+                      </TableHead>
                       <TableHead className="w-12"></TableHead>
                       <TableHead>Business Name</TableHead>
                       <TableHead className="hidden md:table-cell">Description</TableHead>
