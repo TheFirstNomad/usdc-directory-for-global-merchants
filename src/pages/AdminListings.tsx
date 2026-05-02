@@ -596,6 +596,80 @@ const AdminListings = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!rejectTarget} onOpenChange={(open) => { if (!open) { setRejectTarget(null); setRejectReason(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reject {rejectTarget && rejectTarget.ids.length > 1 ? `${rejectTarget.ids.length} listings` : "listing"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground line-clamp-2">{rejectTarget?.names}</p>
+            <div>
+              <label className="text-sm font-medium text-foreground">Reason (visible to submitter)</label>
+              <Textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={4}
+                placeholder="e.g. Description doesn't clearly explain USDC integration."
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground mt-1">{rejectReason.length}/500</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRejectTarget(null); setRejectReason(""); }}>Cancel</Button>
+            <Button variant="destructive" onClick={submitReject} disabled={!rejectReason.trim() || bulkBusy || actionLoadingId !== null}>
+              {(bulkBusy || actionLoadingId) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Reject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={auditOpen} onOpenChange={setAuditOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5" /> Audit Log</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto -mx-6 px-6">
+            {auditLoading ? (
+              <div className="space-y-2">
+                {[...Array(6)].map((_, i) => <div key={i} className="h-10 rounded bg-muted animate-pulse" />)}
+              </div>
+            ) : auditEntries.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No audit entries yet.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>When</TableHead>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Listing</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead>Admin</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {auditEntries.map((e) => (
+                    <TableRow key={e.id}>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</TableCell>
+                      <TableCell><Badge variant="outline" className="text-[10px] capitalize">{e.action.replace(/_/g, " ")}</Badge></TableCell>
+                      <TableCell className="text-sm max-w-[180px] truncate">{e.partner_name || e.partner_id?.slice(0, 8) || "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[220px] truncate">{e.reason || "—"}</TableCell>
+                      <TableCell className="text-xs font-mono text-muted-foreground">{e.admin_address.slice(0, 6)}…{e.admin_address.slice(-4)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={fetchAudit} disabled={auditLoading} className="gap-2">
+              <RefreshCw className={`h-4 w-4 ${auditLoading ? "animate-spin" : ""}`} /> Refresh
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </>
   );
