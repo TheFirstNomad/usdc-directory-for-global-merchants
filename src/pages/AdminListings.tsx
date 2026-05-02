@@ -475,7 +475,7 @@ const AdminListings = () => {
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                  onClick={() => handleModerate(p.id, "reject")}
+                                  onClick={() => { setRejectTarget({ ids: [p.id], names: p.name }); setRejectReason(""); }}
                                   disabled={actionLoadingId === p.id}
                                   title="Reject"
                                 >
