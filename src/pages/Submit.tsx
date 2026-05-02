@@ -177,7 +177,7 @@ const Submit = () => {
             <p className="text-muted-foreground mb-4">
               {isFree
                 ? "Thanks! Your listing is in our admin review queue. We'll publish approved listings within 1–3 business days."
-                : "Your listing will go live automatically once payment is confirmed (usually 1-5 minutes)."}
+                : "Thanks! Your payment has been received and your submission is now in the priority review queue. An admin will approve it shortly (typically within hours)."}
             </p>
             {orderId && (
               <p className="text-xs text-muted-foreground font-mono break-all mb-6">
