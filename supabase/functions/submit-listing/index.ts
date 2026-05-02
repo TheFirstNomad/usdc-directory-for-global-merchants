@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
           region,
           logo_url,
           wallet_address: walletLower,
-          payment_status: "confirmed",
+          payment_status: "pending_review",
           payment_id: tx_hash,
           featured: false,
         })
@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
         wallet_address: walletLower,
         payment_id: tx_hash,
         payment_status: "confirmed",
-        status: "approved",
+        status: "pending",
         partner_id: newPartner.id,
       });
       if (subErr) console.error("Submission insert error:", subErr);

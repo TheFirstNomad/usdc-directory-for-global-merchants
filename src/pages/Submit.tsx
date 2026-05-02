@@ -177,7 +177,7 @@ const Submit = () => {
             <p className="text-muted-foreground mb-4">
               {isFree
                 ? "Thanks! Your listing is in our admin review queue. We'll publish approved listings within 1–3 business days."
-                : "Your listing will go live automatically once payment is confirmed (usually 1-5 minutes)."}
+                : "Thanks! Your payment has been received and your submission is now in the priority review queue. An admin will approve it shortly (typically within hours)."}
             </p>
             {orderId && (
               <p className="text-xs text-muted-foreground font-mono break-all mb-6">
@@ -401,14 +401,14 @@ const Submit = () => {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-foreground">Instant — 10 USDC</h3>
-                      <span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full font-medium">No review</span>
+                      <h3 className="font-bold text-foreground">Priority — 10 USDC</h3>
+                      <span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full font-medium">Fast-tracked review</span>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2">Skip the queue. Pay 10 USDC and your listing goes live as soon as the payment confirms (~1–5 min).</p>
+                    <p className="text-sm text-muted-foreground mb-2">Pay 10 USDC and your submission jumps to the front of the admin review queue (typically reviewed within hours).</p>
                     <ul className="text-xs text-muted-foreground space-y-0.5">
-                      <li>✓ Live in minutes</li>
+                      <li>✓ Priority admin review</li>
                       <li>✓ Eligible for homepage featuring</li>
-                      <li>✓ Permanent listing</li>
+                      <li>✓ Permanent listing once approved</li>
                     </ul>
                   </div>
                 </div>
@@ -429,10 +429,10 @@ const Submit = () => {
               <div className="bg-card border border-border rounded-xl p-4">
                 <h4 className="font-semibold text-foreground text-sm mb-2">What you get:</h4>
                 <ul className="space-y-1.5 text-sm text-muted-foreground">
-                  <li>✅ Permanent listing in the global directory</li>
+                  <li>✅ Permanent listing in the global directory once approved</li>
                   <li>✅ Searchable by category, region, and network</li>
                   <li>✅ Eligible for homepage featuring</li>
-                  <li>✅ Instant approval after payment</li>
+                  <li>✅ Priority admin review (typically within hours)</li>
                 </ul>
               </div>
             </div>
