@@ -170,7 +170,7 @@ const AdminListings = () => {
     }
   }, [toast, getHeaders]);
 
-  const handleModerate = useCallback(async (id: string, action: "approve" | "reject") => {
+  const handleModerate = useCallback(async (id: string, action: "approve" | "reject", reason?: string) => {
     setActionLoadingId(id);
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -180,19 +180,91 @@ const AdminListings = () => {
         {
           method: "PUT",
           headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify({ id, action }),
+          body: JSON.stringify({ id, action, reason }),
         }
       );
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed");
+      }
       const newStatus = action === "approve" ? "confirmed" : "rejected";
       setPartners((prev) => prev.map((p) => (p.id === id ? { ...p, payment_status: newStatus } : p)));
       toast({ title: action === "approve" ? "Approved" : "Rejected", description: `Listing ${action === "approve" ? "is now live" : "has been rejected"}` });
-    } catch {
-      toast({ title: "Error", description: `Failed to ${action} listing`, variant: "destructive" });
+    } catch (err) {
+      toast({ title: "Error", description: (err as Error).message || `Failed to ${action} listing`, variant: "destructive" });
     } finally {
       setActionLoadingId(null);
     }
   }, [toast, getHeaders]);
+
+  const runBulk = useCallback(async (action: "approve" | "reject" | "delete", reason?: string) => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const headers = await getHeaders();
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/admin-listings`,
+        {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({ ids, action, reason }),
+        }
+      );
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "Bulk action failed");
+      if (action === "delete") {
+        setPartners((prev) => prev.filter((p) => !selected.has(p.id)));
+      } else {
+        const newStatus = action === "approve" ? "confirmed" : "rejected";
+        setPartners((prev) => prev.map((p) => (selected.has(p.id) ? { ...p, payment_status: newStatus } : p)));
+      }
+      setSelected(new Set());
+      toast({ title: "Done", description: `${ids.length} listing(s) ${action}d` });
+    } catch (err) {
+      toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setBulkBusy(false);
+    }
+  }, [selected, toast, getHeaders]);
+
+  const fetchAudit = useCallback(async () => {
+    setAuditLoading(true);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const headers = await getHeaders();
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/admin-listings?resource=audit`,
+        { headers }
+      );
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "Failed");
+      setAuditEntries(body.entries || []);
+    } catch (err) {
+      toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setAuditLoading(false);
+    }
+  }, [toast, getHeaders]);
+
+  const openAudit = useCallback(() => {
+    setAuditOpen(true);
+    fetchAudit();
+  }, [fetchAudit]);
+
+  const submitReject = useCallback(async () => {
+    if (!rejectTarget || !rejectReason.trim()) return;
+    if (rejectTarget.ids.length === 1) {
+      await handleModerate(rejectTarget.ids[0], "reject", rejectReason.trim());
+    } else {
+      // bulk: temporarily inject ids
+      setSelected(new Set(rejectTarget.ids));
+      await runBulk("reject", rejectReason.trim());
+    }
+    setRejectTarget(null);
+    setRejectReason("");
+  }, [rejectTarget, rejectReason, handleModerate, runBulk]);
 
   const filtered = partners.filter((p) => {
     if (statusFilter !== "all" && p.payment_status !== statusFilter) return false;
