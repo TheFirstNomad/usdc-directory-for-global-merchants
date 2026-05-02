@@ -55,6 +55,13 @@ const AdminListings = () => {
   const [editPartner, setEditPartner] = useState<PartnerRow | null>(null);
   const [saving, setSaving] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [rejectTarget, setRejectTarget] = useState<{ ids: string[]; names: string } | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [auditEntries, setAuditEntries] = useState<any[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   const isOwner = isConnected && address?.toLowerCase() === TREASURY_ADDRESS.toLowerCase();
 
