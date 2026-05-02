@@ -305,10 +305,15 @@ const AdminListings = () => {
             <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
             <p className="text-sm text-muted-foreground">{partners.length} total listings</p>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="gap-2">
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={openAudit} className="gap-2">
+              <FileText className="h-4 w-4" /> Audit Log
+            </Button>
+            <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="gap-2">
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <div className="flex gap-2 border-b border-border pb-3">
