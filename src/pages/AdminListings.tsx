@@ -419,6 +419,18 @@ const AdminListings = () => {
                     {filtered.map((p) => (
                       <TableRow key={p.id} className={p.featured ? "bg-primary/5" : ""}>
                         <TableCell>
+                          <Checkbox
+                            checked={selected.has(p.id)}
+                            onCheckedChange={(val) => {
+                              setSelected((prev) => {
+                                const next = new Set(prev);
+                                if (val) next.add(p.id); else next.delete(p.id);
+                                return next;
+                              });
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
                           {p.logo_url ? (
                             <img
                               src={p.logo_url}
