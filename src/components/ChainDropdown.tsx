@@ -25,7 +25,10 @@ const ChainDropdown = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border/60 bg-card hover:bg-muted transition-colors text-sm font-medium text-foreground focus:outline-none">
+        <button
+          aria-label={`Switch network. Current network: ${current.name}`}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border/60 bg-card hover:bg-muted transition-colors text-sm font-medium text-foreground focus:outline-none"
+        >
           <img src={icon.src} alt={icon.alt} className="w-5 h-5 rounded-full object-cover" />
           <span className="hidden sm:inline">{current.shortName}</span>
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />

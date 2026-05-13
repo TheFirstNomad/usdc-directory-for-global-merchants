@@ -130,11 +130,13 @@ const Bridge = () => {
 
             {/* Amount input */}
             <div className="rounded-xl bg-muted/20 border border-border/40 p-4 mb-4">
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Amount (USDC)</label>
+              <label htmlFor="bridge-amount" className="text-xs font-medium text-muted-foreground mb-2 block">Amount (USDC)</label>
               <input
+                id="bridge-amount"
                 type="text"
                 inputMode="decimal"
                 placeholder="0"
+                aria-label="USDC amount to bridge"
                 value={amount}
                 onChange={(e) => {
                   const v = e.target.value.replace(/[^0-9.]/g, "");

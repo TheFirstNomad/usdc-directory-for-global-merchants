@@ -197,7 +197,7 @@ const MerchantDetail = () => {
 
             {/* Categories */}
             <div className="bg-card border border-border rounded-xl p-5">
-              <h3 className="font-semibold text-foreground mb-3 text-sm">Categories</h3>
+              <h2 className="font-semibold text-foreground mb-3 text-sm">Categories</h2>
               <div className="flex flex-wrap gap-2">
                 {partner.categories.map((cat, i) => (
                   <span
@@ -212,7 +212,7 @@ const MerchantDetail = () => {
 
             {/* Chains */}
             <div className="bg-card border border-border rounded-xl p-5">
-              <h3 className="font-semibold text-foreground mb-3 text-sm">Supported Networks</h3>
+              <h2 className="font-semibold text-foreground mb-3 text-sm">Supported Networks</h2>
               <div className="flex flex-wrap gap-2">
                 {(((partner as any).networks as string[]) || []).map((chain, i) => (
                   <span
@@ -249,7 +249,7 @@ const MerchantDetail = () => {
             {/* Score card */}
             {score > 0 && (
               <div className="bg-card border border-border rounded-xl p-5">
-                <h3 className="font-semibold text-foreground mb-3 text-sm">USDC Score</h3>
+                <h2 className="font-semibold text-foreground mb-3 text-sm">USDC Score</h2>
                 <div className="flex items-center gap-3">
                   <div className="relative w-16 h-16">
                     <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
@@ -277,7 +277,7 @@ const MerchantDetail = () => {
 
             {/* Info */}
             <div className="bg-card border border-border rounded-xl p-5">
-              <h3 className="font-semibold text-foreground mb-3 text-sm">Details</h3>
+              <h2 className="font-semibold text-foreground mb-3 text-sm">Details</h2>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Region</dt>

@@ -89,6 +89,7 @@ const HeroSection = forwardRef<HTMLElement, HeroSectionProps>(({
             <input
               ref={inputRef}
               type="text"
+              aria-label="Search merchants and services"
               placeholder={`Search ${partnerCount} merchants…`}
               className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground/50 text-sm py-2"
               value={searchQuery}

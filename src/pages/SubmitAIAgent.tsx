@@ -124,6 +124,7 @@ const SubmitAIAgent = () => {
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label="Copy transaction hash"
                   className="h-7 w-7"
                   onClick={() => {
                     navigator.clipboard.writeText(success.txHash);
@@ -155,18 +156,18 @@ const SubmitAIAgent = () => {
 
               <div className="bg-card border border-border rounded-3xl p-6 md:p-8 space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">Agent Name *</label>
-                  <Input placeholder="e.g. PayBot3000" value={agentName} onChange={(e) => setAgentName(e.target.value)} maxLength={100} className="rounded-xl h-12" />
+                  <label htmlFor="agent-name" className="text-sm font-semibold text-foreground">Agent Name *</label>
+                  <Input id="agent-name" placeholder="e.g. PayBot3000" value={agentName} onChange={(e) => setAgentName(e.target.value)} maxLength={100} className="rounded-xl h-12" />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">Agent Wallet Address *</label>
-                  <Input placeholder="0x... or sol1... or bc1..." value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} maxLength={256} className="rounded-xl h-12 font-mono text-sm" />
+                  <label htmlFor="agent-wallet" className="text-sm font-semibold text-foreground">Agent Wallet Address *</label>
+                  <Input id="agent-wallet" placeholder="0x... or sol1... or bc1..." value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} maxLength={256} className="rounded-xl h-12 font-mono text-sm" />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">Description *</label>
-                  <Input placeholder="What does your agent do?" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={300} className="rounded-xl h-12" />
+                  <label htmlFor="agent-description" className="text-sm font-semibold text-foreground">Description *</label>
+                  <Input id="agent-description" placeholder="What does your agent do?" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={300} className="rounded-xl h-12" />
                   <p className="text-xs text-muted-foreground text-right">{description.length}/300</p>
                 </div>
 

@@ -105,7 +105,7 @@ const Insights = () => {
           <div className="grid md:grid-cols-2 gap-8 mb-12">
             {/* Category bar chart */}
             <div className="bg-card border border-border rounded-xl p-6">
-              <h3 className="font-bold text-foreground mb-4">Merchants by Category</h3>
+              <h2 className="font-bold text-foreground mb-4">Merchants by Category</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={categoryData} layout="vertical" margin={{ left: 0, right: 20 }}>
                   <XAxis type="number" tick={{ fontSize: 12 }} />
@@ -118,7 +118,7 @@ const Insights = () => {
 
             {/* Region pie chart */}
             <div className="bg-card border border-border rounded-xl p-6">
-              <h3 className="font-bold text-foreground mb-4">Distribution by Region</h3>
+              <h2 className="font-bold text-foreground mb-4">Distribution by Region</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie data={regionData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>

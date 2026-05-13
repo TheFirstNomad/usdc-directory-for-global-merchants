@@ -104,8 +104,17 @@ const MapView = () => {
               return (
                 <g
                   key={region}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${region}: ${count} merchants. ${isSelected ? "Selected" : "Click to filter"}`}
                   onClick={() => setSelectedRegion(isSelected ? null : region)}
-                  className="cursor-pointer"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedRegion(isSelected ? null : region);
+                    }
+                  }}
+                  className="cursor-pointer focus:outline-none focus-visible:[&>circle:nth-of-type(2)]:stroke-primary focus-visible:[&>circle:nth-of-type(2)]:stroke-2"
                 >
                   {/* Pulse ring */}
                   <circle cx={x} cy={y} r={radius + 8} fill="hsl(var(--primary))" opacity={isSelected ? 0.15 : 0.08}>

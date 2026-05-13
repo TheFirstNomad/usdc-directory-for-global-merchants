@@ -109,12 +109,12 @@ const MyListings = () => {
                     ) : (listing.logo_emoji || "🏢")}
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground truncate">
+                    <h2 className="font-semibold text-foreground truncate">
                       {listing.name}
                       {(listing.categories?.includes("AI Agents") || listing.categories?.includes("AI Agents & Automation")) && (
                         <span className="ml-2 text-[10px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full">🤖 AI Agent</span>
                       )}
-                    </h3>
+                    </h2>
                     <p className="text-sm text-muted-foreground truncate">{listing.description}</p>
                     <div className="flex items-center gap-2 mt-1">
                       {listing.categories.slice(0, 3).map((cat) => (
@@ -124,11 +124,11 @@ const MyListings = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <Link to={`/merchant/${listing.id}`}>
-                    <Button variant="outline" size="sm"><ExternalLink className="h-4 w-4" /></Button>
+                  <Link to={`/merchant/${listing.id}`} aria-label={`View ${listing.name}`}>
+                    <Button variant="outline" size="sm" aria-label={`View ${listing.name}`}><ExternalLink className="h-4 w-4" /></Button>
                   </Link>
-                  <Link to={`/edit/${listing.id}`}>
-                    <Button variant="outline" size="sm"><Pencil className="h-4 w-4" /></Button>
+                  <Link to={`/edit/${listing.id}`} aria-label={`Edit ${listing.name}`}>
+                    <Button variant="outline" size="sm" aria-label={`Edit ${listing.name}`}><Pencil className="h-4 w-4" /></Button>
                   </Link>
                 </div>
               </div>
