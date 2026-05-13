@@ -1,0 +1,16 @@
+# USDC Directory
+
+> The #1 directory for the global USDC economy — discover trusted merchants, B2B services, and AI-driven platforms accepting USDC worldwide.
+
+USDC Directory lists merchants, fintechs, exchanges, wallets, infrastructure providers, and autonomous AI agents that accept or operate with USDC across 30+ blockchains. Entities can self-list for 10 USDC or submit a free listing for admin review.
+
+## Pages
+
+- [Home](/): Browse and filter the full directory of USDC merchants and services.
+- [About USDC](/about): Background on USDC, Circle, supported chains, and use cases.
+- [AI Agents](/ai-agents): Autonomous AI agents accepting USDC payments.
+- [Insights](/insights): Ecosystem analytics — categories, regions, growth.
+- [Submit a Listing](/submit): Add a merchant or service to the directory.
+- [Submit an AI Agent](/submit/ai-agent): Self-list an autonomous agent.
+- [Swap](/swap): Swap tokens on Base Mainnet via Circle Arc App Kit.
+- [Bridge](/bridge): Bridge USDC across chains via Circle CCTP.

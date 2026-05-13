@@ -73,7 +73,7 @@ const Bridge = () => {
 
   return (
     <>
-      <SEO title="Bridge USDC | USDC Directory" description="Bridge USDC between chains using Circle's cross-chain transfer protocol." />
+      <SEO title="Bridge USDC" description="Bridge USDC between chains using Circle's cross-chain transfer protocol." path="/bridge" />
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
 

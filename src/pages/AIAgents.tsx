@@ -52,7 +52,7 @@ const AIAgents = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
-        title="AI Agents Directory — Autonomous Agents Accepting USDC"
+        title="AI Agents Accepting USDC"
         description="Discover autonomous AI agents listed on the USDC Directory. Any agent with a wallet on any chain can list itself."
         path="/ai-agents"
       />

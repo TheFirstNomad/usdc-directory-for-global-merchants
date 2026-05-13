@@ -126,9 +126,19 @@ const MerchantDetail = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
-        title={`${partner.name} — USDC Directory`}
+        title={partner.name}
         description={partner.description}
         path={`/merchant/${id}`}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: partner.name,
+          description: partner.description,
+          url: partner.website || undefined,
+          logo: logoUrl,
+          areaServed: partner.region,
+          knowsAbout: partner.categories,
+        }}
       />
       <Header />
 
