@@ -194,17 +194,17 @@ const EditListing = () => {
       <main className="flex-1 max-w-xl mx-auto w-full px-6 py-10">
         <div className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Business Name</label>
-            <Input value={partner.name} disabled className="opacity-60" />
+            <label htmlFor="edit-business-name" className="block text-sm font-medium text-foreground mb-1.5">Business Name</label>
+            <Input id="edit-business-name" value={partner.name} disabled className="opacity-60" />
             <p className="text-xs text-muted-foreground mt-1">Name cannot be changed.</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Website *</label>
-            <Input type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://yourcompany.com" maxLength={255} />
+            <label htmlFor="edit-website" className="block text-sm font-medium text-foreground mb-1.5">Website *</label>
+            <Input id="edit-website" type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://yourcompany.com" maxLength={255} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Description *</label>
-            <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe what your business does…" rows={4} maxLength={1000} />
+            <label htmlFor="edit-description" className="block text-sm font-medium text-foreground mb-1.5">Description *</label>
+            <Textarea id="edit-description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe what your business does…" rows={4} maxLength={1000} />
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">Categories *</label>
