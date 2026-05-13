@@ -201,8 +201,9 @@ const Swap = () => {
   return (
     <>
       <SEO
-        title="Swap Tokens on Base | USDC Directory"
+        title="Swap Tokens on Base"
         description="Swap tokens on Base Mainnet with low fees and minimal slippage."
+        path="/swap"
       />
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
