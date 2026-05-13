@@ -233,24 +233,24 @@ const Submit = () => {
           {step === 0 && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Business Name *</label>
-                <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="Your company name" maxLength={100} />
+                <label htmlFor="submit-company-name" className="block text-sm font-medium text-foreground mb-1.5">Business Name *</label>
+                <Input id="submit-company-name" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="Your company name" maxLength={100} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Contact Email</label>
-                <Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} placeholder="you@company.com (optional)" maxLength={255} />
+                <label htmlFor="submit-contact-email" className="block text-sm font-medium text-foreground mb-1.5">Contact Email</label>
+                <Input id="submit-contact-email" type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} placeholder="you@company.com (optional)" maxLength={255} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Website</label>
-                <Input type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://yourcompany.com (optional)" maxLength={255} />
+                <label htmlFor="submit-website" className="block text-sm font-medium text-foreground mb-1.5">Website</label>
+                <Input id="submit-website" type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://yourcompany.com (optional)" maxLength={255} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Country / Region</label>
-                <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="e.g. United States, Nigeria (optional)" maxLength={100} />
+                <label htmlFor="submit-country-region" className="block text-sm font-medium text-foreground mb-1.5">Country / Region</label>
+                <Input id="submit-country-region" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="e.g. United States, Nigeria (optional)" maxLength={100} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Description *</label>
-                <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Briefly describe what your business does…" rows={3} maxLength={1000} />
+                <label htmlFor="submit-description" className="block text-sm font-medium text-foreground mb-1.5">Description *</label>
+                <Textarea id="submit-description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Briefly describe what your business does…" rows={3} maxLength={1000} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">Logo (PNG, JPG, JPEG, SVG, WebP recommended)</label>
@@ -318,12 +318,12 @@ const Submit = () => {
               {form.presence_type !== "Online Only" && (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">Country</label>
-                    <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="e.g. United States" maxLength={100} />
+                    <label htmlFor="submit-country" className="block text-sm font-medium text-foreground mb-1.5">Country</label>
+                    <Input id="submit-country" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="e.g. United States" maxLength={100} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">City</label>
-                    <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="e.g. New York" maxLength={100} />
+                    <label htmlFor="submit-city" className="block text-sm font-medium text-foreground mb-1.5">City</label>
+                    <Input id="submit-city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="e.g. New York" maxLength={100} />
                   </div>
                 </div>
               )}
