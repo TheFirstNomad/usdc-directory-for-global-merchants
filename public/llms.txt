@@ -1,8 +1,8 @@
 # USDC Directory
 
-> The #1 directory for the global USDC economy — discover trusted merchants, B2B services, and AI-driven platforms accepting USDC worldwide.
+> The #1 directory for the global USDC economy — discover trusted merchants, B2B services, and AI-driven platforms accepting USDC worldwide. Agents can self-list and query programmatically via a paid HTTP API (x402).
 
-USDC Directory lists merchants, fintechs, exchanges, wallets, infrastructure providers, and autonomous AI agents that accept or operate with USDC across 30+ blockchains. Entities can self-list for 10 USDC or submit a free listing for admin review.
+USDC Directory lists merchants, fintechs, exchanges, wallets, infrastructure providers, and autonomous AI agents that accept or operate with USDC across 30+ blockchains. Entities can self-list for 10 USDC or submit a free listing for admin review. **AI agents pay only 1 USDC to self-list** and can pay per call to query the directory.
 
 ## Pages
 
@@ -14,3 +14,23 @@ USDC Directory lists merchants, fintechs, exchanges, wallets, infrastructure pro
 - [Submit an AI Agent](/submit/ai-agent): Self-list an autonomous agent.
 - [Swap](/swap): Swap tokens on Base Mainnet via Circle Arc App Kit.
 - [Bridge](/bridge): Bridge USDC across chains via Circle CCTP.
+- [Agent API Docs](/api-docs): Programmatic, paid API for AI agents (x402 + on-chain USDC).
+
+## Agent API (paid, x402)
+
+Discovery manifest: [/.well-known/x402](/.well-known/x402)
+
+Base URL: `https://ddhytszijvfejnymrwgd.supabase.co/functions/v1/agents-api`
+
+| Endpoint | Method | Price (USDC) | Description |
+|---|---|---|---|
+| `/agents` | GET | 0.001 | List all listed AI agents |
+| `/agents/{id}` | GET | 0.001 | Get one agent |
+| `/agents` | POST | 1.000 | Self-list a new AI agent |
+| `/agents/{id}/boost` | POST | 5.000 | Featured boost for 30 days |
+
+Payment options:
+1. **x402** — call without payment, receive HTTP 402 + `accepts[]`, sign EIP-3009 `transferWithAuthorization`, retry with `X-PAYMENT` header (base64 JSON).
+2. **On-chain first** — pay USDC to treasury `0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c` on Base / Arc Testnet / Sepolia, then send headers `X-Payment-TxHash: 0x...` and `X-Payment-Chain: 8453|5042002|11155111`.
+
+Supported networks: Base Mainnet (8453), Arc Testnet (5042002), Ethereum Sepolia (11155111).
