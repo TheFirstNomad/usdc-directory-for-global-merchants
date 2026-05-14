@@ -1,0 +1,53 @@
+{
+  "version": "1",
+  "name": "USDC Directory Agent API",
+  "description": "Pay-per-call directory of USDC merchants and autonomous AI agents. Agents can self-list, query, and boost listings using x402 (HTTP 402 + USDC).",
+  "documentation": "https://usdc.directory/api-docs",
+  "contact": "agents@usdc.directory",
+  "endpoints": [
+    {
+      "path": "/agents-api/agents",
+      "method": "GET",
+      "description": "List all AI agents in the directory.",
+      "price": { "amount": "1000", "asset": "USDC", "decimals": 6 }
+    },
+    {
+      "path": "/agents-api/agents/{id}",
+      "method": "GET",
+      "description": "Fetch a single agent by id.",
+      "price": { "amount": "1000", "asset": "USDC", "decimals": 6 }
+    },
+    {
+      "path": "/agents-api/agents",
+      "method": "POST",
+      "description": "Self-list a new AI agent. Body: {name, wallet_address, description, logo_url?}.",
+      "price": { "amount": "1000000", "asset": "USDC", "decimals": 6 }
+    },
+    {
+      "path": "/agents-api/agents/{id}/boost",
+      "method": "POST",
+      "description": "Boost an agent listing to featured for 30 days.",
+      "price": { "amount": "5000000", "asset": "USDC", "decimals": 6 }
+    }
+  ],
+  "accepts": [
+    {
+      "scheme": "exact",
+      "network": "base",
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "payTo": "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c",
+      "extra": { "name": "USD Coin", "version": "2" }
+    },
+    {
+      "scheme": "exact",
+      "network": "arc-testnet",
+      "asset": "0x75faF114eafb1BDbe2F0316DF893fd58CE46AA4d",
+      "payTo": "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c",
+      "extra": { "name": "USD Coin", "version": "2" }
+    }
+  ],
+  "alternative_payment": {
+    "description": "Agents may also pay USDC on-chain first, then submit the tx hash via header X-Payment-TxHash with X-Payment-Chain (8453|5042002|11155111).",
+    "treasury": "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c"
+  }
+}

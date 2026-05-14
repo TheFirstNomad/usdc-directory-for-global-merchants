@@ -47,6 +47,72 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_api_payments: {
+        Row: {
+          agent_wallet: string | null
+          amount_usdc: number
+          chain: string
+          endpoint: string
+          id: string
+          method: string
+          paid_at: string
+          payment_id: string
+          scheme: string
+        }
+        Insert: {
+          agent_wallet?: string | null
+          amount_usdc: number
+          chain: string
+          endpoint: string
+          id?: string
+          method: string
+          paid_at?: string
+          payment_id: string
+          scheme?: string
+        }
+        Update: {
+          agent_wallet?: string | null
+          amount_usdc?: number
+          chain?: string
+          endpoint?: string
+          id?: string
+          method?: string
+          paid_at?: string
+          payment_id?: string
+          scheme?: string
+        }
+        Relationships: []
+      }
+      agent_boosts: {
+        Row: {
+          amount_usdc: number
+          chain: string
+          created_at: string
+          expires_at: string
+          id: string
+          partner_id: string
+          payment_id: string
+        }
+        Insert: {
+          amount_usdc: number
+          chain: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          partner_id: string
+          payment_id: string
+        }
+        Update: {
+          amount_usdc?: number
+          chain?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          partner_id?: string
+          payment_id?: string
+        }
+        Relationships: []
+      }
       deployment_checks: {
         Row: {
           checked_at: string
@@ -95,6 +161,7 @@ export type Database = {
           badge_token_id: number | null
           badge_tx_hash: string | null
           badge_voucher_issued_at: string | null
+          boosted_until: string | null
           categories: string[]
           created_at: string
           description: string
@@ -110,6 +177,7 @@ export type Database = {
           updated_at: string
           usdc_score: number | null
           use_cases: string[] | null
+          verified: boolean
           wallet_address: string | null
           website: string | null
         }
@@ -118,6 +186,7 @@ export type Database = {
           badge_token_id?: number | null
           badge_tx_hash?: string | null
           badge_voucher_issued_at?: string | null
+          boosted_until?: string | null
           categories?: string[]
           created_at?: string
           description: string
@@ -133,6 +202,7 @@ export type Database = {
           updated_at?: string
           usdc_score?: number | null
           use_cases?: string[] | null
+          verified?: boolean
           wallet_address?: string | null
           website?: string | null
         }
@@ -141,6 +211,7 @@ export type Database = {
           badge_token_id?: number | null
           badge_tx_hash?: string | null
           badge_voucher_issued_at?: string | null
+          boosted_until?: string | null
           categories?: string[]
           created_at?: string
           description?: string
@@ -156,6 +227,7 @@ export type Database = {
           updated_at?: string
           usdc_score?: number | null
           use_cases?: string[] | null
+          verified?: boolean
           wallet_address?: string | null
           website?: string | null
         }
