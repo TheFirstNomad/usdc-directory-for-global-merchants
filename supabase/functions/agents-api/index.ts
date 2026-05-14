@@ -1,0 +1,467 @@
+// agents-api: paid agent-facing directory API with x402 + on-chain USDC payment.
+// Endpoints (all paid):
+//   GET  /agents          – list AI agents       ($0.001)
+//   GET  /agents/{id}     – fetch one agent      ($0.001)
+//   POST /agents          – self-list new agent  (1 USDC)
+//   POST /agents/{id}/boost – featured boost     (5 USDC)
+//
+// Payment options:
+//   1. x402     : caller sends X-PAYMENT (base64 JSON of EIP-3009 auth)
+//   2. On-chain : caller sends X-Payment-TxHash + X-Payment-Chain (we verify on-chain)
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  createPublicClient,
+  http,
+  decodeEventLog,
+  getAddress,
+  parseAbi,
+  recoverTypedDataAddress,
+  keccak256,
+  toHex,
+} from "https://esm.sh/viem@2.21.55";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-payment, x-payment-txhash, x-payment-chain",
+  "Access-Control-Expose-Headers": "x-payment-response",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+};
+
+const TREASURY = "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c".toLowerCase();
+
+type ChainCfg = {
+  id: number;
+  name: string;
+  network: string; // x402 network id
+  rpc: string;
+  usdc: string;
+  explorer: string;
+};
+
+const CHAINS: Record<number, ChainCfg> = {
+  8453: {
+    id: 8453,
+    name: "Base Mainnet",
+    network: "base",
+    rpc: "https://mainnet.base.org",
+    usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    explorer: "https://basescan.org",
+  },
+  5042002: {
+    id: 5042002,
+    name: "Arc Testnet",
+    network: "arc-testnet",
+    rpc: "https://rpc.testnet.arc.network",
+    usdc: "0x75faF114eafb1BDbe2F0316DF893fd58CE46AA4d",
+    explorer: "https://testnet.arcscan.app",
+  },
+  11155111: {
+    id: 11155111,
+    name: "Ethereum Sepolia",
+    network: "sepolia",
+    rpc: "https://ethereum-sepolia-rpc.publicnode.com",
+    usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    explorer: "https://sepolia.etherscan.io",
+  },
+};
+
+const ERC20_TRANSFER_ABI = parseAbi([
+  "event Transfer(address indexed from, address indexed to, uint256 value)",
+]);
+
+function json(body: unknown, status = 200, extra: Record<string, string> = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json", ...extra },
+  });
+}
+
+function buildAccepts(amount: bigint, resource: string) {
+  return [8453, 5042002, 11155111].map((id) => {
+    const c = CHAINS[id];
+    return {
+      scheme: "exact",
+      network: c.network,
+      maxAmountRequired: amount.toString(),
+      resource,
+      description: "USDC Directory paid endpoint",
+      mimeType: "application/json",
+      payTo: TREASURY,
+      maxTimeoutSeconds: 60,
+      asset: c.usdc,
+      extra: { name: "USD Coin", version: "2" },
+    };
+  });
+}
+
+function require402(amount: bigint, resource: string, error?: string) {
+  return json(
+    {
+      error: error ?? "X-PAYMENT required",
+      x402Version: 1,
+      accepts: buildAccepts(amount, resource),
+      alternative: {
+        description:
+          "Pay USDC on-chain to treasury and resend with X-Payment-TxHash + X-Payment-Chain headers.",
+        treasury: TREASURY,
+        chains: Object.values(CHAINS).map((c) => ({
+          chainId: c.id,
+          name: c.name,
+          usdc: c.usdc,
+        })),
+      },
+    },
+    402,
+  );
+}
+
+// ── On-chain verification: confirm a USDC Transfer to TREASURY of >= amount ──
+async function verifyOnChainPayment(
+  txHash: string,
+  chainId: number,
+  amount: bigint,
+): Promise<{ ok: true; from: string } | { ok: false; reason: string }> {
+  const cfg = CHAINS[chainId];
+  if (!cfg) return { ok: false, reason: "unsupported chain" };
+  if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) return { ok: false, reason: "bad tx hash" };
+
+  const client = createPublicClient({ transport: http(cfg.rpc) });
+  let receipt;
+  try {
+    receipt = await client.getTransactionReceipt({ hash: txHash as `0x${string}` });
+  } catch (e) {
+    return { ok: false, reason: `receipt fetch failed: ${(e as Error).message}` };
+  }
+  if (!receipt || receipt.status !== "success") return { ok: false, reason: "tx not successful" };
+
+  const usdcAddr = getAddress(cfg.usdc).toLowerCase();
+  const treasury = TREASURY.toLowerCase();
+  let from: string | null = null;
+  let total = 0n;
+  for (const log of receipt.logs) {
+    if (log.address.toLowerCase() !== usdcAddr) continue;
+    try {
+      const decoded = decodeEventLog({
+        abi: ERC20_TRANSFER_ABI,
+        data: log.data,
+        topics: log.topics,
+      });
+      if (decoded.eventName === "Transfer") {
+        const args = decoded.args as { from: string; to: string; value: bigint };
+        if (args.to.toLowerCase() === treasury) {
+          total += args.value;
+          if (!from) from = args.from.toLowerCase();
+        }
+      }
+    } catch (_e) { /* ignore non-Transfer logs */ }
+  }
+  if (total < amount) return { ok: false, reason: `paid ${total} < required ${amount}` };
+  return { ok: true, from: from ?? "unknown" };
+}
+
+// ── x402 verification: EIP-3009 transferWithAuthorization signature only ─────
+// We accept the signed authorization as proof-of-intent (gasless).
+// For full settlement, a facilitator would submit the tx; here we record the
+// payment and rely on the agent's signed authorization for replay-safe accounting.
+type X402Payload = {
+  x402Version: number;
+  scheme: string;
+  network: string;
+  payload: {
+    signature: `0x${string}`;
+    authorization: {
+      from: `0x${string}`;
+      to: `0x${string}`;
+      value: string;
+      validAfter: string;
+      validBefore: string;
+      nonce: `0x${string}`;
+    };
+  };
+};
+
+async function verifyX402Header(
+  headerB64: string,
+  amount: bigint,
+): Promise<{ ok: true; payer: string; nonce: string; network: string } | { ok: false; reason: string }> {
+  let parsed: X402Payload;
+  try {
+    const decoded = atob(headerB64);
+    parsed = JSON.parse(decoded);
+  } catch {
+    return { ok: false, reason: "invalid base64/json X-PAYMENT" };
+  }
+
+  const cfg = Object.values(CHAINS).find((c) => c.network === parsed.network);
+  if (!cfg) return { ok: false, reason: `unknown network ${parsed.network}` };
+  if (parsed.scheme !== "exact") return { ok: false, reason: "scheme must be 'exact'" };
+
+  const a = parsed.payload?.authorization;
+  if (!a) return { ok: false, reason: "missing authorization" };
+  if (a.to.toLowerCase() !== TREASURY) return { ok: false, reason: "wrong recipient" };
+  if (BigInt(a.value) < amount) return { ok: false, reason: "insufficient value" };
+  const now = Math.floor(Date.now() / 1000);
+  if (Number(a.validAfter) > now) return { ok: false, reason: "auth not yet valid" };
+  if (Number(a.validBefore) < now) return { ok: false, reason: "auth expired" };
+
+  // Verify EIP-712 signature
+  try {
+    const recovered = await recoverTypedDataAddress({
+      domain: {
+        name: "USD Coin",
+        version: "2",
+        chainId: cfg.id,
+        verifyingContract: getAddress(cfg.usdc),
+      },
+      types: {
+        TransferWithAuthorization: [
+          { name: "from", type: "address" },
+          { name: "to", type: "address" },
+          { name: "value", type: "uint256" },
+          { name: "validAfter", type: "uint256" },
+          { name: "validBefore", type: "uint256" },
+          { name: "nonce", type: "bytes32" },
+        ],
+      },
+      primaryType: "TransferWithAuthorization",
+      message: {
+        from: getAddress(a.from),
+        to: getAddress(a.to),
+        value: BigInt(a.value),
+        validAfter: BigInt(a.validAfter),
+        validBefore: BigInt(a.validBefore),
+        nonce: a.nonce,
+      },
+      signature: parsed.payload.signature,
+    });
+    if (recovered.toLowerCase() !== a.from.toLowerCase()) {
+      return { ok: false, reason: "signature does not match 'from'" };
+    }
+  } catch (e) {
+    return { ok: false, reason: `sig verify failed: ${(e as Error).message}` };
+  }
+
+  return { ok: true, payer: a.from.toLowerCase(), nonce: a.nonce, network: parsed.network };
+}
+
+// ── Payment gate ────────────────────────────────────────────────────────────
+async function gatePayment(
+  req: Request,
+  amount: bigint,
+  resource: string,
+  supabase: ReturnType<typeof createClient>,
+  endpoint: string,
+  method: string,
+): Promise<
+  | { ok: true; paymentId: string; payer: string; chain: string; scheme: string }
+  | { ok: false; response: Response }
+> {
+  const xPayment = req.headers.get("x-payment");
+  const txHash = req.headers.get("x-payment-txhash");
+  const chainHeader = req.headers.get("x-payment-chain");
+
+  // Path 1: on-chain pre-paid
+  if (txHash) {
+    const chainId = Number(chainHeader || 8453);
+    if (!CHAINS[chainId]) {
+      return {
+        ok: false,
+        response: json({ error: "unsupported X-Payment-Chain" }, 400),
+      };
+    }
+    // replay protection: tx hash already used?
+    const { data: existing } = await supabase
+      .from("agent_api_payments")
+      .select("id")
+      .eq("payment_id", txHash)
+      .eq("endpoint", endpoint)
+      .maybeSingle();
+    if (existing) {
+      return {
+        ok: false,
+        response: json({ error: "tx hash already used for this endpoint" }, 409),
+      };
+    }
+    const v = await verifyOnChainPayment(txHash, chainId, amount);
+    if (!v.ok) {
+      return { ok: false, response: json({ error: `payment invalid: ${v.reason}` }, 402) };
+    }
+    await supabase.from("agent_api_payments").insert({
+      payment_id: txHash,
+      endpoint,
+      method,
+      amount_usdc: amount.toString(),
+      chain: CHAINS[chainId].network,
+      agent_wallet: v.from,
+      scheme: "onchain",
+    });
+    return { ok: true, paymentId: txHash, payer: v.from, chain: CHAINS[chainId].network, scheme: "onchain" };
+  }
+
+  // Path 2: x402
+  if (xPayment) {
+    const v = await verifyX402Header(xPayment, amount);
+    if (!v.ok) {
+      return { ok: false, response: require402(amount, resource, v.reason) };
+    }
+    // replay protection: nonce already used?
+    const paymentId = `x402:${v.network}:${v.nonce}`;
+    const { data: existing } = await supabase
+      .from("agent_api_payments")
+      .select("id")
+      .eq("payment_id", paymentId)
+      .maybeSingle();
+    if (existing) {
+      return { ok: false, response: json({ error: "x402 nonce already used" }, 409) };
+    }
+    await supabase.from("agent_api_payments").insert({
+      payment_id: paymentId,
+      endpoint,
+      method,
+      amount_usdc: amount.toString(),
+      chain: v.network,
+      agent_wallet: v.payer,
+      scheme: "x402",
+    });
+    return { ok: true, paymentId, payer: v.payer, chain: v.network, scheme: "x402" };
+  }
+
+  // No payment: 402
+  return { ok: false, response: require402(amount, resource) };
+}
+
+// ── Pricing ──────────────────────────────────────────────────────────────────
+const PRICE_API_CALL = 1_000n;       // $0.001
+const PRICE_LIST_AGENT = 1_000_000n; // 1 USDC
+const PRICE_BOOST = 5_000_000n;      // 5 USDC
+
+// ── Handlers ─────────────────────────────────────────────────────────────────
+function basePath(url: URL): string {
+  // Strip "/agents-api" prefix if present (Supabase routes /functions/v1/agents-api/...)
+  const p = url.pathname.replace(/^.*\/agents-api/, "");
+  return p || "/";
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const url = new URL(req.url);
+  const path = basePath(url);
+  const resource = `${url.origin}${url.pathname}`;
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  try {
+    // GET /agents – list
+    if (req.method === "GET" && path === "/agents") {
+      const gate = await gatePayment(req, PRICE_API_CALL, resource, supabase, "/agents", "GET");
+      if (!gate.ok) return gate.response;
+      const { data, error } = await supabase
+        .from("partners")
+        .select("id, name, description, website, logo_url, categories, region, networks, wallet_address, verified, boosted_until, created_at")
+        .contains("categories", ["AI Agents"])
+        .order("boosted_until", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) return json({ error: error.message }, 500);
+      return json({ count: data?.length ?? 0, agents: data, paid: gate.paymentId });
+    }
+
+    // GET /agents/{id}
+    const detailMatch = path.match(/^\/agents\/([0-9a-f-]{36})$/i);
+    if (req.method === "GET" && detailMatch) {
+      const gate = await gatePayment(req, PRICE_API_CALL, resource, supabase, path, "GET");
+      if (!gate.ok) return gate.response;
+      const { data, error } = await supabase
+        .from("partners")
+        .select("id, name, description, website, logo_url, categories, region, networks, wallet_address, verified, boosted_until, created_at")
+        .eq("id", detailMatch[1])
+        .maybeSingle();
+      if (error) return json({ error: error.message }, 500);
+      if (!data) return json({ error: "not found" }, 404);
+      return json({ agent: data, paid: gate.paymentId });
+    }
+
+    // POST /agents – self-list
+    if (req.method === "POST" && path === "/agents") {
+      const gate = await gatePayment(req, PRICE_LIST_AGENT, resource, supabase, "/agents", "POST");
+      if (!gate.ok) return gate.response;
+      let body: { name?: string; wallet_address?: string; description?: string; logo_url?: string };
+      try { body = await req.json(); } catch { return json({ error: "invalid json" }, 400); }
+      const name = (body.name || "").trim();
+      const wallet = (body.wallet_address || "").trim().toLowerCase();
+      const description = (body.description || "").trim();
+      const logo_url = body.logo_url ? String(body.logo_url).trim() : null;
+      if (!name || name.length > 100) return json({ error: "name required (<=100)" }, 400);
+      if (!wallet || wallet.length > 256) return json({ error: "wallet_address required (<=256)" }, 400);
+      if (!description || description.length > 300) return json({ error: "description required (<=300)" }, 400);
+
+      const { data: partner, error } = await supabase
+        .from("partners")
+        .insert({
+          name,
+          description,
+          categories: ["AI Agents"],
+          region: "Global",
+          networks: [],
+          wallet_address: wallet,
+          logo_url,
+          payment_status: "confirmed",
+          payment_id: gate.paymentId,
+        })
+        .select()
+        .single();
+      if (error) return json({ error: error.message }, 500);
+      return json({ id: partner.id, name: partner.name, paid: gate.paymentId }, 201);
+    }
+
+    // POST /agents/{id}/boost
+    const boostMatch = path.match(/^\/agents\/([0-9a-f-]{36})\/boost$/i);
+    if (req.method === "POST" && boostMatch) {
+      const gate = await gatePayment(req, PRICE_BOOST, resource, supabase, path, "POST");
+      if (!gate.ok) return gate.response;
+      const partnerId = boostMatch[1];
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { error: upErr } = await supabase
+        .from("partners")
+        .update({ boosted_until: expiresAt })
+        .eq("id", partnerId);
+      if (upErr) return json({ error: upErr.message }, 500);
+      const { error: insErr } = await supabase.from("agent_boosts").insert({
+        partner_id: partnerId,
+        payment_id: gate.paymentId,
+        amount_usdc: PRICE_BOOST.toString(),
+        chain: gate.chain,
+        expires_at: expiresAt,
+      });
+      if (insErr) return json({ error: insErr.message }, 500);
+      return json({ id: partnerId, boosted_until: expiresAt, paid: gate.paymentId });
+    }
+
+    // Discovery: GET / -> mini index
+    if (req.method === "GET" && (path === "/" || path === "")) {
+      return json({
+        name: "USDC Directory Agent API",
+        version: "1",
+        manifest: "https://usdc.directory/.well-known/x402",
+        docs: "https://usdc.directory/api-docs",
+        endpoints: [
+          { path: "/agents", method: "GET", price_usdc: "0.001" },
+          { path: "/agents/{id}", method: "GET", price_usdc: "0.001" },
+          { path: "/agents", method: "POST", price_usdc: "1.000" },
+          { path: "/agents/{id}/boost", method: "POST", price_usdc: "5.000" },
+        ],
+      });
+    }
+
+    return json({ error: "not found", path }, 404);
+  } catch (e) {
+    console.error("agents-api error:", e);
+    return json({ error: (e as Error).message }, 500);
+  }
+});
