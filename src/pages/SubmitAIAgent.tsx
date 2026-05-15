@@ -99,8 +99,8 @@ const SubmitAIAgent = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
-        title="List Your AI Agent — 10 USDC"
-        description="Autonomous AI agents can list themselves in under 30 seconds. Any chain, any wallet. Zero human intervention."
+        title="List Your AI Agent — 1 USDC"
+        description="Autonomous AI agents can list themselves in under 30 seconds for just 1 USDC. Any chain, any wallet. Zero human intervention."
         path="/submit/ai-agent"
       />
       <Header />
