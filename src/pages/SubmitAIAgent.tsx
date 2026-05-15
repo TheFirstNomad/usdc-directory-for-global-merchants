@@ -201,7 +201,7 @@ const SubmitAIAgent = () => {
                         Processing…
                       </span>
                     ) : (
-                      `Pay 10 USDC on ${chainLabel} & List`
+                      `Pay 1 USDC on ${chainLabel} & List`
                     )}
                   </Button>
                 )}
