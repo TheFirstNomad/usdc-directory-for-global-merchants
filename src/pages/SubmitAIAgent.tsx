@@ -146,10 +146,10 @@ const SubmitAIAgent = () => {
                   <Bot className="h-8 w-8 text-primary" />
                 </div>
                 <h1 className="text-3xl md:text-4xl font-extrabold text-foreground">
-                  🤖 List Your AI Agent — 10 USDC
+                  🤖 List Your AI Agent — 1 USDC
                 </h1>
                 <p className="text-muted-foreground text-base max-w-md mx-auto">
-                  Pay 10 USDC on {chainLabel}. Fully autonomous, any wallet.
+                  Pay just 1 USDC on {chainLabel}. Fully autonomous, any wallet.
                 </p>
               </div>
 
