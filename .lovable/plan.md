@@ -1,71 +1,29 @@
-## Goal
+## Resume — Session 2 (Phase 2, ~5 credits cap)
 
-Turn usdc.directory into an agent-payable surface so any AI agent (Circle's, Claude, Codex, Cursor, custom) can self-list and pay autonomously, and so agents pay tiny amounts to query the directory.
+Goal: wire the **1 USDC agent self-listing** into the existing on-chain payment flow so agents (and the human form) actually pay the lower fee on `/submit/ai-agent`.
 
-## Credit budget for this session
+### Scope this session (stop after these)
 
-**Max ~5 credits, then stop.** Resume tomorrow by replying "resume".
-Session 1 will cover Phase 1 only (DB + agents-api edge function + x402 discovery files). Phases 2–4 are queued for later sessions.
+1. **`src/lib/arcAppKit.ts`** — add `payAgentListingFee(adapter, chainId)` that mirrors `payListingFee` but transfers `LISTING_FEE_AGENT` (1 USDC) instead of 10 USDC. Reuses existing USDC contract + treasury logic, no new infra.
+2. **`src/pages/SubmitAIAgent.tsx`** — swap `payListingFee` → `payAgentListingFee`, update SEO title, hero copy, and CTA from "10 USDC" → "1 USDC".
+3. **`supabase/functions/submit-ai-agent/index.ts`** — accept the existing `payment_tx` field unchanged (already does); add a lightweight server-side amount sanity note in code comment only — no on-chain re-verification this session (reuses existing trust model of `submit-ai-agent` which is the same as `submit-listing`).
+4. **`/ai-agents` hero** — add a single small line "Agents: list yourself for 1 USDC →" linking to `/submit/ai-agent`. (Programmatic API link comes in Phase 3.)
 
-## Revenue streams
+### Explicitly NOT in this session
+- `/api-docs` page → Phase 3
+- Boost upsell UI / badges → Phase 4
+- x402 path inside `submit-ai-agent` (frontend humans use on-chain; agents already have `agents-api` POST) → deferred
+- Server-side tx verification refactor
 
-1. **Self-listing** — 1 USDC per agent (lower than the 10 USDC human fee, to drive volume).
-2. **Metered API access** — agents pay per call to `/agents`, `/agents/search`, `/agents/{id}` (~$0.001 each).
-3. **Featured boost** — 5 USDC to pin to top for 30 days; 20 USDC for "Verified Agent" badge.
+### Checkpoint
+After Phase 2, reply **"resume"** to start Phase 3.
 
-## Payment rails (all three, agent picks)
+### Remaining credit estimate to finish everything
 
-- **x402 (HTTP 402 + USDC)** — primary agent-native rail. Endpoint returns 402 + `accepts` array. Agent signs EIP-3009 `transferWithAuthorization` and retries with `X-PAYMENT` header.
-- **On-chain USDC micropay** (existing Arc App Kit flow) — agent pays USDC, then POSTs tx hash. Reuses current `payListingFee` infra.
-- **Discoverability** — `/.well-known/x402` manifest + extend `/llms.txt` with paid endpoint catalog so Claude/Cursor/Codex can auto-discover.
+| Phase | Work | Est. credits |
+|---|---|---|
+| **Phase 3** | `/api-docs` page (curl + TS/Python samples, pricing table), route in `App.tsx`, hero link polish | ~5 |
+| **Phase 4** | Boost upsell UI on owner listings, "Boosted"/"Verified" badges in `PartnerCard`, sort-by-boost in `/ai-agents` | ~5–7 |
+| **Optional Phase 5** | Server-side x402 settlement against Coinbase facilitator, replay-cache hardening, admin dashboard for `agent_api_payments` | ~5 |
 
-## New surfaces
-
-### Public agent API (Edge Functions)
-- `GET /agents-api/agents` — list (paid, 402-gated, $0.001)
-- `GET /agents-api/agents/{id}` — detail (paid, $0.001)
-- `POST /agents-api/agents` — self-list (paid, 1 USDC via x402 OR tx hash)
-- `POST /agents-api/agents/{id}/boost` — featured (paid, 5 USDC)
-- `public/.well-known/x402` — payment manifest
-- Updated `public/llms.txt` with paid endpoint catalog
-
-### Frontend
-- New `/api-docs` page — agent-facing docs: x402 example, curl with `X-PAYMENT`, on-chain alternative, pricing table, code samples.
-- `/ai-agents` hero adds "Agents: list yourself programmatically →" link.
-
-### Database
-- `partners`: add `boosted_until timestamptz`, `verified bool`.
-- `agent_api_payments` — log every paid call.
-- `agent_boosts` — boost expiries.
-
-## Phased delivery (so we can checkpoint)
-
-### Phase 1 — Session 1 (this approval, ~5 credits) ✅ stop after this
-1. DB migration: add `boosted_until`, `verified`; create `agent_api_payments`, `agent_boosts` (RLS service-role only).
-2. `supabase/functions/agents-api/index.ts` — single function, internal router, 402 gating with x402 verification (EIP-3009 signature check + on-chain settle).
-3. `public/.well-known/x402` — static discovery manifest.
-4. `public/llms.txt` — append paid API catalog.
-5. `src/lib/web3.ts` — add `LISTING_FEE_AGENT = 1 USDC` constant.
-
-→ **STOP** here, await "resume".
-
-### Phase 2 — Session 2
-- `submit-ai-agent` edge function: accept x402 path + lower amount.
-- `src/lib/arcAppKit.ts`: add `payAgentListingFee` (1 USDC variant).
-- `SubmitAIAgent.tsx`: show 1 USDC for agents.
-
-### Phase 3 — Session 3
-- `/api-docs` page with curl + TS/Python examples, pricing table.
-- Route registration in `App.tsx`.
-- `/ai-agents` hero link to `/api-docs`.
-
-### Phase 4 — Session 4
-- Boost upsell UI on owner-controlled listings.
-- "Boosted" + "Verified" badges in `PartnerCard`.
-- Sort by boost in `/ai-agents`.
-
-## Out of scope (future)
-- Coinbase x402 facilitator (we self-settle on Arc/Base initially).
-- Subscriptions / streaming payments.
-- Solana / non-EVM x402.
-- Referral revenue tracking.
+**Total to finish core (Phases 3 + 4): ~10–12 credits.** Optional Phase 5 adds ~5 more.
