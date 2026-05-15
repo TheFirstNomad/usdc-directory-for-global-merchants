@@ -70,7 +70,7 @@ const SubmitAIAgent = () => {
     setPaying(true);
     try {
       const adapter = await createViemAdapterFromWallet(walletProvider);
-      const { txHash, explorerUrl } = await payListingFee(adapter, paymentChainId);
+      const { txHash, explorerUrl } = await payAgentListingFee(adapter, paymentChainId);
 
       const logoUrl = await uploadLogo();
 
