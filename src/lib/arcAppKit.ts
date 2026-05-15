@@ -133,6 +133,18 @@ export async function payListingFee(
   return { txHash, explorerUrl: getExplorerUrl(chainId, txHash) };
 }
 
+// ── Pay Agent Listing Fee (1 USDC) ──────────────────────────────────
+/**
+ * Sends the discounted 1 USDC AI-agent listing fee to the treasury.
+ * Mirrors `payListingFee` but with a fixed 1 USDC amount.
+ */
+export async function payAgentListingFee(
+  adapter: Awaited<ReturnType<typeof createViemAdapterFromWallet>>,
+  chainId: PaymentChainId = 5042002,
+) {
+  return payListingFee(adapter, chainId, "1");
+}
+
 // ── Fetch-intercepting proxy for Circle API ────────────────────────
 /**
  * The Circle SDK calls `https://api.circle.com/v1/stablecoinKits/*` from

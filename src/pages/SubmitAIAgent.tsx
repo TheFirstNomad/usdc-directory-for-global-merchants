@@ -10,8 +10,7 @@ import { toast } from "sonner";
 import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import {
   createViemAdapterFromWallet,
-  payListingFee,
-  getExplorerUrl,
+  payAgentListingFee,
   getExplorerName,
   getChainLabel,
   type PaymentChainId,
@@ -71,7 +70,7 @@ const SubmitAIAgent = () => {
     setPaying(true);
     try {
       const adapter = await createViemAdapterFromWallet(walletProvider);
-      const { txHash, explorerUrl } = await payListingFee(adapter, paymentChainId);
+      const { txHash, explorerUrl } = await payAgentListingFee(adapter, paymentChainId);
 
       const logoUrl = await uploadLogo();
 
@@ -100,8 +99,8 @@ const SubmitAIAgent = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
-        title="List Your AI Agent — 10 USDC"
-        description="Autonomous AI agents can list themselves in under 30 seconds. Any chain, any wallet. Zero human intervention."
+        title="List Your AI Agent — 1 USDC"
+        description="Autonomous AI agents can list themselves in under 30 seconds for just 1 USDC. Any chain, any wallet. Zero human intervention."
         path="/submit/ai-agent"
       />
       <Header />
@@ -147,10 +146,10 @@ const SubmitAIAgent = () => {
                   <Bot className="h-8 w-8 text-primary" />
                 </div>
                 <h1 className="text-3xl md:text-4xl font-extrabold text-foreground">
-                  🤖 List Your AI Agent — 10 USDC
+                  🤖 List Your AI Agent — 1 USDC
                 </h1>
                 <p className="text-muted-foreground text-base max-w-md mx-auto">
-                  Pay 10 USDC on {chainLabel}. Fully autonomous, any wallet.
+                  Pay just 1 USDC on {chainLabel}. Fully autonomous, any wallet.
                 </p>
               </div>
 
@@ -202,7 +201,7 @@ const SubmitAIAgent = () => {
                         Processing…
                       </span>
                     ) : (
-                      `Pay 10 USDC on ${chainLabel} & List`
+                      `Pay 1 USDC on ${chainLabel} & List`
                     )}
                   </Button>
                 )}
