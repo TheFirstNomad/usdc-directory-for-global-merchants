@@ -10,8 +10,7 @@ import { toast } from "sonner";
 import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import {
   createViemAdapterFromWallet,
-  payListingFee,
-  getExplorerUrl,
+  payAgentListingFee,
   getExplorerName,
   getChainLabel,
   type PaymentChainId,
