@@ -2,3 +2,6 @@ project_id = "ddhytszijvfejnymrwgd"
 
 [functions.agents-api]
 verify_jwt = false
+
+[functions.boost-listing]
+verify_jwt = false
