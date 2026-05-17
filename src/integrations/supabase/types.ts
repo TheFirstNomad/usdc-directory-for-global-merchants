@@ -309,6 +309,7 @@ export type Database = {
     Views: {
       partners_public: {
         Row: {
+          boosted_until: string | null
           categories: string[] | null
           created_at: string | null
           description: string | null
@@ -322,9 +323,11 @@ export type Database = {
           updated_at: string | null
           usdc_score: number | null
           use_cases: string[] | null
+          verified: boolean | null
           website: string | null
         }
         Insert: {
+          boosted_until?: string | null
           categories?: string[] | null
           created_at?: string | null
           description?: string | null
@@ -338,9 +341,11 @@ export type Database = {
           updated_at?: string | null
           usdc_score?: number | null
           use_cases?: string[] | null
+          verified?: boolean | null
           website?: string | null
         }
         Update: {
+          boosted_until?: string | null
           categories?: string[] | null
           created_at?: string | null
           description?: string | null
@@ -354,6 +359,7 @@ export type Database = {
           updated_at?: string | null
           usdc_score?: number | null
           use_cases?: string[] | null
+          verified?: boolean | null
           website?: string | null
         }
         Relationships: []
