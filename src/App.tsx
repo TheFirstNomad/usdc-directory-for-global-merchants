@@ -40,6 +40,7 @@ const App = () => (
             <Route path="/submit" element={<Submit />} />
             <Route path="/submit/ai-agent" element={<SubmitAIAgent />} />
             <Route path="/ai-agents" element={<AIAgents />} />
+            <Route path="/api-docs" element={<ApiDocs />} />
             <Route path="/swap" element={<Swap />} />
             <Route path="/bridge" element={<Bridge />} />
             <Route path="/insights" element={<Insights />} />
