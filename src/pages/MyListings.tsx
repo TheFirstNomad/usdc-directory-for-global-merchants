@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useAppKitAccount } from "@reown/appkit/react";
+import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { useAppKit } from "@reown/appkit/react";
 import SEO from "@/components/SEO";
 import Header from "@/components/Header";
@@ -8,7 +8,9 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { Wallet, Pencil, ExternalLink, Plus } from "lucide-react";
+import { Wallet, Pencil, ExternalLink, Plus, Zap } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { createViemAdapterFromWallet, payBoostFee } from "@/lib/arcAppKit";
 
 interface ListingItem {
   id: string;
@@ -17,13 +19,16 @@ interface ListingItem {
   logo_url: string | null;
   logo_emoji: string | null;
   categories: string[];
+  boosted_until?: string | null;
 }
 
 const MyListings = () => {
   const { address, isConnected } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider<unknown>("eip155") as { walletProvider: unknown };
   const { open } = useAppKit();
   const [listings, setListings] = useState<ListingItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [boosting, setBoosting] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isConnected || !address) {
@@ -31,18 +36,56 @@ const MyListings = () => {
       return;
     }
 
-    const fetchMyListings = async () => {
-      const { data, error } = await supabase
+    (async () => {
+      const { data } = await supabase
         .rpc("get_my_listings", { _wallet_address: address.toLowerCase() });
-
-      if (!error && data) {
-        setListings(data as ListingItem[]);
+      if (data) {
+        const items = data as ListingItem[];
+        const ids = items.map((l) => l.id);
+        if (ids.length) {
+          const { data: extra } = await supabase
+            .from("partners_public" as any)
+            .select("id, boosted_until")
+            .in("id", ids);
+          const boostMap = new Map((extra as any[] ?? []).map((r) => [r.id, r.boosted_until]));
+          setListings(items.map((l) => ({ ...l, boosted_until: boostMap.get(l.id) ?? null })));
+        } else {
+          setListings(items);
+        }
       }
       setLoading(false);
-    };
-
-    fetchMyListings();
+    })();
   }, [isConnected, address]);
+
+  const handleBoost = async (listing: ListingItem) => {
+    if (!walletProvider || !address) {
+      toast({ title: "Connect your wallet first", variant: "destructive" });
+      return;
+    }
+    setBoosting(listing.id);
+    try {
+      const adapter = await createViemAdapterFromWallet(walletProvider);
+      const { txHash } = await payBoostFee(adapter, 5042002);
+      const { data, error } = await supabase.functions.invoke("boost-listing", {
+        body: {
+          partner_id: listing.id,
+          wallet_address: address.toLowerCase(),
+          payment_tx: txHash,
+          chain: "Arc_Testnet",
+        },
+      });
+      if (error) throw error;
+      toast({ title: "⚡ Boosted!", description: `${listing.name} featured for 30 days.` });
+      setListings((prev) =>
+        prev.map((l) => (l.id === listing.id ? { ...l, boosted_until: (data as any)?.boosted_until } : l))
+      );
+    } catch (err) {
+      console.error("Boost failed:", err);
+      toast({ title: "Boost failed", description: err instanceof Error ? err.message : "Try again", variant: "destructive" });
+    } finally {
+      setBoosting(null);
+    }
+  };
 
   if (!isConnected) {
     return (
