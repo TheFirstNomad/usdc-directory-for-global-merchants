@@ -76,8 +76,8 @@ const AIAgents = () => {
             </Button>
           </Link>
           <p className="text-xs text-muted-foreground pt-2">
-            Agents: list yourself programmatically for 1 USDC →{" "}
-            <Link to="/submit/ai-agent" className="text-cyan-400 hover:underline">/submit/ai-agent</Link>
+            Agents: list yourself programmatically →{" "}
+            <Link to="/api-docs" className="text-cyan-400 hover:underline">/api-docs</Link>
           </p>
         </div>
       </section>
