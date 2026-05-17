@@ -42,6 +42,12 @@ const AIAgents = () => {
         p.description.toLowerCase().includes(q)
     );
     return [...matched].sort((a, b) => {
+      if (sortBy === "boost") {
+        const aB = a.boosted_until && new Date(a.boosted_until).getTime() > Date.now() ? 1 : 0;
+        const bB = b.boosted_until && new Date(b.boosted_until).getTime() > Date.now() ? 1 : 0;
+        if (aB !== bB) return bB - aB;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
       if (sortBy === "newest")
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       if (sortBy === "score") return (b.usdc_score ?? 0) - (a.usdc_score ?? 0);
