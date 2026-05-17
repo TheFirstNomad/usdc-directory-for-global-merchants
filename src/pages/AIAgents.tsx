@@ -12,7 +12,7 @@ import { fetchPartners, type Partner } from "@/lib/partners";
 
 const AIAgents = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"name" | "newest" | "score">("newest");
+  const [sortBy, setSortBy] = useState<"name" | "newest" | "score" | "boost">("boost");
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
 
