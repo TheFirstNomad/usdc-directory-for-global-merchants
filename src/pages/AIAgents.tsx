@@ -109,9 +109,10 @@ const AIAgents = () => {
               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as "name" | "newest" | "score")}
+                onChange={(e) => setSortBy(e.target.value as "name" | "newest" | "score" | "boost")}
                 className="bg-transparent text-sm text-foreground font-medium outline-none cursor-pointer pr-1"
               >
+                <option value="boost">⚡ Boosted first</option>
                 <option value="newest">Newest</option>
                 <option value="name">Name A–Z</option>
                 <option value="score">USDC Score</option>
