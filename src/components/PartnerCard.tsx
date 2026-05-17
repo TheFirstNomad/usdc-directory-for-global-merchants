@@ -34,6 +34,7 @@ const categoryColors: Record<string, string> = {
 };
 
 const PartnerCard = forwardRef<HTMLDivElement, { partner: Partner; index: number }>(({ partner, index }, ref) => {
+  const isBoosted = !!partner.boosted_until && new Date(partner.boosted_until).getTime() > Date.now();
   const logoUrl =
     partner.logo_url && partner.logo_url !== ""
       ? partner.logo_url
@@ -46,12 +47,17 @@ const PartnerCard = forwardRef<HTMLDivElement, { partner: Partner; index: number
   return (
     <div
       ref={ref}
-      className="partner-card group relative bg-card rounded-2xl overflow-hidden h-full flex flex-col border border-border hover:border-primary/30 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+      className={`partner-card group relative bg-card rounded-2xl overflow-hidden h-full flex flex-col border ${isBoosted ? "border-amber-400/60 shadow-amber-400/10 shadow-lg" : "border-border"} hover:border-primary/30 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300`}
       style={{ animationDelay: `${Math.min(index * 30, 500)}ms` }}
     >
       <Link to={`/merchant/${partner.id}`} className="flex flex-col h-full">
         <div className="h-36 flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted/20 p-6 relative">
-          {partner.categories?.includes("AI Agents") && (
+          {isBoosted && (
+            <div className="absolute top-3 right-3 text-[10px] font-bold bg-amber-400/15 text-amber-500 px-2 py-0.5 rounded-full flex items-center gap-1">
+              ⚡ Boosted
+            </div>
+          )}
+          {partner.categories?.includes("AI Agents") && !isBoosted && (
             <div className="absolute top-3 right-3 text-[10px] font-bold bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full flex items-center gap-1">
               AI Agent
             </div>
@@ -82,8 +88,8 @@ const PartnerCard = forwardRef<HTMLDivElement, { partner: Partner; index: number
             <h3 className="font-bold text-lg tracking-tight text-foreground leading-tight truncate">
               {partner.name}
             </h3>
-            {partner.featured && (
-              <BadgeCheck className="h-[18px] w-[18px] text-primary flex-shrink-0" />
+            {(partner.featured || partner.verified) && (
+              <BadgeCheck className="h-[18px] w-[18px] text-primary flex-shrink-0" aria-label={partner.verified ? "Verified" : "Featured"} />
             )}
           </div>
 

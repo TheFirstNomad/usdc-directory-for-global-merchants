@@ -145,6 +145,17 @@ export async function payAgentListingFee(
   return payListingFee(adapter, chainId, "1");
 }
 
+// ── Pay Boost Fee (5 USDC) ──────────────────────────────────────────
+/**
+ * Sends a 5 USDC boost fee to the treasury to feature a listing for 30 days.
+ */
+export async function payBoostFee(
+  adapter: Awaited<ReturnType<typeof createViemAdapterFromWallet>>,
+  chainId: PaymentChainId = 5042002,
+) {
+  return payListingFee(adapter, chainId, "5");
+}
+
 // ── Fetch-intercepting proxy for Circle API ────────────────────────
 /**
  * The Circle SDK calls `https://api.circle.com/v1/stablecoinKits/*` from

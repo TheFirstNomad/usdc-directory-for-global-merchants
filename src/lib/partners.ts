@@ -14,12 +14,16 @@ export interface Partner {
   created_at: string;
   usdc_score?: number;
   networks?: string[];
+  boosted_until?: string | null;
+  verified?: boolean;
 }
+
+const PARTNER_COLS = "id, name, description, website, logo_url, logo_emoji, categories, region, use_cases, featured, created_at, usdc_score, networks, boosted_until, verified";
 
 export async function fetchPartners(): Promise<Partner[]> {
   const { data, error } = await supabase
     .from("partners_public" as any)
-    .select("id, name, description, website, logo_url, logo_emoji, categories, region, use_cases, featured, created_at, usdc_score, networks")
+    .select(PARTNER_COLS)
     .order("created_at", { ascending: false })
     .range(0, 2999);
 
@@ -33,7 +37,7 @@ export async function fetchPartners(): Promise<Partner[]> {
 export async function fetchFeaturedPartners(): Promise<Partner[]> {
   const { data, error } = await supabase
     .from("partners_public" as any)
-    .select("id, name, description, website, logo_url, logo_emoji, categories, region, use_cases, featured, created_at, usdc_score, networks")
+    .select(PARTNER_COLS)
     .eq("featured", true)
     .order("created_at", { ascending: false })
     .range(0, 2999);

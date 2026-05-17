@@ -12,7 +12,7 @@ import { fetchPartners, type Partner } from "@/lib/partners";
 
 const AIAgents = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"name" | "newest" | "score">("newest");
+  const [sortBy, setSortBy] = useState<"name" | "newest" | "score" | "boost">("boost");
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,6 +42,12 @@ const AIAgents = () => {
         p.description.toLowerCase().includes(q)
     );
     return [...matched].sort((a, b) => {
+      if (sortBy === "boost") {
+        const aB = a.boosted_until && new Date(a.boosted_until).getTime() > Date.now() ? 1 : 0;
+        const bB = b.boosted_until && new Date(b.boosted_until).getTime() > Date.now() ? 1 : 0;
+        if (aB !== bB) return bB - aB;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
       if (sortBy === "newest")
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       if (sortBy === "score") return (b.usdc_score ?? 0) - (a.usdc_score ?? 0);
@@ -103,9 +109,10 @@ const AIAgents = () => {
               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as "name" | "newest" | "score")}
+                onChange={(e) => setSortBy(e.target.value as "name" | "newest" | "score" | "boost")}
                 className="bg-transparent text-sm text-foreground font-medium outline-none cursor-pointer pr-1"
               >
+                <option value="boost">⚡ Boosted first</option>
                 <option value="newest">Newest</option>
                 <option value="name">Name A–Z</option>
                 <option value="score">USDC Score</option>

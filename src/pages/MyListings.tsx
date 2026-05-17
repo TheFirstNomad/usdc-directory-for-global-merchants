@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useAppKitAccount } from "@reown/appkit/react";
+import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { useAppKit } from "@reown/appkit/react";
 import SEO from "@/components/SEO";
 import Header from "@/components/Header";
@@ -8,7 +8,9 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { Wallet, Pencil, ExternalLink, Plus } from "lucide-react";
+import { Wallet, Pencil, ExternalLink, Plus, Zap } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { createViemAdapterFromWallet, payBoostFee } from "@/lib/arcAppKit";
 
 interface ListingItem {
   id: string;
@@ -17,13 +19,16 @@ interface ListingItem {
   logo_url: string | null;
   logo_emoji: string | null;
   categories: string[];
+  boosted_until?: string | null;
 }
 
 const MyListings = () => {
   const { address, isConnected } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider<unknown>("eip155") as { walletProvider: unknown };
   const { open } = useAppKit();
   const [listings, setListings] = useState<ListingItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [boosting, setBoosting] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isConnected || !address) {
@@ -31,18 +36,56 @@ const MyListings = () => {
       return;
     }
 
-    const fetchMyListings = async () => {
-      const { data, error } = await supabase
+    (async () => {
+      const { data } = await supabase
         .rpc("get_my_listings", { _wallet_address: address.toLowerCase() });
-
-      if (!error && data) {
-        setListings(data as ListingItem[]);
+      if (data) {
+        const items = data as ListingItem[];
+        const ids = items.map((l) => l.id);
+        if (ids.length) {
+          const { data: extra } = await supabase
+            .from("partners_public" as any)
+            .select("id, boosted_until")
+            .in("id", ids);
+          const boostMap = new Map((extra as any[] ?? []).map((r) => [r.id, r.boosted_until]));
+          setListings(items.map((l) => ({ ...l, boosted_until: boostMap.get(l.id) ?? null })));
+        } else {
+          setListings(items);
+        }
       }
       setLoading(false);
-    };
-
-    fetchMyListings();
+    })();
   }, [isConnected, address]);
+
+  const handleBoost = async (listing: ListingItem) => {
+    if (!walletProvider || !address) {
+      toast({ title: "Connect your wallet first", variant: "destructive" });
+      return;
+    }
+    setBoosting(listing.id);
+    try {
+      const adapter = await createViemAdapterFromWallet(walletProvider);
+      const { txHash } = await payBoostFee(adapter, 5042002);
+      const { data, error } = await supabase.functions.invoke("boost-listing", {
+        body: {
+          partner_id: listing.id,
+          wallet_address: address.toLowerCase(),
+          payment_tx: txHash,
+          chain: "Arc_Testnet",
+        },
+      });
+      if (error) throw error;
+      toast({ title: "⚡ Boosted!", description: `${listing.name} featured for 30 days.` });
+      setListings((prev) =>
+        prev.map((l) => (l.id === listing.id ? { ...l, boosted_until: (data as any)?.boosted_until } : l))
+      );
+    } catch (err) {
+      console.error("Boost failed:", err);
+      toast({ title: "Boost failed", description: err instanceof Error ? err.message : "Try again", variant: "destructive" });
+    } finally {
+      setBoosting(null);
+    }
+  };
 
   if (!isConnected) {
     return (
@@ -114,6 +157,9 @@ const MyListings = () => {
                       {(listing.categories?.includes("AI Agents") || listing.categories?.includes("AI Agents & Automation")) && (
                         <span className="ml-2 text-[10px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full">🤖 AI Agent</span>
                       )}
+                      {listing.boosted_until && new Date(listing.boosted_until).getTime() > Date.now() && (
+                        <span className="ml-2 text-[10px] bg-amber-400/15 text-amber-500 px-2 py-0.5 rounded-full">⚡ Boosted</span>
+                      )}
                     </h2>
                     <p className="text-sm text-muted-foreground truncate">{listing.description}</p>
                     <div className="flex items-center gap-2 mt-1">
@@ -124,6 +170,19 @@ const MyListings = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  {!(listing.boosted_until && new Date(listing.boosted_until).getTime() > Date.now()) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleBoost(listing)}
+                      disabled={boosting === listing.id}
+                      className="border-amber-400/40 text-amber-500 hover:bg-amber-400/10 hover:text-amber-500"
+                      aria-label={`Boost ${listing.name} for 5 USDC`}
+                    >
+                      <Zap className="h-4 w-4 mr-1" />
+                      {boosting === listing.id ? "Boosting…" : "Boost 5 USDC"}
+                    </Button>
+                  )}
                   <Link to={`/merchant/${listing.id}`} aria-label={`View ${listing.name}`}>
                     <Button variant="outline" size="sm" aria-label={`View ${listing.name}`}><ExternalLink className="h-4 w-4" /></Button>
                   </Link>
