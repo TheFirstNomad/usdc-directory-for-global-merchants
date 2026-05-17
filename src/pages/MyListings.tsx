@@ -157,6 +157,9 @@ const MyListings = () => {
                       {(listing.categories?.includes("AI Agents") || listing.categories?.includes("AI Agents & Automation")) && (
                         <span className="ml-2 text-[10px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full">🤖 AI Agent</span>
                       )}
+                      {listing.boosted_until && new Date(listing.boosted_until).getTime() > Date.now() && (
+                        <span className="ml-2 text-[10px] bg-amber-400/15 text-amber-500 px-2 py-0.5 rounded-full">⚡ Boosted</span>
+                      )}
                     </h2>
                     <p className="text-sm text-muted-foreground truncate">{listing.description}</p>
                     <div className="flex items-center gap-2 mt-1">
@@ -167,6 +170,19 @@ const MyListings = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  {!(listing.boosted_until && new Date(listing.boosted_until).getTime() > Date.now()) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleBoost(listing)}
+                      disabled={boosting === listing.id}
+                      className="border-amber-400/40 text-amber-500 hover:bg-amber-400/10 hover:text-amber-500"
+                      aria-label={`Boost ${listing.name} for 5 USDC`}
+                    >
+                      <Zap className="h-4 w-4 mr-1" />
+                      {boosting === listing.id ? "Boosting…" : "Boost 5 USDC"}
+                    </Button>
+                  )}
                   <Link to={`/merchant/${listing.id}`} aria-label={`View ${listing.name}`}>
                     <Button variant="outline" size="sm" aria-label={`View ${listing.name}`}><ExternalLink className="h-4 w-4" /></Button>
                   </Link>
