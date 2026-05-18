@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.boost-listing]
 verify_jwt = false
+
+[functions.admin-agents]
+verify_jwt = false
