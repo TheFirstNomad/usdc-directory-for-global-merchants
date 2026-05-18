@@ -15,6 +15,7 @@ import EditListing from "./pages/EditListing.tsx";
 import MapView from "./pages/MapView.tsx";
 import MyListings from "./pages/MyListings.tsx";
 import AdminPayments from "./pages/AdminPayments.tsx";
+import AdminAgents from "./pages/AdminAgents.tsx";
 import SubmitAIAgent from "./pages/SubmitAIAgent.tsx";
 import AIAgents from "./pages/AIAgents.tsx";
 import ApiDocs from "./pages/ApiDocs.tsx";
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/map" element={<MapView />} />
             <Route path="/my-listings" element={<MyListings />} />
             <Route path="/admin/payments" element={<AdminPayments />} />
+            <Route path="/admin/agents" element={<AdminAgents />} />
             <Route path="/admin/featured" element={<AdminFeatured />} />
             <Route path="/admin/listings" element={<AdminListings />} />
             <Route path="/deployment-status" element={<DeploymentStatus />} />
