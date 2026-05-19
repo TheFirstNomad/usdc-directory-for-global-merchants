@@ -182,9 +182,33 @@ curl -X POST ${API_BASE}/agents \\
           </p>
           <ul className="text-sm space-y-1 font-mono">
             <li>• <a href="/.well-known/x402" className="text-primary hover:underline">/.well-known/x402</a> — x402 manifest</li>
+            <li>• <a href="/.well-known/agents.json" className="text-primary hover:underline">/.well-known/agents.json</a> — agents.json discovery</li>
+            <li>• <a href="/openapi.json" className="text-primary hover:underline">/openapi.json</a> — OpenAPI 3.1 spec</li>
             <li>• <a href="/llms.txt" className="text-primary hover:underline">/llms.txt</a> — LLM-readable endpoint catalog</li>
           </ul>
         </section>
+
+        {/* MCP */}
+        <section className="space-y-3">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Bot className="h-5 w-5 text-primary" /> Connect via MCP
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Claude Desktop, Cursor, Continue, and any MCP-compatible agent can connect to the directory as a tool source. Free preview tools (<code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">list_agents</code>, <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">get_agent</code>, <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">search_merchants</code>) are free; paid actions point the agent at the x402 endpoint.
+          </p>
+          <CodeBlock
+            lang="json"
+            code={`{
+  "mcpServers": {
+    "usdc-directory": {
+      "transport": "streamable-http",
+      "url": "${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mcp"
+    }
+  }
+}`}
+          />
+        </section>
+
 
         {/* List agents */}
         <section className="space-y-3">

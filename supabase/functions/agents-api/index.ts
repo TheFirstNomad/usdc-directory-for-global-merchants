@@ -12,14 +12,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   createPublicClient,
+  createWalletClient,
   http,
   decodeEventLog,
   getAddress,
   parseAbi,
   recoverTypedDataAddress,
-  keccak256,
-  toHex,
 } from "https://esm.sh/viem@2.21.55";
+import { privateKeyToAccount } from "https://esm.sh/viem@2.21.55/accounts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -185,7 +185,10 @@ type X402Payload = {
 async function verifyX402Header(
   headerB64: string,
   amount: bigint,
-): Promise<{ ok: true; payer: string; nonce: string; network: string } | { ok: false; reason: string }> {
+): Promise<
+  | { ok: true; payer: string; nonce: string; network: string; chainId: number; auth: X402Payload["payload"]["authorization"]; signature: `0x${string}` }
+  | { ok: false; reason: string }
+> {
   let parsed: X402Payload;
   try {
     const decoded = atob(headerB64);
@@ -206,15 +209,9 @@ async function verifyX402Header(
   if (Number(a.validAfter) > now) return { ok: false, reason: "auth not yet valid" };
   if (Number(a.validBefore) < now) return { ok: false, reason: "auth expired" };
 
-  // Verify EIP-712 signature
   try {
     const recovered = await recoverTypedDataAddress({
-      domain: {
-        name: "USD Coin",
-        version: "2",
-        chainId: cfg.id,
-        verifyingContract: getAddress(cfg.usdc),
-      },
+      domain: { name: "USD Coin", version: "2", chainId: cfg.id, verifyingContract: getAddress(cfg.usdc) },
       types: {
         TransferWithAuthorization: [
           { name: "from", type: "address" },
@@ -227,12 +224,9 @@ async function verifyX402Header(
       },
       primaryType: "TransferWithAuthorization",
       message: {
-        from: getAddress(a.from),
-        to: getAddress(a.to),
-        value: BigInt(a.value),
-        validAfter: BigInt(a.validAfter),
-        validBefore: BigInt(a.validBefore),
-        nonce: a.nonce,
+        from: getAddress(a.from), to: getAddress(a.to),
+        value: BigInt(a.value), validAfter: BigInt(a.validAfter),
+        validBefore: BigInt(a.validBefore), nonce: a.nonce,
       },
       signature: parsed.payload.signature,
     });
@@ -243,7 +237,58 @@ async function verifyX402Header(
     return { ok: false, reason: `sig verify failed: ${(e as Error).message}` };
   }
 
-  return { ok: true, payer: a.from.toLowerCase(), nonce: a.nonce, network: parsed.network };
+  return {
+    ok: true,
+    payer: a.from.toLowerCase(),
+    nonce: a.nonce,
+    network: parsed.network,
+    chainId: cfg.id,
+    auth: a,
+    signature: parsed.payload.signature,
+  };
+}
+
+// ── x402 on-chain settlement (broadcast transferWithAuthorization) ──────────
+const TRANSFER_WITH_AUTH_ABI = parseAbi([
+  "function transferWithAuthorization(address from, address to, uint256 value, uint256 validAfter, uint256 validBefore, bytes32 nonce, uint8 v, bytes32 r, bytes32 s)",
+]);
+
+function splitSig(sig: `0x${string}`): { v: number; r: `0x${string}`; s: `0x${string}` } {
+  const r = ("0x" + sig.slice(2, 66)) as `0x${string}`;
+  const s = ("0x" + sig.slice(66, 130)) as `0x${string}`;
+  let v = parseInt(sig.slice(130, 132), 16);
+  if (v < 27) v += 27;
+  return { v, r, s };
+}
+
+async function settleX402(
+  chainId: number,
+  auth: X402Payload["payload"]["authorization"],
+  signature: `0x${string}`,
+): Promise<{ ok: true; txHash: string } | { ok: false; reason: string }> {
+  const cfg = CHAINS[chainId];
+  if (!cfg) return { ok: false, reason: "unsupported chain" };
+  const pk = Deno.env.get("X402_SETTLEMENT_PRIVATE_KEY");
+  if (!pk) return { ok: false, reason: "settlement signer not configured" };
+  const normalizedPk = (pk.startsWith("0x") ? pk : `0x${pk}`) as `0x${string}`;
+  try {
+    const account = privateKeyToAccount(normalizedPk);
+    const wallet = createWalletClient({ account, transport: http(cfg.rpc) });
+    const { v, r, s } = splitSig(signature);
+    const txHash = await wallet.writeContract({
+      address: getAddress(cfg.usdc),
+      abi: TRANSFER_WITH_AUTH_ABI,
+      functionName: "transferWithAuthorization",
+      args: [
+        getAddress(auth.from), getAddress(auth.to), BigInt(auth.value),
+        BigInt(auth.validAfter), BigInt(auth.validBefore), auth.nonce, v, r, s,
+      ],
+      chain: null,
+    } as Parameters<typeof wallet.writeContract>[0]);
+    return { ok: true, txHash };
+  } catch (e) {
+    return { ok: false, reason: (e as Error).message };
+  }
 }
 
 // ── Rate limiter (sliding window) ───────────────────────────────────────────
@@ -317,7 +362,7 @@ async function gatePayment(
     return { ok: true, paymentId: txHash, payer: v.from, chain: CHAINS[chainId].network, scheme: "onchain" };
   }
 
-  // Path 2: x402
+  // Path 2: x402 — verify, settle on chain, then record
   if (xPayment) {
     const v = await verifyX402Header(xPayment, amount);
     if (!v.ok) {
@@ -331,16 +376,40 @@ async function gatePayment(
     if (nonceErr) {
       return { ok: false, response: json({ error: "x402 nonce already used" }, 409) };
     }
+    // Broadcast transferWithAuthorization on chain
+    const settled = await settleX402(v.chainId, v.auth, v.signature);
+    if (!settled.ok) {
+      // Free the nonce so the caller can retry (and don't bill them)
+      await supabase.from("x402_nonces").delete().eq("chain", v.network).eq("nonce", v.nonce);
+      return { ok: false, response: json({ error: `settlement failed: ${settled.reason}` }, 402) };
+    }
+    await supabase
+      .from("x402_nonces")
+      .update({ tx_hash: settled.txHash, settled: true, settled_at: new Date().toISOString() })
+      .eq("chain", v.network)
+      .eq("nonce", v.nonce);
     const paymentId = `x402:${v.network}:${v.nonce}`;
     await supabase.from("agent_api_payments").insert({
       payment_id: paymentId, endpoint, method,
       amount_usdc: amount.toString(),
       chain: v.network, agent_wallet: v.payer, scheme: "x402",
     });
-    return { ok: true, paymentId, payer: v.payer, chain: v.network, scheme: "x402" };
+    return { ok: true, paymentId, payer: v.payer, chain: v.network, scheme: "x402", txHash: settled.txHash } as any;
   }
 
   return { ok: false, response: require402(amount, resource) };
+}
+
+// Build the X-PAYMENT-RESPONSE header value per x402 spec (base64 JSON).
+function paymentResponseHeader(gate: { paymentId: string; chain: string; scheme: string; txHash?: string }): Record<string, string> {
+  const body = {
+    success: true,
+    paymentId: gate.paymentId,
+    network: gate.chain,
+    scheme: gate.scheme,
+    transaction: gate.txHash ?? null,
+  };
+  return { "X-PAYMENT-RESPONSE": btoa(JSON.stringify(body)) };
 }
 
 // ── Pricing ──────────────────────────────────────────────────────────────────
@@ -380,7 +449,7 @@ Deno.serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) return json({ error: error.message }, 500);
-      return json({ count: data?.length ?? 0, agents: data, paid: gate.paymentId });
+      return json({ count: data?.length ?? 0, agents: data, paid: gate.paymentId }, 200, paymentResponseHeader(gate));
     }
 
     // GET /agents/{id}
@@ -395,7 +464,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (error) return json({ error: error.message }, 500);
       if (!data) return json({ error: "not found" }, 404);
-      return json({ agent: data, paid: gate.paymentId });
+      return json({ agent: data, paid: gate.paymentId }, 200, paymentResponseHeader(gate));
     }
 
     // POST /agents – self-list
@@ -428,7 +497,7 @@ Deno.serve(async (req) => {
         .select()
         .single();
       if (error) return json({ error: error.message }, 500);
-      return json({ id: partner.id, name: partner.name, paid: gate.paymentId }, 201);
+      return json({ id: partner.id, name: partner.name, paid: gate.paymentId }, 201, paymentResponseHeader(gate));
     }
 
     // POST /agents/{id}/boost
@@ -451,7 +520,7 @@ Deno.serve(async (req) => {
         expires_at: expiresAt,
       });
       if (insErr) return json({ error: insErr.message }, 500);
-      return json({ id: partnerId, boosted_until: expiresAt, paid: gate.paymentId });
+      return json({ id: partnerId, boosted_until: expiresAt, paid: gate.paymentId }, 200, paymentResponseHeader(gate));
     }
 
     // Discovery: GET / -> mini index
