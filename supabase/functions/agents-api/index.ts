@@ -185,7 +185,10 @@ type X402Payload = {
 async function verifyX402Header(
   headerB64: string,
   amount: bigint,
-): Promise<{ ok: true; payer: string; nonce: string; network: string } | { ok: false; reason: string }> {
+): Promise<
+  | { ok: true; payer: string; nonce: string; network: string; chainId: number; auth: X402Payload["payload"]["authorization"]; signature: `0x${string}` }
+  | { ok: false; reason: string }
+> {
   let parsed: X402Payload;
   try {
     const decoded = atob(headerB64);
@@ -206,15 +209,9 @@ async function verifyX402Header(
   if (Number(a.validAfter) > now) return { ok: false, reason: "auth not yet valid" };
   if (Number(a.validBefore) < now) return { ok: false, reason: "auth expired" };
 
-  // Verify EIP-712 signature
   try {
     const recovered = await recoverTypedDataAddress({
-      domain: {
-        name: "USD Coin",
-        version: "2",
-        chainId: cfg.id,
-        verifyingContract: getAddress(cfg.usdc),
-      },
+      domain: { name: "USD Coin", version: "2", chainId: cfg.id, verifyingContract: getAddress(cfg.usdc) },
       types: {
         TransferWithAuthorization: [
           { name: "from", type: "address" },
@@ -227,12 +224,9 @@ async function verifyX402Header(
       },
       primaryType: "TransferWithAuthorization",
       message: {
-        from: getAddress(a.from),
-        to: getAddress(a.to),
-        value: BigInt(a.value),
-        validAfter: BigInt(a.validAfter),
-        validBefore: BigInt(a.validBefore),
-        nonce: a.nonce,
+        from: getAddress(a.from), to: getAddress(a.to),
+        value: BigInt(a.value), validAfter: BigInt(a.validAfter),
+        validBefore: BigInt(a.validBefore), nonce: a.nonce,
       },
       signature: parsed.payload.signature,
     });
@@ -243,7 +237,58 @@ async function verifyX402Header(
     return { ok: false, reason: `sig verify failed: ${(e as Error).message}` };
   }
 
-  return { ok: true, payer: a.from.toLowerCase(), nonce: a.nonce, network: parsed.network };
+  return {
+    ok: true,
+    payer: a.from.toLowerCase(),
+    nonce: a.nonce,
+    network: parsed.network,
+    chainId: cfg.id,
+    auth: a,
+    signature: parsed.payload.signature,
+  };
+}
+
+// ── x402 on-chain settlement (broadcast transferWithAuthorization) ──────────
+const TRANSFER_WITH_AUTH_ABI = parseAbi([
+  "function transferWithAuthorization(address from, address to, uint256 value, uint256 validAfter, uint256 validBefore, bytes32 nonce, uint8 v, bytes32 r, bytes32 s)",
+]);
+
+function splitSig(sig: `0x${string}`): { v: number; r: `0x${string}`; s: `0x${string}` } {
+  const r = ("0x" + sig.slice(2, 66)) as `0x${string}`;
+  const s = ("0x" + sig.slice(66, 130)) as `0x${string}`;
+  let v = parseInt(sig.slice(130, 132), 16);
+  if (v < 27) v += 27;
+  return { v, r, s };
+}
+
+async function settleX402(
+  chainId: number,
+  auth: X402Payload["payload"]["authorization"],
+  signature: `0x${string}`,
+): Promise<{ ok: true; txHash: string } | { ok: false; reason: string }> {
+  const cfg = CHAINS[chainId];
+  if (!cfg) return { ok: false, reason: "unsupported chain" };
+  const pk = Deno.env.get("X402_SETTLEMENT_PRIVATE_KEY");
+  if (!pk) return { ok: false, reason: "settlement signer not configured" };
+  const normalizedPk = (pk.startsWith("0x") ? pk : `0x${pk}`) as `0x${string}`;
+  try {
+    const account = privateKeyToAccount(normalizedPk);
+    const wallet = createWalletClient({ account, transport: http(cfg.rpc) });
+    const { v, r, s } = splitSig(signature);
+    const txHash = await wallet.writeContract({
+      address: getAddress(cfg.usdc),
+      abi: TRANSFER_WITH_AUTH_ABI,
+      functionName: "transferWithAuthorization",
+      args: [
+        getAddress(auth.from), getAddress(auth.to), BigInt(auth.value),
+        BigInt(auth.validAfter), BigInt(auth.validBefore), auth.nonce, v, r, s,
+      ],
+      chain: null,
+    } as Parameters<typeof wallet.writeContract>[0]);
+    return { ok: true, txHash };
+  } catch (e) {
+    return { ok: false, reason: (e as Error).message };
+  }
 }
 
 // ── Rate limiter (sliding window) ───────────────────────────────────────────
