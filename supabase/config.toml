@@ -12,3 +12,10 @@ verify_jwt = false
 [functions.mcp]
 verify_jwt = false
 
+[functions.sitemap]
+verify_jwt = false
+
+[functions.og-agent]
+verify_jwt = false
+
+
