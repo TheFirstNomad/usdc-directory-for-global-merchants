@@ -12,14 +12,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   createPublicClient,
+  createWalletClient,
   http,
   decodeEventLog,
   getAddress,
   parseAbi,
   recoverTypedDataAddress,
-  keccak256,
-  toHex,
 } from "https://esm.sh/viem@2.21.55";
+import { privateKeyToAccount } from "https://esm.sh/viem@2.21.55/accounts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
