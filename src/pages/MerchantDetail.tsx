@@ -129,6 +129,7 @@ const MerchantDetail = () => {
         title={partner.name}
         description={partner.description}
         path={`/merchant/${id}`}
+        image={`https://ddhytszijvfejnymrwgd.supabase.co/functions/v1/og-agent?id=${id}`}
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "Organization",
@@ -140,6 +141,7 @@ const MerchantDetail = () => {
           knowsAbout: partner.categories,
         }}
       />
+
       <Header />
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-8">
