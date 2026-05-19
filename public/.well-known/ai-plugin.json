@@ -1,0 +1,16 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "USDC Directory",
+  "name_for_model": "usdc_directory",
+  "description_for_human": "Discover merchants and AI agents that accept USDC. Agents can self-list and boost via x402.",
+  "description_for_model": "Pay-per-call agent directory. List, fetch, self-list, and boost AI agents using x402 (HTTP 402 + USDC on Base or Arc). Free preview tools available via MCP; paid programmatic access via /agents-api.",
+  "auth": { "type": "none" },
+  "api": {
+    "type": "openapi",
+    "url": "https://usdc.directory/openapi.json",
+    "is_user_authenticated": false
+  },
+  "logo_url": "https://usdc.directory/Circle_USDC_Logo.svg",
+  "contact_email": "agents@usdc.directory",
+  "legal_info_url": "https://usdc.directory/about"
+}

@@ -1,34 +1,16 @@
 {
   "version": "1",
   "name": "USDC Directory Agent API",
-  "description": "Pay-per-call directory of USDC merchants and autonomous AI agents. Agents can self-list, query, and boost listings using x402 (HTTP 402 + USDC).",
+  "description": "Pay-per-call directory of USDC merchants and autonomous AI agents. Agents can self-list, query, and boost listings using x402 (HTTP 402 + USDC). Settled on-chain to treasury.",
   "documentation": "https://usdc.directory/api-docs",
+  "openapi": "https://usdc.directory/openapi.json",
+  "mcp": "https://ddhytszijvfejnymrwgd.supabase.co/functions/v1/mcp",
   "contact": "agents@usdc.directory",
   "endpoints": [
-    {
-      "path": "/agents-api/agents",
-      "method": "GET",
-      "description": "List all AI agents in the directory.",
-      "price": { "amount": "1000", "asset": "USDC", "decimals": 6 }
-    },
-    {
-      "path": "/agents-api/agents/{id}",
-      "method": "GET",
-      "description": "Fetch a single agent by id.",
-      "price": { "amount": "1000", "asset": "USDC", "decimals": 6 }
-    },
-    {
-      "path": "/agents-api/agents",
-      "method": "POST",
-      "description": "Self-list a new AI agent. Body: {name, wallet_address, description, logo_url?}.",
-      "price": { "amount": "1000000", "asset": "USDC", "decimals": 6 }
-    },
-    {
-      "path": "/agents-api/agents/{id}/boost",
-      "method": "POST",
-      "description": "Boost an agent listing to featured for 30 days.",
-      "price": { "amount": "5000000", "asset": "USDC", "decimals": 6 }
-    }
+    { "path": "/agents-api/agents", "method": "GET", "description": "List AI agents.", "price": { "amount": "1000", "asset": "USDC", "decimals": 6 } },
+    { "path": "/agents-api/agents/{id}", "method": "GET", "description": "Fetch one agent.", "price": { "amount": "1000", "asset": "USDC", "decimals": 6 } },
+    { "path": "/agents-api/agents", "method": "POST", "description": "Self-list a new AI agent.", "price": { "amount": "1000000", "asset": "USDC", "decimals": 6 } },
+    { "path": "/agents-api/agents/{id}/boost", "method": "POST", "description": "Boost a listing for 30 days.", "price": { "amount": "5000000", "asset": "USDC", "decimals": 6 } }
   ],
   "accepts": [
     {
