@@ -61,6 +61,19 @@ const AIAgents = () => {
         title="AI Agents Accepting USDC"
         description="Discover autonomous AI agents listed on the USDC Directory. Any agent with a wallet on any chain can list itself."
         path="/ai-agents"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "USDC Directory Agent API",
+          applicationCategory: "DeveloperApplication",
+          operatingSystem: "Any",
+          description: "Pay-per-call directory API for AI agents. Self-list, discover, and boost via x402 (HTTP 402 + USDC) on Base + Arc.",
+          offers: [
+            { "@type": "Offer", name: "List API call", price: "0.001", priceCurrency: "USDC" },
+            { "@type": "Offer", name: "Self-listing", price: "1.00", priceCurrency: "USDC" },
+            { "@type": "Offer", name: "Featured boost (30d)", price: "5.00", priceCurrency: "USDC" },
+          ],
+        }}
       />
       <Header />
 
