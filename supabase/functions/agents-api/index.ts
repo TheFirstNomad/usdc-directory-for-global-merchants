@@ -246,6 +246,26 @@ async function verifyX402Header(
   return { ok: true, payer: a.from.toLowerCase(), nonce: a.nonce, network: parsed.network };
 }
 
+// ── Rate limiter (sliding window) ───────────────────────────────────────────
+async function rateLimitOk(
+  supabase: ReturnType<typeof createClient>,
+  bucketKey: string,
+  endpoint: string,
+  limit: number,
+  windowSec: number,
+): Promise<boolean> {
+  const since = new Date(Date.now() - windowSec * 1000).toISOString();
+  const { count } = await supabase
+    .from("agent_rate_limits")
+    .select("id", { count: "exact", head: true })
+    .eq("bucket_key", bucketKey)
+    .eq("endpoint", endpoint)
+    .gte("created_at", since);
+  if ((count ?? 0) >= limit) return false;
+  await supabase.from("agent_rate_limits").insert({ bucket_key: bucketKey, endpoint });
+  return true;
+}
+
 // ── Payment gate ────────────────────────────────────────────────────────────
 async function gatePayment(
   req: Request,
@@ -262,16 +282,20 @@ async function gatePayment(
   const txHash = req.headers.get("x-payment-txhash");
   const chainHeader = req.headers.get("x-payment-chain");
 
+  // Rate limit the 402 challenge surface (pre-payment) per IP
+  if (!xPayment && !txHash) {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+    const ok = await rateLimitOk(supabase, `ip:${ip}`, endpoint, 30, 60);
+    if (!ok) return { ok: false, response: json({ error: "rate limited" }, 429) };
+    return { ok: false, response: require402(amount, resource) };
+  }
+
   // Path 1: on-chain pre-paid
   if (txHash) {
     const chainId = Number(chainHeader || 8453);
     if (!CHAINS[chainId]) {
-      return {
-        ok: false,
-        response: json({ error: "unsupported X-Payment-Chain" }, 400),
-      };
+      return { ok: false, response: json({ error: "unsupported X-Payment-Chain" }, 400) };
     }
-    // replay protection: tx hash already used?
     const { data: existing } = await supabase
       .from("agent_api_payments")
       .select("id")
@@ -279,23 +303,16 @@ async function gatePayment(
       .eq("endpoint", endpoint)
       .maybeSingle();
     if (existing) {
-      return {
-        ok: false,
-        response: json({ error: "tx hash already used for this endpoint" }, 409),
-      };
+      return { ok: false, response: json({ error: "tx hash already used for this endpoint" }, 409) };
     }
     const v = await verifyOnChainPayment(txHash, chainId, amount);
     if (!v.ok) {
       return { ok: false, response: json({ error: `payment invalid: ${v.reason}` }, 402) };
     }
     await supabase.from("agent_api_payments").insert({
-      payment_id: txHash,
-      endpoint,
-      method,
+      payment_id: txHash, endpoint, method,
       amount_usdc: amount.toString(),
-      chain: CHAINS[chainId].network,
-      agent_wallet: v.from,
-      scheme: "onchain",
+      chain: CHAINS[chainId].network, agent_wallet: v.from, scheme: "onchain",
     });
     return { ok: true, paymentId: txHash, payer: v.from, chain: CHAINS[chainId].network, scheme: "onchain" };
   }
@@ -306,29 +323,23 @@ async function gatePayment(
     if (!v.ok) {
       return { ok: false, response: require402(amount, resource, v.reason) };
     }
-    // replay protection: nonce already used?
-    const paymentId = `x402:${v.network}:${v.nonce}`;
-    const { data: existing } = await supabase
-      .from("agent_api_payments")
-      .select("id")
-      .eq("payment_id", paymentId)
-      .maybeSingle();
-    if (existing) {
+    // Replay protection via dedicated nonce table (unique chain+nonce)
+    const { error: nonceErr } = await supabase.from("x402_nonces").insert({
+      chain: v.network, nonce: v.nonce, payer: v.payer,
+      endpoint, amount_usdc: amount.toString(),
+    });
+    if (nonceErr) {
       return { ok: false, response: json({ error: "x402 nonce already used" }, 409) };
     }
+    const paymentId = `x402:${v.network}:${v.nonce}`;
     await supabase.from("agent_api_payments").insert({
-      payment_id: paymentId,
-      endpoint,
-      method,
+      payment_id: paymentId, endpoint, method,
       amount_usdc: amount.toString(),
-      chain: v.network,
-      agent_wallet: v.payer,
-      scheme: "x402",
+      chain: v.network, agent_wallet: v.payer, scheme: "x402",
     });
     return { ok: true, paymentId, payer: v.payer, chain: v.network, scheme: "x402" };
   }
 
-  // No payment: 402
   return { ok: false, response: require402(amount, resource) };
 }
 
