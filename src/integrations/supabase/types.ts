@@ -113,6 +113,27 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_rate_limits: {
+        Row: {
+          bucket_key: string
+          created_at: string
+          endpoint: string
+          id: string
+        }
+        Insert: {
+          bucket_key: string
+          created_at?: string
+          endpoint: string
+          id?: string
+        }
+        Update: {
+          bucket_key?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+        }
+        Relationships: []
+      }
       deployment_checks: {
         Row: {
           checked_at: string
@@ -304,6 +325,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      x402_nonces: {
+        Row: {
+          amount_usdc: number
+          chain: string
+          created_at: string
+          endpoint: string | null
+          id: string
+          nonce: string
+          payer: string | null
+          settled: boolean
+          settled_at: string | null
+          tx_hash: string | null
+        }
+        Insert: {
+          amount_usdc: number
+          chain: string
+          created_at?: string
+          endpoint?: string | null
+          id?: string
+          nonce: string
+          payer?: string | null
+          settled?: boolean
+          settled_at?: string | null
+          tx_hash?: string | null
+        }
+        Update: {
+          amount_usdc?: number
+          chain?: string
+          created_at?: string
+          endpoint?: string | null
+          id?: string
+          nonce?: string
+          payer?: string | null
+          settled?: boolean
+          settled_at?: string | null
+          tx_hash?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
