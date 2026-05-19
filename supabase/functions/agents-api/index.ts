@@ -362,7 +362,7 @@ async function gatePayment(
     return { ok: true, paymentId: txHash, payer: v.from, chain: CHAINS[chainId].network, scheme: "onchain" };
   }
 
-  // Path 2: x402
+  // Path 2: x402 — verify, settle on chain, then record
   if (xPayment) {
     const v = await verifyX402Header(xPayment, amount);
     if (!v.ok) {
@@ -376,16 +376,40 @@ async function gatePayment(
     if (nonceErr) {
       return { ok: false, response: json({ error: "x402 nonce already used" }, 409) };
     }
+    // Broadcast transferWithAuthorization on chain
+    const settled = await settleX402(v.chainId, v.auth, v.signature);
+    if (!settled.ok) {
+      // Free the nonce so the caller can retry (and don't bill them)
+      await supabase.from("x402_nonces").delete().eq("chain", v.network).eq("nonce", v.nonce);
+      return { ok: false, response: json({ error: `settlement failed: ${settled.reason}` }, 402) };
+    }
+    await supabase
+      .from("x402_nonces")
+      .update({ tx_hash: settled.txHash, settled: true, settled_at: new Date().toISOString() })
+      .eq("chain", v.network)
+      .eq("nonce", v.nonce);
     const paymentId = `x402:${v.network}:${v.nonce}`;
     await supabase.from("agent_api_payments").insert({
       payment_id: paymentId, endpoint, method,
       amount_usdc: amount.toString(),
       chain: v.network, agent_wallet: v.payer, scheme: "x402",
     });
-    return { ok: true, paymentId, payer: v.payer, chain: v.network, scheme: "x402" };
+    return { ok: true, paymentId, payer: v.payer, chain: v.network, scheme: "x402", txHash: settled.txHash } as any;
   }
 
   return { ok: false, response: require402(amount, resource) };
+}
+
+// Build the X-PAYMENT-RESPONSE header value per x402 spec (base64 JSON).
+function paymentResponseHeader(gate: { paymentId: string; chain: string; scheme: string; txHash?: string }): Record<string, string> {
+  const body = {
+    success: true,
+    paymentId: gate.paymentId,
+    network: gate.chain,
+    scheme: gate.scheme,
+    transaction: gate.txHash ?? null,
+  };
+  return { "X-PAYMENT-RESPONSE": btoa(JSON.stringify(body)) };
 }
 
 // ── Pricing ──────────────────────────────────────────────────────────────────
