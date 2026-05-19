@@ -520,7 +520,7 @@ Deno.serve(async (req) => {
         expires_at: expiresAt,
       });
       if (insErr) return json({ error: insErr.message }, 500);
-      return json({ id: partnerId, boosted_until: expiresAt, paid: gate.paymentId });
+      return json({ id: partnerId, boosted_until: expiresAt, paid: gate.paymentId }, 200, paymentResponseHeader(gate));
     }
 
     // Discovery: GET / -> mini index
