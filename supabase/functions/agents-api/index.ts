@@ -449,7 +449,7 @@ Deno.serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) return json({ error: error.message }, 500);
-      return json({ count: data?.length ?? 0, agents: data, paid: gate.paymentId });
+      return json({ count: data?.length ?? 0, agents: data, paid: gate.paymentId }, 200, paymentResponseHeader(gate));
     }
 
     // GET /agents/{id}
@@ -464,7 +464,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (error) return json({ error: error.message }, 500);
       if (!data) return json({ error: "not found" }, 404);
-      return json({ agent: data, paid: gate.paymentId });
+      return json({ agent: data, paid: gate.paymentId }, 200, paymentResponseHeader(gate));
     }
 
     // POST /agents – self-list
@@ -497,7 +497,7 @@ Deno.serve(async (req) => {
         .select()
         .single();
       if (error) return json({ error: error.message }, 500);
-      return json({ id: partner.id, name: partner.name, paid: gate.paymentId }, 201);
+      return json({ id: partner.id, name: partner.name, paid: gate.paymentId }, 201, paymentResponseHeader(gate));
     }
 
     // POST /agents/{id}/boost
