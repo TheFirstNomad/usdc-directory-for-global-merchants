@@ -5,8 +5,10 @@ interface SEOProps {
   description?: string;
   path?: string;
   type?: string;
+  image?: string;
   jsonLd?: Record<string, any> | Record<string, any>[];
 }
+
 
 const SITE_URL = "https://usdc.directory";
 const SITE_NAME = "USDC Directory";
@@ -19,11 +21,14 @@ const SEO = ({
   description = DEFAULT_DESCRIPTION,
   path = "/",
   type = "website",
+  image,
   jsonLd,
 }: SEOProps) => {
   const fullTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE;
   const url = `${SITE_URL}${path}`;
   const isHome = path === "/";
+  const ogImage = image || `${SITE_URL}/og-default.png`;
+
 
   // Sitewide schema only on the homepage to avoid duplicate JSON-LD on every route.
   const homeJsonLd = isHome
@@ -72,11 +77,14 @@ const SEO = ({
       <meta property="og:type" content={type} />
       <meta property="og:url" content={url} />
       <meta property="og:site_name" content={SITE_NAME} />
+      <meta property="og:image" content={ogImage} />
 
       {/* Twitter */}
-      <meta name="twitter:card" content="summary" />
+      <meta name="twitter:card" content={image ? "summary_large_image" : "summary"} />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={ogImage} />
+
 
       {allJsonLd.map((schema, i) => (
         <script key={i} type="application/ld+json">
