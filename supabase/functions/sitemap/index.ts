@@ -23,11 +23,24 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { data: partners } = await supabase
-      .from("partners_public")
-      .select("id, updated_at, created_at")
-      .order("created_at", { ascending: false })
-      .limit(5000);
+    // Paginate to bypass PostgREST 1000-row default cap
+    const PAGE = 1000;
+    const MAX = 10000;
+    const partners: Array<{ id: string; updated_at?: string; created_at?: string }> = [];
+    for (let from = 0; from < MAX; from += PAGE) {
+      const { data, error } = await supabase
+        .from("partners_public")
+        .select("id, updated_at, created_at")
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (error) {
+        console.error("sitemap page error", from, error);
+        break;
+      }
+      if (!data || data.length === 0) break;
+      partners.push(...(data as any[]));
+      if (data.length < PAGE) break;
+    }
 
     const now = new Date().toISOString();
     const urls: string[] = [];
@@ -35,9 +48,9 @@ Deno.serve(async (req) => {
     for (const p of STATIC_PATHS) {
       urls.push(`<url><loc>${SITE}${p}</loc><lastmod>${now}</lastmod><changefreq>daily</changefreq><priority>${p === "/" ? "1.0" : "0.7"}</priority></url>`);
     }
-    for (const row of partners || []) {
-      const lastmod = (row as any).updated_at || (row as any).created_at || now;
-      urls.push(`<url><loc>${SITE}/merchant/${(row as any).id}</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`);
+    for (const row of partners) {
+      const lastmod = row.updated_at || row.created_at || now;
+      urls.push(`<url><loc>${SITE}/merchant/${row.id}</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`);
     }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -50,6 +63,7 @@ ${urls.join("\n")}
         "Content-Type": "application/xml; charset=utf-8",
         "Cache-Control": "public, max-age=3600, s-maxage=3600",
         "Access-Control-Allow-Origin": "*",
+        "X-Sitemap-Count": String(urls.length),
       },
     });
   } catch (err) {
