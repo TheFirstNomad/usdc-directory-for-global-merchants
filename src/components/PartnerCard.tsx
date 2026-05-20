@@ -33,11 +33,17 @@ const categoryColors: Record<string, string> = {
   "Analytics": "bg-sky-500/10 text-sky-400",
 };
 
+const BOT_LOGO = "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=";
+const USDC_FALLBACK = "https://cryptologos.cc/logos/usd-coin-usdc-logo.png";
+
 const PartnerCard = forwardRef<HTMLDivElement, { partner: Partner; index: number }>(({ partner, index }, ref) => {
   const isBoosted = !!partner.boosted_until && new Date(partner.boosted_until).getTime() > Date.now();
-  const logoUrl =
-    partner.logo_url && partner.logo_url !== ""
-      ? partner.logo_url
+  const isAIAgent = partner.categories?.some((c) => c === "AI Agents" || c === "AI Agents & Automation");
+  const hasOwnLogo = partner.logo_url && partner.logo_url !== "" && !partner.logo_url.includes("usd-coin-usdc-logo");
+  const logoUrl = isAIAgent && !hasOwnLogo
+    ? `${BOT_LOGO}${encodeURIComponent(partner.name)}`
+    : hasOwnLogo
+      ? partner.logo_url!
       : `https://logo.clearbit.com/${partner.website?.replace(/https?:\/\//, "").replace(/\/.*/, "") || partner.name.toLowerCase().replace(/\s+/g, "") + ".com"}`;
 
   const isNew = partner.created_at
