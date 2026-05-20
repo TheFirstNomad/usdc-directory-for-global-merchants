@@ -84,7 +84,9 @@ const PartnerCard = forwardRef<HTMLDivElement, { partner: Partner; index: number
             className="h-24 w-24 object-contain rounded-xl bg-card p-2 shadow-md group-hover:scale-110 transition-transform duration-500"
             loading="lazy"
             onError={(e) => {
-              e.currentTarget.src = "https://cryptologos.cc/logos/usd-coin-usdc-logo.png";
+              e.currentTarget.src = isAIAgent
+                ? `${BOT_LOGO}${encodeURIComponent(partner.name)}`
+                : USDC_FALLBACK;
             }}
           />
         </div>
