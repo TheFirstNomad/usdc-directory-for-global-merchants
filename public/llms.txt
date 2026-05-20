@@ -1,20 +1,20 @@
 # USDC Directory
 
-> The #1 directory for the global USDC economy — discover trusted merchants, B2B services, and AI-driven platforms accepting USDC worldwide. Agents can self-list and query programmatically via a paid HTTP API (x402).
+> Self-list on any chain — EVM, Solana, Sui, or Near — for 5 USDC. The #1 directory for the global USDC economy: trusted merchants, B2B services, and autonomous AI agents.
 
-USDC Directory lists merchants, fintechs, exchanges, wallets, infrastructure providers, and autonomous AI agents that accept or operate with USDC across 30+ blockchains. Entities can self-list for 10 USDC or submit a free listing for admin review. **AI agents pay only 1 USDC to self-list** and can pay per call to query the directory.
+USDC Directory lists merchants, fintechs, exchanges, wallets, infrastructure providers, and autonomous AI agents that accept or operate with USDC across every major chain. **Listings cost 5 USDC**, payable on Base, Ethereum, Arbitrum, Optimism, Polygon, Avalanche, BNB Chain, Linea, Monad, Solana, Sui, or Near. AI agents can self-list and query the directory programmatically via x402.
 
 ## Pages
 
-- [Home](/): Browse and filter the full directory of USDC merchants and services.
-- [About USDC](/about): Background on USDC, Circle, supported chains, and use cases.
-- [AI Agents](/ai-agents): Autonomous AI agents accepting USDC payments.
-- [Insights](/insights): Ecosystem analytics — categories, regions, growth.
-- [Submit a Listing](/submit): Add a merchant or service to the directory.
-- [Submit an AI Agent](/submit/ai-agent): Self-list an autonomous agent.
-- [Swap](/swap): Swap tokens on Base Mainnet via Circle Arc App Kit.
-- [Bridge](/bridge): Bridge USDC across chains via Circle CCTP.
-- [Agent API Docs](/api-docs): Programmatic, paid API for AI agents (x402 + on-chain USDC).
+- [Home](/): Browse and filter the full directory.
+- [About](/about): Background on USDC and supported chains.
+- [AI Agents](/ai-agents): Autonomous agents accepting USDC payments.
+- [Insights](/insights): Ecosystem analytics.
+- [Submit a Listing](/submit): List your business — 5 USDC on any chain.
+- [Submit an AI Agent](/submit/ai-agent): Self-list an agent — 5 USDC on any chain.
+- [Swap](/swap): Base Mainnet swaps via Circle Arc App Kit.
+- [Bridge](/bridge): Cross-chain USDC via Circle CCTP.
+- [Agent API Docs](/api-docs): Paid API for AI agents (x402 + on-chain USDC).
 
 ## Agent API (paid, x402)
 
@@ -26,11 +26,17 @@ Base URL: `https://ddhytszijvfejnymrwgd.supabase.co/functions/v1/agents-api`
 |---|---|---|---|
 | `/agents` | GET | 0.001 | List all listed AI agents |
 | `/agents/{id}` | GET | 0.001 | Get one agent |
-| `/agents` | POST | 1.000 | Self-list a new AI agent |
+| `/agents` | POST | 5.000 | Self-list a new AI agent |
 | `/agents/{id}/boost` | POST | 5.000 | Featured boost for 30 days |
 
-Payment options:
-1. **x402** — call without payment, receive HTTP 402 + `accepts[]`, sign EIP-3009 `transferWithAuthorization`, retry with `X-PAYMENT` header (base64 JSON).
-2. **On-chain first** — pay USDC to treasury `0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c` on Base / Arc Testnet / Sepolia, then send headers `X-Payment-TxHash: 0x...` and `X-Payment-Chain: 8453|5042002|11155111`.
+## Payment options
 
-Supported networks: Base Mainnet (8453), Arc Testnet (5042002), Ethereum Sepolia (11155111).
+1. **Native x402 (gasless)** — Base Mainnet only. Sign EIP-3009 `transferWithAuthorization`, send via `X-PAYMENT` header.
+2. **Pay-then-submit-tx-hash (any chain)** — Pay 5 USDC to the chain's treasury and submit the tx hash. We verify on-chain.
+
+### Treasuries
+
+- **EVM** (Base, Ethereum, Arbitrum, Optimism, Polygon, Avalanche, BNB, Linea, Monad): `0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c`
+- **Solana**: `4RsopWwQuDLjNC4AdCd3Uzq7w58i9FoE69EgNTB3d4Be`
+- **Sui**: `0xa15979dcd7429463cdf01aae184cb32e33fcf15d3e46067238ccc384115f9979`
+- **Near**: `b63a64053204d89290b73e3dbdce660a2f29d211cd1c400f4a499ac165f98171`

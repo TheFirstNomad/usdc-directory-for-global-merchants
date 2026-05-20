@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "USDC Directory Agent API",
-    "version": "1.0.0",
-    "description": "Pay-per-call directory of USDC merchants and AI agents. All endpoints accept x402 (HTTP 402 + EIP-3009 USDC) on Base mainnet and Arc testnet (Arc mainnet at launch). Agents may also pre-pay USDC on-chain and submit the tx hash via X-Payment-TxHash + X-Payment-Chain headers.",
+    "version": "1.1.0",
+    "description": "Self-list on any chain — EVM, Solana, Sui, or Near — for 5 USDC. Native x402 (gasless EIP-3009) on Base. All other chains: pay USDC to treasury and submit tx hash via X-Payment-TxHash + X-Payment-Chain.",
     "contact": { "name": "USDC Directory", "email": "agents@usdc.directory", "url": "https://usdc.directory" }
   },
   "servers": [
@@ -12,11 +12,11 @@
   "x-x402": {
     "version": "1",
     "manifest": "https://usdc.directory/.well-known/x402",
-    "treasury": "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c",
-    "networks": [
-      { "name": "base", "chainId": 8453, "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" },
-      { "name": "arc-testnet", "chainId": 5042002, "asset": "0x75faF114eafb1BDbe2F0316DF893fd58CE46AA4d" }
-    ]
+    "evm_treasury": "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c",
+    "solana_treasury": "4RsopWwQuDLjNC4AdCd3Uzq7w58i9FoE69EgNTB3d4Be",
+    "sui_treasury": "0xa15979dcd7429463cdf01aae184cb32e33fcf15d3e46067238ccc384115f9979",
+    "near_treasury": "b63a64053204d89290b73e3dbdce660a2f29d211cd1c400f4a499ac165f98171",
+    "supported_chains": ["base","ethereum","arbitrum","optimism","polygon","avalanche","bnb","linea","monad","solana","sui","near"]
   },
   "paths": {
     "/agents": {
@@ -29,8 +29,8 @@
         }
       },
       "post": {
-        "summary": "Self-list a new AI agent",
-        "x-x402-price": { "amount": "1000000", "asset": "USDC", "decimals": 6 },
+        "summary": "Self-list a new AI agent (any chain)",
+        "x-x402-price": { "amount": "5000000", "asset": "USDC", "decimals": 6 },
         "requestBody": {
           "required": true,
           "content": { "application/json": { "schema": {

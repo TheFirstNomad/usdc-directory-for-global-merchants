@@ -1,44 +1,72 @@
 
-# Fix empty directory + finish Agent Magnet build
+# Open paid self-listing to every chain — EVM + Solana + Sui + Near
 
-## Why the directory looks empty
+## Credit estimate (read before approving)
+**~8–10 build credits total.** Drop the broadcast script to save ~1. Ship EVM-only first to save ~2.
 
-When Phase A recreated `partners_public` as a `security_invoker=true` view, the view now runs queries **as the caller** (anon role). The anon role no longer has the table-level `GRANT SELECT` on `public.partners`, so every request returns `401 permission denied for table partners` (visible in the latest network logs). The data is still there — it just isn't reachable.
+---
 
-The RLS policy `Public can read confirmed partners` already gates which rows are visible. We only need to restore the table-level grant so RLS can do its job.
+## 1. Kill free listings
+- Remove the "Free" tab from `src/pages/Submit.tsx` and `src/pages/SubmitAIAgent.tsx`.
+- `supabase/functions/submit-free-listing/index.ts` → return `410 Gone`.
+- Migration: mark the pending "Quantum Consultation" row `payment_status='rejected'`.
 
-## Fix + finish plan
+## 2. Fee = 5 USDC, payable on ANY chain
 
-### 1. Restore public read access (migration)
-- `GRANT SELECT ON public.partners TO anon, authenticated;`
-- `GRANT SELECT ON public.partners_public TO anon, authenticated;`
-- Re-confirm RLS is still `ENABLED` on `partners` (it is) so only `payment_status in ('confirmed','finished','sending')` rows leak through.
-- Quick `SELECT count(*)` sanity check via read_query after the migration runs.
+### Native x402 (gasless, EIP-3009)
+- **Base Mainnet only** — this is the only chain where our facilitator can settle a signed authorization. Stays as the premium fast-path.
+- Sepolia + Arc Testnet kept for testing.
 
-### 2. Lock the rest of the surface
-- Confirm `submissions`, `agent_api_payments`, `agent_boosts`, `x402_nonces`, `agent_rate_limits`, `admin_audit_log` remain `USING (false)` for anon/auth (already true). No client grants added.
-- `logos` storage bucket stays public-read (needed for cards) but we add MIME/size guard in `upload-logo` if not already there.
+### Alternative-payment path = every other chain (this is what makes the money)
+Agent pays USDC on their own chain → sends us the tx hash + chain id → backend verifies on-chain transfer ≥ 5 USDC to treasury → listing inserted. Zero gas for us, zero bridging for them.
 
-### 3. Finish deferred Phase D polish (~2 credits)
-- `supabase/functions/sitemap/index.ts` → dynamic `sitemap.xml` from `partners_public`, cached 1h, registered with `verify_jwt = false`.
-- `supabase/functions/og-agent/index.ts` → per-agent OG image (SVG → PNG via `@resvg/resvg-wasm`) at `/og/agent/:id`; referenced from `MerchantDetail` `<SEO>` and `AIAgents` cards.
-- Add `<link rel="sitemap">` + ensure `robots.txt` points at the edge function URL.
+**EVM mainnets accepted** (native or bridged USDC, allow-listed contracts):
+Base · Ethereum · Arbitrum · Optimism · Polygon · Avalanche · BNB Chain (Binance-Peg USDC) · Linea · Monad · Mantle · Berachain. Any EVM agent with any wallet can pay — no gatekeeping.
 
-### 4. Verification pass
-- Re-run `supabase--linter` and `security--run_security_scan`; fix anything new.
-- `read_query` to confirm `select count(*) from partners_public` returns the original seeded count (~152+).
-- Hit `/` in preview to confirm cards render; check network tab returns 200.
-- Curl `/.well-known/agents.json`, `/openapi.json`, `/functions/v1/mcp` to confirm discovery surfaces still respond.
+**Non-EVM mainnets accepted** (new treasuries):
+| Chain  | Treasury |
+|--------|----------|
+| Solana | `4RsopWwQuDLjNC4AdCd3Uzq7w58i9FoE69EgNTB3d4Be` |
+| Sui    | `0xa15979dcd7429463cdf01aae184cb32e33fcf15d3e46067238ccc384115f9979` |
+| Near   | `b63a64053204d89290b73e3dbdce660a2f29d211cd1c400f4a499ac165f98171` |
 
-## Technical notes
+Verifiers (pure JSON-RPC, no SDK bloat):
+- **Solana** — `getTransaction` on public RPC, assert SPL Transfer of USDC mint `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` to treasury ATA, ≥ 5_000_000.
+- **Sui** — `sui_getTransactionBlock`, assert balance change ≥ 5_000_000 USDC to treasury.
+- **Near** — RPC `tx <hash>`, assert `ft_transfer` on `17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1` to treasury ≥ "5000000".
 
-- `security_invoker=true` views require BOTH (a) RLS policy on the base table AND (b) table-level GRANT to the role. We had (a) only; adding (b) is the fix.
-- No code changes in `src/lib/partners.ts` needed — the query shape is already correct.
-- `X402_SETTLEMENT_PRIVATE_KEY` is set; settlement will activate the moment that wallet has Base ETH. No code blocker.
-- Treasury wallet `0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c` continues receiving USDC on Base + Arc via the unchanged x402 flow.
+## 3. Submit page UI (`ArcPaymentPanel.tsx`)
+- `fee = "5"` everywhere.
+- Chain picker shows ~14 mainnets (EVM + Solana + Sui + Near).
+- EVM path: wagmi `switchChainAsync` + USDC `transfer(treasury, 5e6)`.
+- Solana/Sui/Near path: show treasury address + QR + "Paste tx hash" field → backend verifies.
+- Arc Testnet hidden from listing picker.
 
-## Credits
+## 4. Swap & Bridge — unchanged
+Base + Arc only. Notice on `/submit` when wallet is Arc Testnet: *"Arc Testnet is for swap & bridge demos. Listings require a mainnet — pay 5 USDC on any chain, including Solana, Sui, Near."*
 
-~2 credits total (1 for the grant migration + verification, 1 for sitemap + OG image function).
+## 5. Manifest broadcast (the magnet)
+Update `public/.well-known/x402`, `agents.json`, `openapi.json`, `llms.txt`, `robots.txt`:
+- `accepts` array: Base entry stays native x402 (`scheme: "exact"`); all other chains listed under `alternative_payment.chains` with their treasury + USDC contract.
+- Listing price → `5000000`.
+- Description: *"Self-list on any chain — EVM, Solana, Sui, or Near — for 5 USDC."*
 
-Reply **"go"** to execute.
+`scripts/broadcast-manifest.ts` pings:
+- x402 Bazaar
+- MCP Hub, Smithery.ai, Pulse MCP
+- AgentDirectory.org
+- agents.json crawler
+- Google Indexing API (existing GSC connector) + sitemap resubmit
+- Returns draft Twitter/Farcaster post
+
+CTA card on `/ai-agents`: *"Agents — self-list for 5 USDC on any chain"* → links to `/api-docs`.
+
+## 6. Verification
+- `curl /.well-known/x402` → price 5000000, all chains listed.
+- Submit picker shows all chains; Arc Testnet hidden.
+- Quantum row rejected.
+- One real test row inserted with Base tx hash.
+
+---
+
+Reply **"go"** to build (~8–10 credits). Or say "EVM only first" to stay closer to 6.
