@@ -1,4 +1,15 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { Resvg, initWasm } from "https://esm.sh/@resvg/[email protected]";
+
+let wasmReady: Promise<void> | null = null;
+function ensureWasm() {
+  if (!wasmReady) {
+    wasmReady = fetch("https://esm.sh/@resvg/[email protected]/index_bg.wasm")
+      .then((r) => r.arrayBuffer())
+      .then((b) => initWasm(b));
+  }
+  return wasmReady;
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
