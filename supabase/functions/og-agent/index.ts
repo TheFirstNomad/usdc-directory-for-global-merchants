@@ -1,13 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-// Build URLs at runtime so the literal package@version string is not mangled by editor filters.
-const RESVG_BASE = "https://esm.sh/" + "@resvg/resvg-wasm" + "@" + "2.6.2";
-// @ts-ignore dynamic import
-const { Resvg, initWasm } = await import(RESVG_BASE);
+import { Resvg, initWasm } from "https://esm.sh/@resvg/resvg-wasm";
 
 let wasmReady: Promise<void> | null = null;
 function ensureWasm() {
   if (!wasmReady) {
-    wasmReady = fetch(RESVG_BASE + "/index_bg.wasm")
+    wasmReady = fetch("https://esm.sh/@resvg/resvg-wasm/index_bg.wasm")
       .then((r) => r.arrayBuffer())
       .then((b) => initWasm(b));
   }
