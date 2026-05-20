@@ -9,33 +9,25 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORIES, CATEGORY_EMOJIS, REGIONS, REGION_FLAGS } from "@/lib/partners";
-import { CheckCircle2, ArrowRight, ArrowLeft, Upload, Eye, Zap, Clock, Loader2 } from "lucide-react";
-import { useAppKitAccount, useAppKit } from "@reown/appkit/react";
-
+import { CheckCircle2, ArrowRight, ArrowLeft, Upload, Eye } from "lucide-react";
+import { useAppKitAccount } from "@reown/appkit/react";
 
 const STEPS = [
   { title: "Business Info", description: "Tell us about your business" },
   { title: "Location", description: "Where are your customers?" },
   { title: "Preview", description: "Review your listing" },
-  { title: "Choose Tier", description: "Free review queue or instant paid listing" },
-  { title: "Submit", description: "" },
+  { title: "Pay & List", description: "5 USDC on any chain" },
 ];
 
 const PRESENCE_TYPES = ["Online Only", "Physical Locations", "Both"];
-
-type Tier = "free" | "paid";
 
 const Submit = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const { address, isConnected } = useAppKitAccount();
-  const { open } = useAppKit();
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(searchParams.get("success") === "true");
   const [orderId, setOrderId] = useState(searchParams.get("order") || "");
-  const [tier, setTier] = useState<Tier>("free");
-  const [submittedTier, setSubmittedTier] = useState<Tier>("paid");
-  const [submittingFree, setSubmittingFree] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [form, setForm] = useState({
@@ -82,10 +74,7 @@ const Submit = () => {
       const fd = new FormData();
       fd.append("file", form.logo_file);
       fd.append("wallet_address", address);
-      const res = await fetch(`${supabaseUrl}/functions/v1/upload-logo`, {
-        method: "POST",
-        body: fd,
-      });
+      const res = await fetch(`${supabaseUrl}/functions/v1/upload-logo`, { method: "POST", body: fd });
       if (!res.ok) throw new Error("Upload failed");
       const data = await res.json();
       setLogoUrl(data.url);
@@ -93,16 +82,15 @@ const Submit = () => {
     } catch {
       toast({ title: "Logo upload failed", variant: "destructive" });
       return null;
-    } finally {
-      setUploadingLogo(false);
-    }
+    } finally { setUploadingLogo(false); }
   };
 
   const nextStep = async () => {
     if (!validateStep()) return;
     if (step === 0 && form.logo_file && !logoUrl) {
       if (!isConnected) {
-        toast({ title: "Please connect wallet to upload logo", variant: "destructive" });
+        // logo upload requires a wallet for storage path; let users skip and add later if needed
+        toast({ title: "Connect wallet to upload a logo, or skip it for now", variant: "destructive" });
         return;
       }
       await uploadLogo();
@@ -110,44 +98,11 @@ const Submit = () => {
     if (step < STEPS.length - 1) setStep(step + 1);
   };
 
-  const prevStep = () => {
-    if (step > 0) setStep(step - 1);
-  };
+  const prevStep = () => { if (step > 0) setStep(step - 1); };
 
   const handlePaymentSuccess = (txHash: string) => {
     setOrderId(txHash);
-    setSubmittedTier("paid");
     setSubmitted(true);
-  };
-
-  const handleFreeSubmit = async () => {
-    if (!isConnected || !address) {
-      toast({ title: "Connect your wallet to submit", variant: "destructive" });
-      open();
-      return;
-    }
-    setSubmittingFree(true);
-    try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || `https://${projectId}.supabase.co`;
-      const res = await fetch(`${supabaseUrl}/functions/v1/submit-free-listing`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          wallet_address: address,
-          data: submissionData,
-        }),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error || "Submission failed");
-      setOrderId(body.partner_id);
-      setSubmittedTier("free");
-      setSubmitted(true);
-    } catch (err) {
-      toast({ title: "Submission failed", description: (err as Error).message, variant: "destructive" });
-    } finally {
-      setSubmittingFree(false);
-    }
   };
 
   const submissionData = {
@@ -161,28 +116,21 @@ const Submit = () => {
   };
 
   if (submitted) {
-    const isFree = submittedTier === "free";
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <SEO title={isFree ? "Submitted for Review" : "Listed Successfully"} description="Your business has been submitted to USDC Directory." path="/submit" />
+        <SEO title="Listed Successfully" description="Your business is now in USDC Directory." path="/submit" />
         <Header />
         <main className="flex-1 flex items-center justify-center px-6 py-20">
           <div className="max-w-md text-center">
-            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${isFree ? "bg-primary/10" : "bg-success/10"}`}>
-              {isFree ? <Clock className="h-10 w-10 text-primary" /> : <CheckCircle2 className="h-10 w-10 text-success" />}
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-success/10">
+              <CheckCircle2 className="h-10 w-10 text-success" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-3">
-              {isFree ? "✅ Submitted for Review" : "🎉 Payment Submitted!"}
-            </h1>
+            <h1 className="text-2xl font-bold text-foreground mb-3">🎉 Listed Successfully!</h1>
             <p className="text-muted-foreground mb-4">
-              {isFree
-                ? "Thanks! Your listing is in our admin review queue. We'll publish approved listings within 1–3 business days."
-                : "Thanks! Your payment has been received and your submission is now in the priority review queue. An admin will approve it shortly (typically within hours)."}
+              Your 5 USDC payment was verified on-chain and your listing is now live in the global USDC Directory.
             </p>
             {orderId && (
-              <p className="text-xs text-muted-foreground font-mono break-all mb-6">
-                {isFree ? "Submission ID" : "Order"}: {orderId}
-              </p>
+              <p className="text-xs text-muted-foreground font-mono break-all mb-6">Tx: {orderId}</p>
             )}
             <a href="/" className="text-primary text-sm font-medium hover:underline">← Back to Directory</a>
           </div>
@@ -194,20 +142,23 @@ const Submit = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <SEO title="List Your Business — Free or 10 USDC" description="Add your business to the USDC Directory. Free with admin review or 10 USDC for instant listing." path="/submit" />
+      <SEO
+        title="List Your Business — 5 USDC, Any Chain"
+        description="Self-list on USDC Directory for 5 USDC. Pay on Base, Ethereum, Arbitrum, Optimism, Polygon, BNB, Linea, Solana, Sui, or Near."
+        path="/submit"
+      />
       <Header />
 
       <section className="bg-gradient-to-b from-primary/5 to-background py-14 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-3xl md:text-4xl font-extrabold text-foreground mb-3">List Your Business</h1>
           <p className="text-muted-foreground text-base max-w-xl mx-auto">
-            Get discovered by thousands of USDC users worldwide. <span className="font-semibold text-foreground">Free with admin review</span> or <span className="font-semibold text-foreground">10 USDC for instant listing</span>.
+            <span className="font-semibold text-foreground">5 USDC, any chain.</span> Pay on Base, Ethereum, Arbitrum, Optimism, Polygon, BNB, Linea — or Solana, Sui, Near. Listings publish instantly after on-chain verification.
           </p>
         </div>
       </section>
 
       <main className="flex-1 max-w-xl mx-auto w-full px-6 py-10">
-        {/* Step indicators */}
         <div className="flex items-center justify-between mb-8">
           {STEPS.map((s, i) => (
             <div key={i} className="flex items-center">
@@ -229,7 +180,6 @@ const Submit = () => {
         </div>
 
         <div>
-          {/* Step 0: Business Info */}
           {step === 0 && (
             <div className="space-y-4">
               <div>
@@ -245,20 +195,16 @@ const Submit = () => {
                 <Input id="submit-website" type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://yourcompany.com (optional)" maxLength={255} />
               </div>
               <div>
-                <label htmlFor="submit-country-region" className="block text-sm font-medium text-foreground mb-1.5">Country / Region</label>
-                <Input id="submit-country-region" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="e.g. United States, Nigeria (optional)" maxLength={100} />
-              </div>
-              <div>
                 <label htmlFor="submit-description" className="block text-sm font-medium text-foreground mb-1.5">Description *</label>
                 <Textarea id="submit-description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Briefly describe what your business does…" rows={3} maxLength={1000} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Logo (PNG, JPG, JPEG, SVG, WebP recommended)</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Logo (PNG, JPG, SVG, WebP)</label>
                 <div className="flex items-center gap-3">
                   <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card cursor-pointer hover:bg-muted transition-colors text-sm text-muted-foreground">
                     <Upload className="h-4 w-4" />
                     {form.logo_file ? form.logo_file.name : "Upload logo"}
-                    <input type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp" className="hidden" onChange={(e) => {
+                    <input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" className="hidden" onChange={(e) => {
                       const file = e.target.files?.[0];
                       const allowedTypes = ["image/png", "image/jpeg", "image/svg+xml", "image/webp"];
                       if (file && allowedTypes.includes(file.type)) {
@@ -271,7 +217,6 @@ const Submit = () => {
                   </label>
                   {uploadingLogo && <span className="text-xs text-muted-foreground">Uploading…</span>}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Recommended: 512×512px or larger, transparent background preferred</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Categories *</label>
@@ -288,7 +233,6 @@ const Submit = () => {
             </div>
           )}
 
-          {/* Step 1: Location */}
           {step === 1 && (
             <div className="space-y-4">
               <div>
@@ -297,9 +241,7 @@ const Submit = () => {
                   {PRESENCE_TYPES.map((pt) => (
                     <button key={pt} type="button" onClick={() => setForm({ ...form, presence_type: pt })} className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
                       form.presence_type === pt ? "bg-primary/10 border-primary text-primary" : "border-border text-muted-foreground hover:border-primary/40"
-                    }`}>
-                      {pt}
-                    </button>
+                    }`}>{pt}</button>
                   ))}
                 </div>
               </div>
@@ -309,9 +251,7 @@ const Submit = () => {
                   {REGIONS.map((r) => (
                     <button key={r} type="button" onClick={() => setForm({ ...form, region: r })} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                       form.region === r ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
-                    }`}>
-                      {REGION_FLAGS[r] || "📍"} {r}
-                    </button>
+                    }`}>{REGION_FLAGS[r] || "📍"} {r}</button>
                   ))}
                 </div>
               </div>
@@ -330,7 +270,6 @@ const Submit = () => {
             </div>
           )}
 
-          {/* Step 2: Preview */}
           {step === 2 && (
             <div className="space-y-6">
               <div className="bg-card border border-border rounded-2xl p-6">
@@ -355,120 +294,25 @@ const Submit = () => {
                   <p className="text-xs text-muted-foreground">📍 {REGION_FLAGS[form.region] || "📍"} {form.region}</p>
                 )}
               </div>
-
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
                 <Eye className="h-5 w-5 text-primary mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">This is how your listing will appear. Continue to choose a tier.</p>
+                <p className="text-sm text-muted-foreground">This is how your listing will appear. Continue to pay 5 USDC.</p>
               </div>
             </div>
           )}
 
-          {/* Step 3: Choose Tier */}
           {step === 3 && (
-            <div className="space-y-4">
-              <button
-                type="button"
-                onClick={() => setTier("free")}
-                className={`w-full text-left p-5 rounded-2xl border-2 transition-all ${tier === "free" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Clock className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-foreground">Free</h3>
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">Admin review</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">Submit at no cost. Our team reviews and approves quality listings within 1–3 business days.</p>
-                    <ul className="text-xs text-muted-foreground space-y-0.5">
-                      <li>✓ No payment required</li>
-                      <li>✓ Same listing features once approved</li>
-                      <li>✗ Manual review (1–3 days)</li>
-                    </ul>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setTier("paid")}
-                className={`w-full text-left p-5 rounded-2xl border-2 transition-all ${tier === "paid" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-[hsl(275,80%,55%)] flex items-center justify-center flex-shrink-0">
-                    <Zap className="h-5 w-5 text-primary-foreground" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-foreground">Priority — 10 USDC</h3>
-                      <span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full font-medium">Fast-tracked review</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">Pay 10 USDC and your submission jumps to the front of the admin review queue (typically reviewed within hours).</p>
-                    <ul className="text-xs text-muted-foreground space-y-0.5">
-                      <li>✓ Priority admin review</li>
-                      <li>✓ Eligible for homepage featuring</li>
-                      <li>✓ Permanent listing once approved</li>
-                    </ul>
-                  </div>
-                </div>
-              </button>
-            </div>
-          )}
-
-          {/* Step 4: Submit (free or paid) */}
-          {step === 4 && tier === "paid" && (
             <div className="space-y-6">
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
-                <ArcPaymentPanel
-                  type="listing"
-                  submissionData={submissionData}
-                  onSuccess={handlePaymentSuccess}
-                />
+                <ArcPaymentPanel type="listing" submissionData={submissionData} onSuccess={handlePaymentSuccess} />
               </div>
               <div className="bg-card border border-border rounded-xl p-4">
                 <h4 className="font-semibold text-foreground text-sm mb-2">What you get:</h4>
                 <ul className="space-y-1.5 text-sm text-muted-foreground">
-                  <li>✅ Permanent listing in the global directory once approved</li>
+                  <li>✅ Instant listing once 5 USDC payment is verified on-chain</li>
                   <li>✅ Searchable by category, region, and network</li>
-                  <li>✅ Eligible for homepage featuring</li>
-                  <li>✅ Priority admin review (typically within hours)</li>
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {step === 4 && tier === "free" && (
-            <div className="space-y-6">
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 text-center">
-                <Clock className="h-8 w-8 text-primary mx-auto mb-3" />
-                <h3 className="text-lg font-bold text-foreground mb-2">Submit for Free Review</h3>
-                <p className="text-sm text-muted-foreground mb-5">
-                  Your listing will join the admin review queue. We'll notify you on-chain (via your connected wallet) once it's approved and live.
-                </p>
-                {!isConnected ? (
-                  <Button onClick={() => open()} className="bg-gradient-to-r from-primary to-[hsl(275,80%,55%)] text-primary-foreground font-semibold w-full">
-                    Connect Wallet to Submit
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleFreeSubmit}
-                    disabled={submittingFree}
-                    className="bg-primary text-primary-foreground font-semibold w-full"
-                  >
-                    {submittingFree ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting…</> : "Submit for Review"}
-                  </Button>
-                )}
-                <p className="text-xs text-muted-foreground mt-3">
-                  Wallet: {address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "not connected"}
-                </p>
-              </div>
-              <div className="bg-card border border-border rounded-xl p-4">
-                <h4 className="font-semibold text-foreground text-sm mb-2">Review guidelines</h4>
-                <ul className="space-y-1.5 text-sm text-muted-foreground">
-                  <li>✅ Real, operational businesses accepting USDC</li>
-                  <li>✅ Clear description and a working website</li>
-                  <li>❌ No spam, scams, or duplicate submissions</li>
+                  <li>✅ Eligible for homepage featuring & boost</li>
+                  <li>✅ Discoverable to AI agents via paid x402 API</li>
                 </ul>
               </div>
             </div>
