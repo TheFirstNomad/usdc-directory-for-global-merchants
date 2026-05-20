@@ -1,4 +1,15 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { Resvg, initWasm } from "https://esm.sh/@resvg/resvg-wasm";
+
+let wasmReady: Promise<void> | null = null;
+function ensureWasm() {
+  if (!wasmReady) {
+    wasmReady = fetch("https://esm.sh/@resvg/resvg-wasm/index_bg.wasm")
+      .then((r) => r.arrayBuffer())
+      .then((b) => initWasm(b));
+  }
+  return wasmReady;
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -79,10 +90,26 @@ Deno.serve(async (req) => {
   <text x="1120" y="592" font-family="system-ui, sans-serif" font-size="28" fill="#5cbdff" text-anchor="end" font-weight="700">Score ${score}</text>
 </svg>`;
 
-    return new Response(svg, {
+    const wantsSvg = url.searchParams.get("format") === "svg";
+    if (wantsSvg) {
+      return new Response(svg, {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "image/svg+xml; charset=utf-8",
+          "Cache-Control": "public, max-age=3600, s-maxage=86400",
+        },
+      });
+    }
+
+    await ensureWasm();
+    const png = new Resvg(svg, { fitTo: { mode: "width", value: 1200 } })
+      .render()
+      .asPng();
+
+    return new Response(png, {
       headers: {
         ...corsHeaders,
-        "Content-Type": "image/svg+xml; charset=utf-8",
+        "Content-Type": "image/png",
         "Cache-Control": "public, max-age=3600, s-maxage=86400",
       },
     });
