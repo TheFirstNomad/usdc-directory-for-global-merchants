@@ -130,7 +130,7 @@ Docs → ${SITE}/api-docs
 #x402 #AIagents #USDC #Base
 `);
 
-console.log("🟪 Farcaster — run: bun run scripts/cast-farcaster.ts\n");
+console.log("🟪 Farcaster — paste-ready copy in scripts/farcaster-copy.md\n");
 
 console.log(`=== Done ===\n${allOk ? "✅ All public URLs reachable. Crawlers can index." : "❌ Some URLs failed — fix before broadcasting."}\n`);
 process.exit(allOk ? 0 : 1);
