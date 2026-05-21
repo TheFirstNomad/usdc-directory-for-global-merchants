@@ -42,30 +42,74 @@ type ChainCfg = {
 
 const CHAINS: Record<number, ChainCfg> = {
   8453: {
-    id: 8453,
-    name: "Base Mainnet",
-    network: "base",
+    id: 8453, name: "Base Mainnet", network: "base",
     rpc: "https://mainnet.base.org",
     usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     explorer: "https://basescan.org",
   },
-  5042002: {
-    id: 5042002,
-    name: "Arc Testnet",
-    network: "arc-testnet",
-    rpc: "https://rpc.testnet.arc.network",
-    usdc: "0x75faF114eafb1BDbe2F0316DF893fd58CE46AA4d",
-    explorer: "https://testnet.arcscan.app",
+  1: {
+    id: 1, name: "Ethereum", network: "ethereum",
+    rpc: "https://ethereum-rpc.publicnode.com",
+    usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    explorer: "https://etherscan.io",
+  },
+  42161: {
+    id: 42161, name: "Arbitrum One", network: "arbitrum",
+    rpc: "https://arb1.arbitrum.io/rpc",
+    usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    explorer: "https://arbiscan.io",
+  },
+  10: {
+    id: 10, name: "Optimism", network: "optimism",
+    rpc: "https://mainnet.optimism.io",
+    usdc: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+    explorer: "https://optimistic.etherscan.io",
+  },
+  137: {
+    id: 137, name: "Polygon", network: "polygon",
+    rpc: "https://polygon-rpc.com",
+    usdc: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+    explorer: "https://polygonscan.com",
+  },
+  43114: {
+    id: 43114, name: "Avalanche", network: "avalanche",
+    rpc: "https://api.avax.network/ext/bc/C/rpc",
+    usdc: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+    explorer: "https://snowtrace.io",
+  },
+  56: {
+    id: 56, name: "BNB Chain", network: "bnb",
+    rpc: "https://bsc-dataseed.binance.org",
+    usdc: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+    explorer: "https://bscscan.com",
+  },
+  59144: {
+    id: 59144, name: "Linea", network: "linea",
+    rpc: "https://rpc.linea.build",
+    usdc: "0x176211869cA2b568f2A7D4EE941E073a821EE1ff",
+    explorer: "https://lineascan.build",
   },
   11155111: {
-    id: 11155111,
-    name: "Ethereum Sepolia",
-    network: "sepolia",
+    id: 11155111, name: "Ethereum Sepolia", network: "sepolia",
     rpc: "https://ethereum-sepolia-rpc.publicnode.com",
     usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
     explorer: "https://sepolia.etherscan.io",
   },
 };
+
+// Chains where USDC supports EIP-3009 transferWithAuthorization (native x402 "exact" scheme).
+// Other EVM chains use the alternative on-chain pay-then-submit-tx path.
+const X402_NATIVE_CHAIN_IDS = [8453, 1, 42161, 10, 137, 43114];
+
+// Non-EVM treasuries — agents pay on their native chain, then submit tx hash.
+const NON_EVM_CHAINS = [
+  { key: "solana", family: "solana", treasury: "4RsopWwQuDLjNC4AdCd3Uzq7w58i9FoE69EgNTB3d4Be",
+    usdc: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+  { key: "sui", family: "sui", treasury: "0xa15979dcd7429463cdf01aae184cb32e33fcf15d3e46067238ccc384115f9979",
+    usdc: "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC" },
+  { key: "near", family: "near", treasury: "b63a64053204d89290b73e3dbdce660a2f29d211cd1c400f4a499ac165f98171",
+    usdc: "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1" },
+];
 
 const ERC20_TRANSFER_ABI = parseAbi([
   "event Transfer(address indexed from, address indexed to, uint256 value)",
@@ -79,14 +123,14 @@ function json(body: unknown, status = 200, extra: Record<string, string> = {}) {
 }
 
 function buildAccepts(amount: bigint, resource: string) {
-  return [8453, 5042002, 11155111].map((id) => {
+  return X402_NATIVE_CHAIN_IDS.map((id) => {
     const c = CHAINS[id];
     return {
       scheme: "exact",
       network: c.network,
       maxAmountRequired: amount.toString(),
       resource,
-      description: "USDC Directory paid endpoint",
+      description: "USDC Directory paid endpoint — 5 USDC self-listing",
       mimeType: "application/json",
       payTo: TREASURY,
       maxTimeoutSeconds: 60,
@@ -104,15 +148,18 @@ function require402(amount: bigint, resource: string, error?: string) {
       accepts: buildAccepts(amount, resource),
       alternative: {
         description:
-          "Pay USDC on-chain to treasury and resend with X-Payment-TxHash + X-Payment-Chain headers.",
+          "Pay USDC to the listed treasury on any supported chain (EVM, Solana, Sui, or Near), then resend with X-Payment-TxHash + X-Payment-Chain headers.",
         treasury: TREASURY,
-        chains: Object.values(CHAINS).map((c) => ({
-          chainId: c.id,
-          name: c.name,
-          usdc: c.usdc,
-        })),
+        chains: [
+          ...Object.values(CHAINS).map((c) => ({
+            chainId: c.id, key: c.network, family: "evm",
+            name: c.name, treasury: TREASURY, usdc: c.usdc,
+          })),
+          ...NON_EVM_CHAINS,
+        ],
       },
     },
+
     402,
   );
 }
