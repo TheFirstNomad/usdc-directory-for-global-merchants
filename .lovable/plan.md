@@ -1,72 +1,56 @@
+## Goal
 
-# Open paid self-listing to every chain — EVM + Solana + Sui + Near
+After you approve, you want to cast on Farcaster so Base AI agents, x402 indexers, and MCP crawlers discover USDC Directory and self-list for 5 USDC.
 
-## Credit estimate (read before approving)
-**~8–10 build credits total.** Drop the broadcast script to save ~1. Ship EVM-only first to save ~2.
+## Reality check on the previous broadcast script
 
----
+The old `scripts/broadcast-manifest.ts` pinged invented endpoints (x402 Bazaar `/api/register`, MCP Hub `/api/discover`, Smithery `/api/servers/submit`, `crawler.agents.json`, Google/Bing sitemap pings). **None of those public POST APIs exist** — they all 404. There is nothing to "fix" by retrying; the registries don't accept anonymous programmatic submissions as of May 2026.
 
-## 1. Kill free listings
-- Remove the "Free" tab from `src/pages/Submit.tsx` and `src/pages/SubmitAIAgent.tsx`.
-- `supabase/functions/submit-free-listing/index.ts` → return `410 Gone`.
-- Migration: mark the pending "Quantum Consultation" row `payment_status='rejected'`.
+What actually drives discovery:
+1. **Passive crawl** — already live at `/.well-known/x402`, `/.well-known/agents.json`, `/openapi.json`, `/llms.txt`, `sitemap.xml`. Agent crawlers (GPTBot, ClaudeBot, Perplexity, agents.json bot, x402 indexers) follow these automatically.
+2. **Farcaster cast** — the one channel that has a real public API and where Base/Coinbase agent builders live. This is your highest-leverage action.
+3. **Manual form submissions** — Smithery, Pulse MCP, MCP Hub, x402 Bazaar (GitHub issue). One-time, takes ~5 min each.
 
-## 2. Fee = 5 USDC, payable on ANY chain
+## Plan
 
-### Native x402 (gasless, EIP-3009)
-- **Base Mainnet only** — this is the only chain where our facilitator can settle a signed authorization. Stays as the premium fast-path.
-- Sepolia + Arc Testnet kept for testing.
+### Step 1 — Replace `scripts/broadcast-manifest.ts` with an honest health-check + submission helper
+- HEAD-checks our 6 public manifest URLs and prints a green/red table (so you can confirm crawlers can reach them).
+- Prints the exact submission URLs + pre-filled payload text for Smithery / Pulse MCP / MCP Hub / x402 Bazaar / AgentDirectory so you (or I) can paste them into the forms in the browser.
+- No more fake API calls.
 
-### Alternative-payment path = every other chain (this is what makes the money)
-Agent pays USDC on their own chain → sends us the tx hash + chain id → backend verifies on-chain transfer ≥ 5 USDC to treasury → listing inserted. Zero gas for us, zero bridging for them.
+### Step 2 — New `scripts/cast-farcaster.ts` (the part you actually want)
+Programmatic Farcaster cast via the **Neynar API** (standard public Farcaster API). The script will:
+- Read `NEYNAR_API_KEY` and `NEYNAR_SIGNER_UUID` from Lovable Cloud secrets.
+- POST to `https://api.neynar.com/v2/farcaster/cast` with launch copy targeted at agent builders:
 
-**EVM mainnets accepted** (native or bridged USDC, allow-listed contracts):
-Base · Ethereum · Arbitrum · Optimism · Polygon · Avalanche · BNB Chain (Binance-Peg USDC) · Linea · Monad · Mantle · Berachain. Any EVM agent with any wallet can pay — no gatekeeping.
+  > 🤖 USDC Directory is now open for autonomous agent self-listing.
+  > Any AI agent with a wallet can list itself for 5 USDC on Base, Ethereum, Arbitrum, OP, Polygon, Avalanche, BNB, Linea, Monad, Solana, Sui, or Near.
+  > Native x402 (gasless EIP-3009) on Base.
+  > Manifest → https://usdc.directory/.well-known/x402
+  > Docs → https://usdc.directory/api-docs
 
-**Non-EVM mainnets accepted** (new treasuries):
-| Chain  | Treasury |
-|--------|----------|
-| Solana | `4RsopWwQuDLjNC4AdCd3Uzq7w58i9FoE69EgNTB3d4Be` |
-| Sui    | `0xa15979dcd7429463cdf01aae184cb32e33fcf15d3e46067238ccc384115f9979` |
-| Near   | `b63a64053204d89290b73e3dbdce660a2f29d211cd1c400f4a499ac165f98171` |
+- Embeds: `https://usdc.directory/.well-known/x402` and `https://usdc.directory/api-docs` (so Warpcast shows rich previews).
+- Posts into relevant channels: `/base`, `/ai-agents`, `/x402` (configurable).
+- Prints the resulting cast hash + Warpcast URL so you can click and see it live.
+- `--dry-run` flag prints the payload without posting.
 
-Verifiers (pure JSON-RPC, no SDK bloat):
-- **Solana** — `getTransaction` on public RPC, assert SPL Transfer of USDC mint `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` to treasury ATA, ≥ 5_000_000.
-- **Sui** — `sui_getTransactionBlock`, assert balance change ≥ 5_000_000 USDC to treasury.
-- **Near** — RPC `tx <hash>`, assert `ft_transfer` on `17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1` to treasury ≥ "5000000".
+### Step 3 — What I need from you before Step 2 can run
+Two secrets, both free, from neynar.com:
+1. **`NEYNAR_API_KEY`** — sign up at https://neynar.com (free tier is enough), grab the API key from the dashboard.
+2. **`NEYNAR_SIGNER_UUID`** — in Neynar dashboard create a "signer" tied to the Farcaster account you want to cast from (your account or a brand account), approve it once from Warpcast on your phone, copy the signer UUID.
 
-## 3. Submit page UI (`ArcPaymentPanel.tsx`)
-- `fee = "5"` everywhere.
-- Chain picker shows ~14 mainnets (EVM + Solana + Sui + Near).
-- EVM path: wagmi `switchChainAsync` + USDC `transfer(treasury, 5e6)`.
-- Solana/Sui/Near path: show treasury address + QR + "Paste tx hash" field → backend verifies.
-- Arc Testnet hidden from listing picker.
+Once you tell me you're ready, I'll trigger Lovable Cloud's secure secret-entry form for both values, then run the script and paste the resulting cast link back to you.
 
-## 4. Swap & Bridge — unchanged
-Base + Arc only. Notice on `/submit` when wallet is Arc Testnet: *"Arc Testnet is for swap & bridge demos. Listings require a mainnet — pay 5 USDC on any chain, including Solana, Sui, Near."*
+### Why Neynar and not X/Twitter
+X's API requires a paid tier + OAuth1.0a app setup — not worth it for one post. I'll print ready-to-paste X copy in the broadcast script so you can post it manually in 10 seconds.
 
-## 5. Manifest broadcast (the magnet)
-Update `public/.well-known/x402`, `agents.json`, `openapi.json`, `llms.txt`, `robots.txt`:
-- `accepts` array: Base entry stays native x402 (`scheme: "exact"`); all other chains listed under `alternative_payment.chains` with their treasury + USDC contract.
-- Listing price → `5000000`.
-- Description: *"Self-list on any chain — EVM, Solana, Sui, or Near — for 5 USDC."*
+## Files touched
+- `scripts/broadcast-manifest.ts` — rewritten (no fake APIs)
+- `scripts/cast-farcaster.ts` — new
+- No `src/` or `supabase/` changes
 
-`scripts/broadcast-manifest.ts` pings:
-- x402 Bazaar
-- MCP Hub, Smithery.ai, Pulse MCP
-- AgentDirectory.org
-- agents.json crawler
-- Google Indexing API (existing GSC connector) + sitemap resubmit
-- Returns draft Twitter/Farcaster post
+## Out of scope
+- Auto-posting to X/Twitter (manual paste instead)
+- Building a UI for casting — these are one-shot scripts run from chat
 
-CTA card on `/ai-agents`: *"Agents — self-list for 5 USDC on any chain"* → links to `/api-docs`.
-
-## 6. Verification
-- `curl /.well-known/x402` → price 5000000, all chains listed.
-- Submit picker shows all chains; Arc Testnet hidden.
-- Quantum row rejected.
-- One real test row inserted with Base tx hash.
-
----
-
-Reply **"go"** to build (~8–10 credits). Or say "EVM only first" to stay closer to 6.
+Approve and I'll build both scripts, then ask you for the two Neynar secrets so we can fire the cast.
