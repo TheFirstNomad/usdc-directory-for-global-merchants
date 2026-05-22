@@ -47,6 +47,24 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_sig_nonces: {
+        Row: {
+          admin_address: string
+          signature: string
+          used_at: string
+        }
+        Insert: {
+          admin_address: string
+          signature: string
+          used_at?: string
+        }
+        Update: {
+          admin_address?: string
+          signature?: string
+          used_at?: string
+        }
+        Relationships: []
+      }
       agent_api_payments: {
         Row: {
           agent_wallet: string | null
@@ -426,6 +444,9 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_admin_sig_nonces: { Args: never; Returns: undefined }
+      cleanup_agent_rate_limits: { Args: never; Returns: undefined }
+      cleanup_deployment_checks: { Args: never; Returns: undefined }
       get_my_listings: {
         Args: { _wallet_address: string }
         Returns: {
