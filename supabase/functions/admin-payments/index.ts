@@ -25,8 +25,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+
+
 
     // DELETE handler
     if (req.method === "DELETE") {
