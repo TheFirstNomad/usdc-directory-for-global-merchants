@@ -3,13 +3,11 @@
  * the browser, bypassing CORS restrictions the Circle API imposes on
  * custom domains.
  *
- * Accepts:
- *   POST /circle-proxy
- *   Body: { method: "GET"|"POST", path: string, body?: object, headers?: object }
- *
- * The function injects the stored ARC_KIT_KEY as the Bearer token and
- * forwards the request server-side.
+ * Hardened: requires a valid Supabase JWT so anonymous internet traffic can't
+ * burn our ARC_KIT_KEY quota or use us as a generic Circle proxy. Path is
+ * locked to /v1/stablecoinKits/*.
  */
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,9 +17,35 @@ const corsHeaders = {
 const CIRCLE_BASE = "https://api.circle.com";
 
 Deno.serve(async (req) => {
-  // CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  // Auth: require a Supabase JWT (anon or signed-in). Browser clients always
+  // send one; raw curl from the open internet does not.
+  const authHeader = req.headers.get("Authorization") || "";
+  if (!authHeader.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  try {
+    const sb = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const token = authHeader.slice("Bearer ".length);
+    const { data, error } = await sb.auth.getClaims(token);
+    if (error || !data?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  } catch {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
@@ -41,15 +65,7 @@ Deno.serve(async (req) => {
       headers?: Record<string, string>;
     };
 
-    if (!path || !path.startsWith("/")) {
-      return new Response(
-        JSON.stringify({ error: "Invalid path — must start with /" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    // Only allow stablecoinKits endpoints
-    if (!path.startsWith("/v1/stablecoinKits/")) {
+    if (!path || typeof path !== "string" || !path.startsWith("/v1/stablecoinKits/")) {
       return new Response(
         JSON.stringify({ error: "Only /v1/stablecoinKits/* endpoints are allowed" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -66,14 +82,16 @@ Deno.serve(async (req) => {
         ...(extraHeaders ?? {}),
       },
     };
-
     if (method.toUpperCase() !== "GET" && body !== undefined) {
       fetchInit.body = JSON.stringify(body);
     }
 
-    console.log(`[circle-proxy] ${method} ${targetUrl}`);
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 15_000);
+    fetchInit.signal = ac.signal;
 
     const upstream = await fetch(targetUrl, fetchInit);
+    clearTimeout(timer);
     const responseBody = await upstream.text();
 
     return new Response(responseBody, {

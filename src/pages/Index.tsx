@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { SearchX, LayoutGrid, Map as MapIcon, ArrowUpDown, Bot } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
@@ -21,15 +22,14 @@ const Index = () => {
   const [selectedNetworks, setSelectedNetworks] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [sortBy, setSortBy] = useState<"name" | "newest" | "score">("newest");
-  const [partners, setPartners] = useState<Partner[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchPartners().then((data) => {
-      setPartners(data);
-      setLoading(false);
-    });
-  }, []);
+  // React Query caches partners across routes so revisits are instant.
+  const { data: partners = [], isLoading: loading } = useQuery<Partner[]>({
+    queryKey: ["partners"],
+    queryFn: fetchPartners,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
 
   const uniquePartners = useMemo(() => {
     return Array.from(

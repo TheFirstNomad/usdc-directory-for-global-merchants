@@ -81,8 +81,11 @@ const PartnerCard = forwardRef<HTMLDivElement, { partner: Partner; index: number
           <img
             src={logoUrl}
             alt={`${partner.name} logo`}
+            width={96}
+            height={96}
             className="h-24 w-24 object-contain rounded-xl bg-card p-2 shadow-md group-hover:scale-110 transition-transform duration-500"
             loading="lazy"
+            decoding="async"
             onError={(e) => {
               e.currentTarget.src = isAIAgent
                 ? `${BOT_LOGO}${encodeURIComponent(partner.name)}`

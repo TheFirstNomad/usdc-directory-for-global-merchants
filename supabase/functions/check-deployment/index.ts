@@ -1,5 +1,9 @@
 // Fetches a target URL server-side, checks whether the HTML mounts a React app,
 // and persists the result to public.deployment_checks.
+//
+// SSRF-hardened: only public, hard-coded hosts are allowed. Arbitrary URLs are
+// rejected so the function cannot be used as a request-forwarder against the
+// internal Supabase / cloud network.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -10,6 +14,37 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+const ALLOWED_HOST_SUFFIXES = [
+  "usdc.directory",
+  "www.usdc.directory",
+  ".lovable.app",
+  ".lovable.dev",
+];
+
+function isAllowedUrl(raw: string): boolean {
+  let u: URL;
+  try { u = new URL(raw); } catch { return false; }
+  if (u.protocol !== "https:" && u.protocol !== "http:") return false;
+  const host = u.hostname.toLowerCase();
+  // Block private/loopback hostnames defensively.
+  if (
+    host === "localhost" ||
+    host.endsWith(".local") ||
+    host.endsWith(".internal") ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+    /^127\./.test(host) ||
+    /^169\.254\./.test(host) ||
+    /^::1$/.test(host) ||
+    /^fc00:/i.test(host) ||
+    /^fe80:/i.test(host)
+  ) return false;
+  return ALLOWED_HOST_SUFFIXES.some((s) =>
+    s.startsWith(".") ? host.endsWith(s) : host === s,
+  );
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -23,10 +58,22 @@ Deno.serve(async (req) => {
       if (body?.url && typeof body.url === "string") target = body.url;
     }
 
+    if (!isAllowedUrl(target)) {
+      return new Response(
+        JSON.stringify({ error: "URL not in allowlist" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Bound the upstream request so a slow target can't hold the isolate open.
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 8_000);
     const res = await fetch(target, {
       headers: { "User-Agent": "Mozilla/5.0 (DeploymentStatusBot)" },
       redirect: "follow",
+      signal: ac.signal,
     });
+    clearTimeout(timer);
     const html = await res.text();
     const durationMs = Date.now() - startedAt;
 
@@ -54,10 +101,12 @@ Deno.serve(async (req) => {
       error,
     };
 
-    // Persist to DB (service role bypasses RLS)
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
     const { error: insertError } = await supabase.from("deployment_checks").insert(record);
     if (insertError) console.error("Insert failed:", insertError.message);
+
+    // Opportunistic cleanup of old rows (caps table growth).
+    supabase.rpc("cleanup_deployment_checks").then(() => {}).catch(() => {});
 
     return new Response(
       JSON.stringify({

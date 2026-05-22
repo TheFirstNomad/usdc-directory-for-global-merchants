@@ -32,8 +32,11 @@ const FeaturedCarousel = ({ partners }: { partners: Partner[] }) => {
                 <img
                   src={logoUrl}
                   alt={`${p.name} logo`}
+                  width={40}
+                  height={40}
                   className="w-10 h-10 object-contain rounded-lg bg-card p-1 shadow-sm group-hover:scale-105 transition-transform"
                   loading="lazy"
+                  decoding="async"
                   onError={(e) => {
                     e.currentTarget.src = "https://cryptologos.cc/logos/usd-coin-usdc-logo.png";
                   }}

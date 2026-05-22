@@ -1,5 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { recoverMessageAddress } from "npm:viem@2.21.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { verifyAdmin } from "../_shared/admin-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,52 +8,22 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
 };
 
-const OWNER_WALLET = "0x13FA78ab20762c8F49B58D44DBc177a2Adb94D7c".toLowerCase();
-const MAX_AGE_MS = 5 * 60 * 1000;
-
-async function verifyAdmin(req: Request): Promise<boolean> {
-  const address = req.headers.get("x-admin-address")?.toLowerCase();
-  const timestamp = req.headers.get("x-admin-timestamp");
-  const signature = req.headers.get("x-admin-signature");
-
-  if (!address || !timestamp || !signature || address !== OWNER_WALLET) {
-    return false;
-  }
-
-  const ts = Number(timestamp);
-  if (isNaN(ts) || Math.abs(Date.now() - ts) > MAX_AGE_MS) {
-    return false;
-  }
-
-  try {
-    const message = `USDC Directory Admin\nTimestamp: ${ts}`;
-    const recovered = (await recoverMessageAddress({
-      message,
-      signature: signature as `0x${string}`,
-    })).toLowerCase();
-    return recovered === OWNER_WALLET;
-  } catch (e) {
-    console.error("[admin-featured] recover error:", e);
-    return false;
-  }
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
-  }
-
-  if (!(await verifyAdmin(req))) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 403,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
   }
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
+
+  if (!(await verifyAdmin(req, supabase))) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     if (req.method === "GET") {
