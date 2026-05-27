@@ -167,6 +167,7 @@ export async function payBoostFee(
  */
 const CIRCLE_API_ORIGIN = "https://api.circle.com";
 const PROXY_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/circle-proxy`;
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 function withCircleProxy<T>(fn: () => Promise<T>): Promise<T> {
   const originalFetch = globalThis.fetch;
@@ -186,7 +187,11 @@ function withCircleProxy<T>(fn: () => Promise<T>): Promise<T> {
 
       return originalFetch(PROXY_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_ANON}`,
+          apikey: SUPABASE_ANON,
+        },
         body: JSON.stringify({ method, path, body }),
       });
     }
