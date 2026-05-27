@@ -122,12 +122,12 @@ export async function payListingFee(
   const kit = getAppKit();
   const chain = chainString(chainId);
 
-  const result = await kit.send({
+  const result = await withCircleProxy(() => kit.send({
     from: { adapter, chain },
     to: TREASURY_ADDRESS,
     amount,
     token: "USDC",
-  } as Parameters<typeof kit.send>[0]);
+  } as Parameters<typeof kit.send>[0]));
 
   const txHash = extractTxHash(result);
   return { txHash, explorerUrl: getExplorerUrl(chainId, txHash) };
@@ -167,6 +167,7 @@ export async function payBoostFee(
  */
 const CIRCLE_API_ORIGIN = "https://api.circle.com";
 const PROXY_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/circle-proxy`;
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 function withCircleProxy<T>(fn: () => Promise<T>): Promise<T> {
   const originalFetch = globalThis.fetch;
@@ -186,7 +187,11 @@ function withCircleProxy<T>(fn: () => Promise<T>): Promise<T> {
 
       return originalFetch(PROXY_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_ANON}`,
+          apikey: SUPABASE_ANON,
+        },
         body: JSON.stringify({ method, path, body }),
       });
     }
@@ -249,12 +254,12 @@ export async function bridgeUsdc(
 ) {
   const kit = getAppKit();
 
-  const result = await kit.bridge({
+  const result = await withCircleProxy(() => kit.bridge({
     from: { adapter, chain: fromChain },
     to: { adapter, chain: toChain },
     amount,
     token: "USDC",
-  } as Parameters<typeof kit.bridge>[0]);
+  } as Parameters<typeof kit.bridge>[0]));
 
   const txHash = extractTxHash(result);
   return { txHash };
