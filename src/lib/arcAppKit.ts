@@ -77,10 +77,15 @@ function extractTxHash(result: unknown): string {
 export async function createViemAdapterFromWallet(passedProvider?: unknown) {
   const provider = (passedProvider as Record<string, unknown>) || (window as unknown as Record<string, unknown>).ethereum;
 
+  console.debug("[arcAppKit] createViemAdapter", {
+    hasPassed: !!passedProvider,
+    hasFallback: !!(window as unknown as Record<string, unknown>).ethereum,
+    hasRequest: !!(provider && typeof (provider as Record<string, unknown>).request === "function"),
+  });
+
   if (!provider || typeof (provider as Record<string, unknown>).request !== "function") {
     throw new Error(
-      "No valid EIP-1193 provider detected. Make sure you are passing the walletProvider " +
-      "object from useAppKitProvider('eip155'), not a wallet address string."
+      "Wallet provider unavailable. Open the wallet, switch it to Arc Testnet, then try again."
     );
   }
 
@@ -258,17 +263,23 @@ export async function swapViaKit(
   const kit = getAppKit();
   const chain = chainString(chainId);
 
-  const doSwap = () =>
-    kit.swap({
+  console.debug("[swapViaKit] start", { chain, tokenIn, tokenOut, amount });
+
+  const doSwap = async () => {
+    console.debug("[swapViaKit] kit.swap invoked");
+    const r = await kit.swap({
       from: { adapter, chain },
       tokenIn,
       tokenOut,
       amountIn: amount,
       config: { kitKey: ARC_KIT_KEY },
     } as Parameters<typeof kit.swap>[0]);
+    console.debug("[swapViaKit] kit.swap returned", r);
+    return r;
+  };
 
   // Retry the whole swap call once for transient SDK failures
-  // (network blip, quote expiry). Wallet-rejection errors are NOT retried.
+  // (network blip, quote expiry). Wallet-rejection / auth errors are NOT retried.
   const MAX_SWAP_ATTEMPTS = 2;
   let lastErr: unknown;
   for (let attempt = 1; attempt <= MAX_SWAP_ATTEMPTS; attempt++) {
@@ -278,14 +289,22 @@ export async function swapViaKit(
       return { txHash };
     } catch (err) {
       lastErr = err;
-      const msg = String((err as Error)?.message ?? "").toLowerCase();
+      const fullMsg = [
+        (err as { shortMessage?: string })?.shortMessage,
+        (err as Error)?.message,
+        (err as { details?: string })?.details,
+        (err as { cause?: { message?: string } })?.cause?.message,
+      ].filter(Boolean).join(" | ");
+      console.error(`[swapViaKit] attempt ${attempt}/${MAX_SWAP_ATTEMPTS} failed:`, fullMsg, err);
+      const msg = fullMsg.toLowerCase();
       const userRejected =
         msg.includes("user rejected") ||
         msg.includes("user denied") ||
         msg.includes("rejected the request");
-      const isAuth = msg.includes("authorization failed");
-      if (userRejected || isAuth || attempt >= MAX_SWAP_ATTEMPTS) throw err;
-      console.warn(`[swapViaKit] transient failure, retrying (${attempt}/${MAX_SWAP_ATTEMPTS})`, err);
+      const isAuth = msg.includes("authorization failed") || msg.includes("unauthorized");
+      const isProviderMissing = msg.includes("wallet provider unavailable") || msg.includes("no valid eip-1193");
+      if (userRejected || isAuth || isProviderMissing || attempt >= MAX_SWAP_ATTEMPTS) throw err;
+      console.warn(`[swapViaKit] transient failure, retrying in 600ms`);
       await new Promise((r) => setTimeout(r, 600));
     }
   }

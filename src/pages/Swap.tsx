@@ -201,8 +201,8 @@ const Swap = () => {
   return (
     <>
       <SEO
-        title="Swap Tokens on Base"
-        description="Swap tokens on Base Mainnet with low fees and minimal slippage."
+        title={`Swap Tokens on ${chainConfig.name}`}
+        description={`Swap tokens on ${chainConfig.name} with low fees and minimal slippage.`}
         path="/swap"
       />
       <div className="min-h-screen flex flex-col bg-background">
@@ -267,7 +267,7 @@ const Swap = () => {
               <div className="w-full max-w-[460px] rounded-2xl border border-border/60 bg-card/95 backdrop-blur-sm p-5 shadow-xl shadow-black/10 animate-scale-in">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
-                  <h1 className="text-lg font-bold text-foreground">Swap Tokens on Base</h1>
+                  <h1 className="text-lg font-bold text-foreground">Swap Tokens on {chainConfig.shortName}</h1>
                   <div className="flex items-center gap-1">
                     <QuoteTimer active={!!amountOut && payAmountNum > 0} />
                     <SlippagePopover value={slippage} onChange={setSlippage} />
