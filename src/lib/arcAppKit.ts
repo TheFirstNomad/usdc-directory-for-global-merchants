@@ -267,11 +267,29 @@ export async function swapViaKit(
       config: { kitKey: ARC_KIT_KEY },
     } as Parameters<typeof kit.swap>[0]);
 
-  // Always proxy to avoid CORS on any domain
-  const result = await withCircleProxy(doSwap);
-
-  const txHash = extractTxHash(result);
-  return { txHash };
+  // Retry the whole swap call once for transient SDK failures
+  // (network blip, quote expiry). Wallet-rejection errors are NOT retried.
+  const MAX_SWAP_ATTEMPTS = 2;
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= MAX_SWAP_ATTEMPTS; attempt++) {
+    try {
+      const result = await withCircleProxy(doSwap);
+      const txHash = extractTxHash(result);
+      return { txHash };
+    } catch (err) {
+      lastErr = err;
+      const msg = String((err as Error)?.message ?? "").toLowerCase();
+      const userRejected =
+        msg.includes("user rejected") ||
+        msg.includes("user denied") ||
+        msg.includes("rejected the request");
+      const isAuth = msg.includes("authorization failed");
+      if (userRejected || isAuth || attempt >= MAX_SWAP_ATTEMPTS) throw err;
+      console.warn(`[swapViaKit] transient failure, retrying (${attempt}/${MAX_SWAP_ATTEMPTS})`, err);
+      await new Promise((r) => setTimeout(r, 600));
+    }
+  }
+  throw lastErr;
 }
 
 // ── Bridge USDC ─────────────────────────────────────────────────────
