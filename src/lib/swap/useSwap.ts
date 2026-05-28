@@ -196,6 +196,7 @@ export function useSwap({
           userAddress,
         });
         // ── Arc Testnet: Circle App Kit swap ──
+        await ensureArcChain(walletProvider);
         const adapter = await createViemAdapterFromWallet(walletProvider);
         console.debug("[useSwap] adapter ready");
         const result = await swapViaKit(
@@ -204,7 +205,9 @@ export function useSwap({
           tokenIn.symbol,
           tokenOut.symbol,
           amountIn,
+          slippage,
         );
+
         setTxHash(result.txHash as `0x${string}`);
         setSwapState("success");
       } else {
