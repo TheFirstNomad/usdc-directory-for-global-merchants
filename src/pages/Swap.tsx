@@ -201,8 +201,8 @@ const Swap = () => {
   return (
     <>
       <SEO
-        title="Swap Tokens on Base"
-        description="Swap tokens on Base Mainnet with low fees and minimal slippage."
+        title={`Swap Tokens on ${chainConfig.name}`}
+        description={`Swap tokens on ${chainConfig.name} with low fees and minimal slippage.`}
         path="/swap"
       />
       <div className="min-h-screen flex flex-col bg-background">
