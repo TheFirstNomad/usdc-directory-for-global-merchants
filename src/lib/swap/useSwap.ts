@@ -6,7 +6,7 @@ import {
 } from "./contracts";
 import type { TokenInfo } from "./tokens";
 import { WETH_ADDRESS, getPoolFee } from "./tokens";
-import { createViemAdapterFromWallet, swapViaKit, type PaymentChainId } from "@/lib/arcAppKit";
+import { createViemAdapterFromWallet, ensureArcChain, swapViaKit, type PaymentChainId } from "@/lib/arcAppKit";
 import { withAttribution, DATA_SUFFIX } from "@/lib/builderCode";
 
 export type SwapState = "idle" | "approving" | "swapping" | "success" | "error";
