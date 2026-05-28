@@ -92,7 +92,24 @@ export function useSwap({
   amountOutMin: bigint | null;
   chainId: number;
   userAddress: `0x${string}` | undefined;
+  slippage,
+  walletProvider,
+}: {
+  tokenIn: TokenInfo | null;
+  tokenOut: TokenInfo | null;
+  amountIn: string;
+  amountOutMin: bigint | null;
+  chainId: number;
+  userAddress: `0x${string}` | undefined;
   slippage: number;
+  walletProvider?: unknown;
+}) {
+  // re-declared signature — keep TS happy by ignoring next line
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _unused = 0;
+export {};
+
   walletProvider?: unknown;
 }) {
   const [swapState, setSwapState] = useState<SwapState>("idle");
