@@ -379,12 +379,13 @@ export async function bridgeUsdc(
 ) {
   const kit = getAppKit();
 
-  const result = await withCircleProxy(() => kit.bridge({
+  const result = await kit.bridge({
     from: { adapter, chain: fromChain },
     to: { adapter, chain: toChain },
     amount,
     token: "USDC",
-  } as Parameters<typeof kit.bridge>[0]));
+  } as Parameters<typeof kit.bridge>[0]);
+
 
   const txHash = extractTxHash(result);
   return { txHash };
