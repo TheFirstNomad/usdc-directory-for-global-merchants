@@ -59,14 +59,17 @@ const getReadableSwapError = (error: unknown) => {
   ) {
     return "Swap could not be simulated. Recheck the amount, route, and slippage, then try again.";
   }
+  if (normalized.includes("wallet provider unavailable") || normalized.includes("no valid eip-1193")) {
+    return "Wallet provider unavailable on Arc Testnet. Open your wallet, switch to Arc Testnet, then try again.";
+  }
   if (normalized.includes("failed to fetch") || normalized.includes("networkerror") || normalized.includes("cors")) {
-    return "Swap service unavailable — this may be a domain configuration issue. Please contact the admin or try again later.";
+    return "Swap service unavailable — network blocked the request. Disable any ad-blocker for this site and try again.";
   }
   if (normalized.includes("swap service") || normalized.includes("temporarily unavailable") || normalized.includes("authorization failed") || normalized.includes("too many swap")) {
     return normalizedMessage;
   }
-  if (normalized.includes("createswap failed")) {
-    return "Swap request failed after multiple attempts. Please check your network and try again.";
+  if (normalized.includes("createswap failed") || normalized.includes("quote") || normalized.includes("liquidity")) {
+    return normalizedMessage || "Swap quote could not be created. Try a smaller amount, a different pair, or refresh the quote.";
   }
   if (normalized.includes("reverted") || normalized.includes("execution reverted")) {
     return normalizedMessage || "Swap reverted on-chain. Try a smaller amount or refresh the quote.";
