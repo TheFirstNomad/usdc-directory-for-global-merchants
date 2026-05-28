@@ -62,8 +62,11 @@ const getReadableSwapError = (error: unknown) => {
   if (normalized.includes("failed to fetch") || normalized.includes("networkerror") || normalized.includes("cors")) {
     return "Swap service unavailable — this may be a domain configuration issue. Please contact the admin or try again later.";
   }
+  if (normalized.includes("swap service") || normalized.includes("temporarily unavailable") || normalized.includes("authorization failed") || normalized.includes("too many swap")) {
+    return normalizedMessage;
+  }
   if (normalized.includes("createswap failed")) {
-    return "Swap request failed. Ensure your wallet is connected to the correct network and try again.";
+    return "Swap request failed after multiple attempts. Please check your network and try again.";
   }
   if (normalized.includes("reverted") || normalized.includes("execution reverted")) {
     return normalizedMessage || "Swap reverted on-chain. Try a smaller amount or refresh the quote.";
