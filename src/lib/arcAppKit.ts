@@ -213,97 +213,89 @@ export async function payBoostFee(
   return payListingFee(adapter, chainId, "5");
 }
 
-// ── Fetch-intercepting proxy for Circle API ────────────────────────
+// ── Global fetch interceptor for Circle API ────────────────────────
 /**
  * The Circle SDK calls `https://api.circle.com/v1/stablecoinKits/*` from
  * the browser, which is blocked by CORS on custom domains.
  *
- * This wrapper temporarily patches `globalThis.fetch` so that any request
- * to `api.circle.com` is transparently routed through our Edge Function
- * (`circle-proxy`). The SDK's signing & on-chain execution stays untouched.
+ * We patch `globalThis.fetch` ONCE at module load so it doesn't matter when
+ * the SDK captured its fetch reference — every Circle API request is
+ * transparently rewritten to our `circle-proxy` edge function.
  */
 const CIRCLE_API_ORIGIN = "https://api.circle.com";
 const PROXY_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/circle-proxy`;
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
-function withCircleProxy<T>(fn: () => Promise<T>): Promise<T> {
-  const originalFetch = globalThis.fetch;
+declare global {
+  // eslint-disable-next-line no-var
+  var __circleProxyInstalled: boolean | undefined;
+}
 
-  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+if (typeof globalThis !== "undefined" && !globalThis.__circleProxyInstalled) {
+  const originalFetch = globalThis.fetch.bind(globalThis);
+
+  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : (input as Request).url;
-
-    if (url.startsWith(CIRCLE_API_ORIGIN)) {
-      const path = new URL(url).pathname + new URL(url).search;
-      const method = init?.method ?? (typeof input !== "string" && !(input instanceof URL) ? (input as Request).method : "GET");
-      let body: unknown;
-      if (init?.body) {
-        try { body = JSON.parse(init.body as string); } catch { body = init.body; }
-      }
-
-      const MAX_ATTEMPTS = 3;
-      let lastErr: unknown;
-      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        try {
-          console.log(`[circle-proxy] ${method} ${path} (attempt ${attempt}/${MAX_ATTEMPTS})`);
-          const res = await originalFetch(PROXY_URL, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${SUPABASE_ANON}`,
-              apikey: SUPABASE_ANON,
-            },
-            body: JSON.stringify({ method, path, body }),
-          });
-
-          if ((res.status >= 500 || res.status === 429) && attempt < MAX_ATTEMPTS) {
-            const delay = 400 * Math.pow(2, attempt - 1);
-            console.warn(`[circle-proxy] ${res.status} from proxy, retrying in ${delay}ms`);
-            await new Promise((r) => setTimeout(r, delay));
-            continue;
-          }
-
-          if (!res.ok) {
-            const text = await res.clone().text().catch(() => "");
-            console.error(`[circle-proxy] ${res.status} ${res.statusText}: ${text}`);
-            if (res.status === 401 || res.status === 403) {
-              throw new Error("Swap service authorization failed. Please refresh the page and try again.");
-            }
-            if (res.status === 429) {
-              throw new Error("Too many swap requests — please wait a moment and retry.");
-            }
-            if (res.status >= 500) {
-              throw new Error("Swap service is temporarily unavailable. Please try again shortly.");
-            }
-          }
-          return res;
-        } catch (err) {
-          lastErr = err;
-          const isNetwork = err instanceof TypeError;
-          if (isNetwork && attempt < MAX_ATTEMPTS) {
-            const delay = 400 * Math.pow(2, attempt - 1);
-            console.warn(`[circle-proxy] network error, retrying in ${delay}ms`, err);
-            await new Promise((r) => setTimeout(r, delay));
-            continue;
-          }
-          throw err;
-        }
-      }
-      throw lastErr ?? new Error("Swap service unreachable. Please check your connection and try again.");
+    if (!url || !url.startsWith(CIRCLE_API_ORIGIN)) {
+      return originalFetch(input as RequestInfo | URL, init);
     }
 
-    return originalFetch(input, init);
+    const u = new URL(url);
+    const path = u.pathname + u.search;
+    const method = init?.method ?? (typeof input !== "string" && !(input instanceof URL) ? (input as Request).method : "GET");
+    let body: unknown;
+    if (init?.body) {
+      try { body = JSON.parse(init.body as string); } catch { body = init.body; }
+    }
+
+    const MAX_ATTEMPTS = 3;
+    let lastErr: unknown;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        console.log(`[circle-proxy] ${method} ${path} (attempt ${attempt}/${MAX_ATTEMPTS})`);
+        const res = await originalFetch(PROXY_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${SUPABASE_ANON}`,
+            apikey: SUPABASE_ANON,
+          },
+          body: JSON.stringify({ method, path, body }),
+        });
+
+        if ((res.status >= 500 || res.status === 429) && attempt < MAX_ATTEMPTS) {
+          const delay = 400 * Math.pow(2, attempt - 1);
+          console.warn(`[circle-proxy] ${res.status} from proxy, retrying in ${delay}ms`);
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
+        if (!res.ok) {
+          const text = await res.clone().text().catch(() => "");
+          console.error(`[circle-proxy] ${res.status} ${res.statusText}: ${text}`);
+        }
+        return res;
+      } catch (err) {
+        lastErr = err;
+        if (err instanceof TypeError && attempt < MAX_ATTEMPTS) {
+          const delay = 400 * Math.pow(2, attempt - 1);
+          console.warn(`[circle-proxy] network error, retrying in ${delay}ms`, err);
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw lastErr ?? new Error("Swap service unreachable. Please check your connection and try again.");
   };
 
-  return fn().finally(() => {
-    globalThis.fetch = originalFetch;
-  });
+  globalThis.__circleProxyInstalled = true;
+  console.debug("[arcAppKit] global circle-proxy fetch interceptor installed");
 }
 
 // ── Swap via App Kit ────────────────────────────────────────────────
 /**
  * Executes a token swap via Circle App Kit.
- * On Arc Testnet, API calls are routed through the circle-proxy Edge Function
- * to bypass CORS. On Base Mainnet, calls go direct (or also proxied).
+ * @param slippage Slippage tolerance in percent (e.g. 0.5 = 0.5%). Default 0.5.
  */
 export async function swapViaKit(
   adapter: Awaited<ReturnType<typeof createViemAdapterFromWallet>>,
@@ -311,11 +303,13 @@ export async function swapViaKit(
   tokenIn: string,
   tokenOut: string,
   amount: string,
+  slippage: number = 0.5,
 ) {
   const kit = getAppKit();
   const chain = chainString(chainId);
+  const slippageBps = Math.max(1, Math.round(slippage * 100));
 
-  console.debug("[swapViaKit] start", { chain, tokenIn, tokenOut, amount });
+  console.debug("[swapViaKit] start", { chain, tokenIn, tokenOut, amount, slippageBps });
 
   const doSwap = async () => {
     console.debug("[swapViaKit] kit.swap invoked");
@@ -324,19 +318,21 @@ export async function swapViaKit(
       tokenIn,
       tokenOut,
       amountIn: amount,
-      config: { kitKey: ARC_KIT_KEY },
+      config: {
+        slippageBps,
+        allowanceStrategy: "approve",
+        kitKey: ARC_KIT_KEY,
+      },
     } as Parameters<typeof kit.swap>[0]);
     console.debug("[swapViaKit] kit.swap returned", r);
     return r;
   };
 
-  // Retry the whole swap call once for transient SDK failures
-  // (network blip, quote expiry). Wallet-rejection / auth errors are NOT retried.
   const MAX_SWAP_ATTEMPTS = 2;
   let lastErr: unknown;
   for (let attempt = 1; attempt <= MAX_SWAP_ATTEMPTS; attempt++) {
     try {
-      const result = await withCircleProxy(doSwap);
+      const result = await doSwap();
       const txHash = extractTxHash(result);
       return { txHash };
     } catch (err) {
@@ -362,6 +358,7 @@ export async function swapViaKit(
   }
   throw lastErr;
 }
+
 
 // ── Bridge USDC ─────────────────────────────────────────────────────
 /**
