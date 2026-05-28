@@ -179,12 +179,13 @@ export async function payListingFee(
   const kit = getAppKit();
   const chain = chainString(chainId);
 
-  const result = await withCircleProxy(() => kit.send({
+  const result = await kit.send({
     from: { adapter, chain },
     to: TREASURY_ADDRESS,
     amount,
     token: "USDC",
-  } as Parameters<typeof kit.send>[0]));
+  } as Parameters<typeof kit.send>[0]);
+
 
   const txHash = extractTxHash(result);
   return { txHash, explorerUrl: getExplorerUrl(chainId, txHash) };
