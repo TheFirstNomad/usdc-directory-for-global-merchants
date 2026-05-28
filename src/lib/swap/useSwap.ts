@@ -6,7 +6,7 @@ import {
 } from "./contracts";
 import type { TokenInfo } from "./tokens";
 import { WETH_ADDRESS, getPoolFee } from "./tokens";
-import { createViemAdapterFromWallet, swapViaKit, type PaymentChainId } from "@/lib/arcAppKit";
+import { createViemAdapterFromWallet, ensureArcChain, swapViaKit, type PaymentChainId } from "@/lib/arcAppKit";
 import { withAttribution, DATA_SUFFIX } from "@/lib/builderCode";
 
 export type SwapState = "idle" | "approving" | "swapping" | "success" | "error";
@@ -84,6 +84,7 @@ export function useSwap({
   amountOutMin,
   chainId,
   userAddress,
+  slippage,
   walletProvider,
 }: {
   tokenIn: TokenInfo | null;
@@ -95,6 +96,7 @@ export function useSwap({
   slippage: number;
   walletProvider?: unknown;
 }) {
+
   const [swapState, setSwapState] = useState<SwapState>("idle");
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const [errorMessage, setErrorMessage] = useState("");
@@ -194,6 +196,7 @@ export function useSwap({
           userAddress,
         });
         // ── Arc Testnet: Circle App Kit swap ──
+        await ensureArcChain(walletProvider);
         const adapter = await createViemAdapterFromWallet(walletProvider);
         console.debug("[useSwap] adapter ready");
         const result = await swapViaKit(
@@ -202,7 +205,9 @@ export function useSwap({
           tokenIn.symbol,
           tokenOut.symbol,
           amountIn,
+          slippage,
         );
+
         setTxHash(result.txHash as `0x${string}`);
         setSwapState("success");
       } else {
@@ -279,7 +284,7 @@ export function useSwap({
       setErrorMessage(getReadableSwapError(err));
       throw err;
     }
-  }, [tokenIn, tokenOut, userAddress, amountInParsed, amountOutMin, amountIn, isNativeIn, isNativeOut, isArc, chainId, sendTransactionAsync, publicClient, walletProvider, recordCalldata]);
+  }, [tokenIn, tokenOut, userAddress, amountInParsed, amountOutMin, amountIn, isNativeIn, isNativeOut, isArc, chainId, sendTransactionAsync, publicClient, walletProvider, slippage, recordCalldata]);
 
   const reset = useCallback(() => {
     setSwapState("idle");
