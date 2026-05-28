@@ -66,13 +66,64 @@ function extractTxHash(result: unknown): string {
   return String(result);
 }
 
+// ── Arc Testnet chain params (for wallet_addEthereumChain) ──────────
+const ARC_TESTNET_HEX = "0x4cf532"; // 5042002
+const ARC_TESTNET_PARAMS = {
+  chainId: ARC_TESTNET_HEX,
+  chainName: "Arc Testnet",
+  nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
+  rpcUrls: ["https://rpc.testnet.arc.network"],
+  blockExplorerUrls: ["https://testnet.arcscan.app"],
+};
+
+/**
+ * Ensure the connected wallet is on Arc Testnet. Prompts the user to switch,
+ * adding the chain first if the wallet doesn't know about it.
+ */
+export async function ensureArcChain(passedProvider?: unknown): Promise<void> {
+  const provider = (passedProvider as { request?: (a: { method: string; params?: unknown[] }) => Promise<unknown> })
+    || (window as unknown as { ethereum?: { request: (a: { method: string; params?: unknown[] }) => Promise<unknown> } }).ethereum;
+  if (!provider || typeof provider.request !== "function") {
+    throw new Error("Wallet provider unavailable. Open the wallet and try again.");
+  }
+  try {
+    const current = (await provider.request({ method: "eth_chainId" })) as string;
+    if (current?.toLowerCase() === ARC_TESTNET_HEX) {
+      console.debug("[arcAppKit] ensureArcChain → already on Arc");
+      return;
+    }
+  } catch (e) {
+    console.debug("[arcAppKit] eth_chainId failed (continuing)", e);
+  }
+  try {
+    await provider.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: ARC_TESTNET_HEX }],
+    });
+    console.debug("[arcAppKit] ensureArcChain → switched");
+  } catch (err: unknown) {
+    const code = (err as { code?: number })?.code;
+    // 4902 = unrecognized chain; some wallets use -32603
+    if (code === 4902 || code === -32603) {
+      console.debug("[arcAppKit] adding Arc Testnet to wallet");
+      await provider.request({
+        method: "wallet_addEthereumChain",
+        params: [ARC_TESTNET_PARAMS],
+      });
+      await provider.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: ARC_TESTNET_HEX }],
+      });
+      console.debug("[arcAppKit] ensureArcChain → added & switched");
+    } else {
+      throw err;
+    }
+  }
+}
+
 // ── Create Viem Adapter from browser wallet ─────────────────────────
 /**
  * Creates a Circle-compatible Viem adapter from an EIP-1193 provider.
- *
- * @param passedProvider - The EIP-1193 provider object from Reown's
- *   `useAppKitProvider('eip155')`. **Must be a provider object, not an address string.**
- * @throws If no provider is available.
  */
 export async function createViemAdapterFromWallet(passedProvider?: unknown) {
   const provider = (passedProvider as Record<string, unknown>) || (window as unknown as Record<string, unknown>).ethereum;
@@ -99,6 +150,7 @@ export async function createViemAdapterFromWallet(passedProvider?: unknown) {
     capabilities: { addressContext: "user-controlled" },
   } as Parameters<typeof createViemAdapterFromProvider>[0]);
 }
+
 
 // ── Singleton AppKit instance ────────────────────────────────────────
 let _kit: AppKit | null = null;
