@@ -183,17 +183,55 @@ function withCircleProxy<T>(fn: () => Promise<T>): Promise<T> {
         try { body = JSON.parse(init.body as string); } catch { body = init.body; }
       }
 
-      console.log(`[circle-proxy] Intercepting ${method} ${path}`);
+      const MAX_ATTEMPTS = 3;
+      let lastErr: unknown;
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+          console.log(`[circle-proxy] ${method} ${path} (attempt ${attempt}/${MAX_ATTEMPTS})`);
+          const res = await originalFetch(PROXY_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${SUPABASE_ANON}`,
+              apikey: SUPABASE_ANON,
+            },
+            body: JSON.stringify({ method, path, body }),
+          });
 
-      return originalFetch(PROXY_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${SUPABASE_ANON}`,
-          apikey: SUPABASE_ANON,
-        },
-        body: JSON.stringify({ method, path, body }),
-      });
+          if ((res.status >= 500 || res.status === 429) && attempt < MAX_ATTEMPTS) {
+            const delay = 400 * Math.pow(2, attempt - 1);
+            console.warn(`[circle-proxy] ${res.status} from proxy, retrying in ${delay}ms`);
+            await new Promise((r) => setTimeout(r, delay));
+            continue;
+          }
+
+          if (!res.ok) {
+            const text = await res.clone().text().catch(() => "");
+            console.error(`[circle-proxy] ${res.status} ${res.statusText}: ${text}`);
+            if (res.status === 401 || res.status === 403) {
+              throw new Error("Swap service authorization failed. Please refresh the page and try again.");
+            }
+            if (res.status === 429) {
+              throw new Error("Too many swap requests — please wait a moment and retry.");
+            }
+            if (res.status >= 500) {
+              throw new Error("Swap service is temporarily unavailable. Please try again shortly.");
+            }
+          }
+          return res;
+        } catch (err) {
+          lastErr = err;
+          const isNetwork = err instanceof TypeError;
+          if (isNetwork && attempt < MAX_ATTEMPTS) {
+            const delay = 400 * Math.pow(2, attempt - 1);
+            console.warn(`[circle-proxy] network error, retrying in ${delay}ms`, err);
+            await new Promise((r) => setTimeout(r, delay));
+            continue;
+          }
+          throw err;
+        }
+      }
+      throw lastErr ?? new Error("Swap service unreachable. Please check your connection and try again.");
     }
 
     return originalFetch(input, init);
