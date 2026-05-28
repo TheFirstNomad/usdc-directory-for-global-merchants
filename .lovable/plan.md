@@ -1,43 +1,60 @@
-## Deep audit: Arc Testnet swap failure
+## Goal
 
-The error "Swap request failed. Ensure your wallet is connected to the correct network and try again." is being thrown, but the **circle-proxy edge function shows zero recent invocations** — meaning the failure happens *before* any request ever reaches Circle. The retry layer we added last week is masking the real upstream cause.
+Make `/swap` on Arc Testnet succeed end-to-end without the generic "Swap request failed" error.
 
-### Diagnosis goals
+## What I found
 
-Walk every layer of the Arc swap pipeline, isolate where execution stops, and fix it. The five candidates, in order of likelihood:
+I inspected `@circle-fin/app-kit@1.4.1` (current installed version) and our `arcAppKit.ts`. Three real bugs are stacking on top of each other:
 
-1. **Adapter creation** — `createViemAdapterFromWallet(walletProvider)` may be throwing because Reown's `useAppKitProvider('eip155')` returns `undefined` on Arc Testnet (Arc isn't a registered EVM chain in the AppKit config, so the provider hook may return nothing even though the wallet is "connected").
-2. **Kit signature mismatch** — `@circle-fin/app-kit@^1.3.0` may have changed the `kit.swap()` payload shape. We currently pass `{ tokenIn: "USDC", tokenOut: "EURC", amountIn, config: { kitKey } }`. The SDK might now require token addresses, a different `chain` enum value, or no inner `config` block.
-3. **Kit key invalid/revoked** — `VITE_ARC_KIT_KEY` may have expired or been rotated. The proxy returns 500 instantly in that case but we never see it because step 1 or 2 fails first.
-4. **Proxy auth (the previous fix)** — `withCircleProxy` adds `Authorization: Bearer <anon>` + `apikey`. If the publishable key was rotated, every proxied call 401s. But this would still produce a `[circle-proxy]` log line, which we don't see.
-5. **Hardcoded UI string** — the card says "Swap Tokens on Base" even on Arc; this is just a cosmetic SEO/heading bug, unrelated to the failure, but I'll fix it while I'm in the file.
+1. **`globalThis.fetch` patch is racey.** `withCircleProxy` swaps `globalThis.fetch` only for the duration of `kit.swap()`, but the SDK builds its HTTP client once at construction time and may hold its own reference to the original `fetch`. When that happens, the proxy is bypassed, the browser hits `api.circle.com` directly, CORS blocks it, and the SDK throws a generic network error — which matches what we see: zero `circle-proxy` invocations in the edge logs even though the user clicked Swap.
 
-### Investigation steps
+2. **Wallet chain mismatch.** We skip the `wrongChain` check on Arc (`src/pages/Swap.tsx:61`) because wagmi can't auto-switch, but Reown's `useAppKitProvider("eip155")` returns the EIP-1193 provider for whatever EVM chain the wallet is actually on (usually Base or Ethereum). The Circle SDK then calls `eth_chainId` on that provider, sees it's not `5042002`, and rejects before any HTTP call.
 
-1. Add structured `console.log` checkpoints in `useSwap.swap()` (Arc branch) and in `arcAppKit.swapViaKit`:
-   - `[swap] start` with `{ walletProvider: !!walletProvider, chainId, tokenIn, tokenOut, amount }`
-   - `[swap] adapter ok`
-   - `[swap] kit.swap invoked`
-   - `[swap] kit.swap result` / `[swap] kit.swap error <full err>`
-2. Reproduce the failure in the live preview to capture which checkpoint is the last one printed.
-3. Based on the last checkpoint:
-   - **Stops at `start` with `walletProvider: false`** → fix Web3Provider/AppKit config to register Arc Testnet as an EIP-155 chain so `useAppKitProvider('eip155')` returns the provider object on Arc.
-   - **Stops at `adapter ok`** → SDK call itself rejected. Print the full error and adjust `kit.swap` arguments (likely: pass token *addresses* instead of symbols, or drop the inner `config.kitKey`). Cross-check against `@circle-fin/app-kit` v1.3.0 type definitions in `node_modules`.
-   - **Reaches `kit.swap invoked` but no proxy log** → SDK is throwing during request construction (e.g. unknown token symbol on Arc). Fix the token map for Arc Testnet.
-   - **Proxy is hit but returns 401/500** → rotate/refresh `VITE_ARC_KIT_KEY` and/or `VITE_SUPABASE_PUBLISHABLE_KEY`.
+3. **Payload shape is slightly off for v1.4.x.** The SDK now expects `from.chain` as the `SwapChain` enum value (or its exact string `"Arc_Testnet"` — which we already pass, good) and a `config` block with `slippageBps`. We currently pass only `{ kitKey }`, so the SDK falls back to a default that on Arc Testnet rejects the quote.
 
-### Fixes that will land
+## Fixes
 
-- **`src/lib/arcAppKit.ts`** — add the diagnostic logs above (kept as `console.debug`, not removed), and apply whichever signature/argument fix the diagnosis points to.
-- **`src/lib/swap/useSwap.ts`** — surface the real underlying error message in `errorMessage` instead of the generic "Swap request failed…" so users see something actionable (e.g. "Wallet provider unavailable on Arc Testnet"). Keep the retry layer.
-- **`src/components/Web3Provider.tsx`** — if step 1 is the culprit, register Arc Testnet in the AppKit `networks` array so the EIP-1193 provider is returned on Arc.
-- **`src/pages/Swap.tsx`** — fix the hardcoded "Swap Tokens on Base" heading and the matching `<SEO>` title to reflect the selected chain.
-- **No backend/schema changes.** `circle-proxy` stays as-is unless step 4 turns out to be the cause.
+All changes are frontend-only. No backend, no schema, no new secrets.
 
-### Verification
+### 1. `src/lib/arcAppKit.ts`
 
-1. Reload preview → open `/swap` → switch to Arc Testnet → connect wallet → enter 1 USDC → EURC → click Swap.
-2. Confirm in the browser console: `[swap] start → adapter ok → kit.swap invoked → [circle-proxy] POST /v1/stablecoinKits/swap/createSwap`.
-3. Confirm in edge function logs: a fresh `circle-proxy` invocation with status 200.
-4. Confirm the wallet prompts for signature, the tx is broadcast, and the success modal appears with the ArcScan link.
-5. If any step still fails, the new logs will pinpoint it and a follow-up fix lands in the same area.
+- **Install the proxy globally, once, at module load** (not per-call). Patch `globalThis.fetch` immediately so every request from the SDK to `api.circle.com` is rewritten to our `circle-proxy` edge function, regardless of when the SDK captured its fetch reference. Keep the retry/backoff logic for 5xx/429. This is the single biggest fix.
+- **Add `ensureArcChain(provider)`** that calls `wallet_switchEthereumChain` to `0x4cf532` (5042002) and, if that fails, `wallet_addEthereumChain` with Arc Testnet's RPC + USDC native currency metadata, then retries the switch. Called inside `createViemAdapterFromWallet` before returning the adapter.
+- **Update `swapViaKit` payload** to include `config: { slippageBps: <bps>, allowanceStrategy: 'approve', kitKey: ARC_KIT_KEY }`. Accept a `slippage` arg (default 0.5%) so the UI can pass the user's chosen slippage.
+- Keep all the diagnostic `console.debug` checkpoints so we can confirm the path on the next run.
+
+### 2. `src/lib/swap/useSwap.ts`
+
+- Pass `slippage` from the hook into `swapViaKit`.
+- Tighten the error mapping: when the proxy responds 4xx with a Circle error body, surface Circle's `message` field verbatim instead of overwriting it with the generic line.
+
+### 3. `src/pages/Swap.tsx`
+
+- Before calling `swap()`, await `ensureArcChain(walletProvider)` so the user is prompted to switch/add Arc Testnet in their wallet rather than failing silently. Show a toast on rejection.
+- The cosmetic "Swap Tokens on Base" heading already got fixed last round — no change needed.
+
+### Out of scope
+
+- Bridge (`/bridge`) and listing-fee `kit.send()` already work and aren't touched.
+- Base Mainnet swap path is untouched.
+- No package updates — we stay on `@circle-fin/app-kit@1.4.1`.
+
+## Verification
+
+After the changes, on `/swap`:
+
+1. Switch chain selector to Arc Testnet.
+2. Connect wallet → wallet prompts to add/switch to Arc Testnet → approve.
+3. Enter `1 USDC → EURC`, click Swap.
+4. Expected console trail:
+   ```
+   [arcAppKit] createViemAdapter ok
+   [arcAppKit] ensureArcChain → switched
+   [swapViaKit] kit.swap invoked
+   [circle-proxy] POST /v1/stablecoinKits/swap/createSwap (attempt 1/3)
+   [swapViaKit] kit.swap returned { txHash: 0x... }
+   ```
+5. Expected edge function logs: a fresh `circle-proxy` invocation with status `200`.
+6. Success modal appears with an ArcScan link.
+
+If any step still fails, the new logs name the exact layer and a follow-up fix lands in the same file.
