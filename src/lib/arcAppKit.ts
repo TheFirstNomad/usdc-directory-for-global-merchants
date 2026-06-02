@@ -213,7 +213,6 @@ const PROXY_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 declare global {
-  // eslint-disable-next-line no-var
   var __circleProxyInstalled: boolean | undefined;
 }
 
