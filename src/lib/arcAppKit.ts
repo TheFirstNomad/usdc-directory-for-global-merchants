@@ -10,8 +10,8 @@
  * used separately for Base mainnet price display (read-only).
  */
 
-import { AppKit } from "@circle-fin/app-kit";
 import { createViemAdapterFromProvider } from "@circle-fin/adapter-viem-v2";
+import type { AppKit } from "@circle-fin/app-kit";
 
 // ── Kit Key (from env only — never hardcoded) ────────────────────────
 export const ARC_KIT_KEY: string = import.meta.env.VITE_ARC_KIT_KEY ?? "";
@@ -66,19 +66,13 @@ function extractTxHash(result: unknown): string {
   return String(result);
 }
 
-// ── Arc Testnet chain params (for wallet_addEthereumChain) ──────────
+// ── Arc Testnet chain switch helper ────────────────────────────────
 const ARC_TESTNET_HEX = "0x4cf532"; // 5042002
-const ARC_TESTNET_PARAMS = {
-  chainId: ARC_TESTNET_HEX,
-  chainName: "Arc Testnet",
-  nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
-  rpcUrls: ["https://rpc.testnet.arc.network"],
-  blockExplorerUrls: ["https://testnet.arcscan.app"],
-};
 
 /**
- * Ensure the connected wallet is on Arc Testnet. Prompts the user to switch,
- * adding the chain first if the wallet doesn't know about it.
+ * Ensure the connected wallet is on Arc Testnet without injecting RPC settings.
+ * If the wallet doesn't already know Arc, we stop with a clear user-facing error
+ * instead of trying to add new wallet RPC settings.
  */
 export async function ensureArcChain(passedProvider?: unknown): Promise<void> {
   const provider = (passedProvider as { request?: (a: { method: string; params?: unknown[] }) => Promise<unknown> })
@@ -103,21 +97,10 @@ export async function ensureArcChain(passedProvider?: unknown): Promise<void> {
     console.debug("[arcAppKit] ensureArcChain → switched");
   } catch (err: unknown) {
     const code = (err as { code?: number })?.code;
-    // 4902 = unrecognized chain; some wallets use -32603
     if (code === 4902 || code === -32603) {
-      console.debug("[arcAppKit] adding Arc Testnet to wallet");
-      await provider.request({
-        method: "wallet_addEthereumChain",
-        params: [ARC_TESTNET_PARAMS],
-      });
-      await provider.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: ARC_TESTNET_HEX }],
-      });
-      console.debug("[arcAppKit] ensureArcChain → added & switched");
-    } else {
-      throw err;
+      throw new Error("Arc Testnet is not available in this wallet. Select Arc Testnet in the wallet network list, then try again.");
     }
+    throw err;
   }
 }
 
@@ -153,13 +136,15 @@ export async function createViemAdapterFromWallet(passedProvider?: unknown) {
 
 
 // ── Singleton AppKit instance ────────────────────────────────────────
-let _kit: AppKit | null = null;
+let _kitPromise: Promise<AppKit> | null = null;
 
-function getAppKit(): AppKit {
-  if (!_kit) {
-    _kit = new AppKit({ kitKey: ARC_KIT_KEY } as ConstructorParameters<typeof AppKit>[0]);
+async function getAppKit(): Promise<AppKit> {
+  if (!_kitPromise) {
+    _kitPromise = import("@circle-fin/app-kit").then(({ AppKit }) => (
+      new AppKit({ kitKey: ARC_KIT_KEY } as ConstructorParameters<typeof AppKit>[0])
+    ));
   }
-  return _kit;
+  return _kitPromise;
 }
 
 // ── Pay Listing Fee (kit.send) ──────────────────────────────────────
@@ -176,7 +161,7 @@ export async function payListingFee(
   chainId: PaymentChainId = 5042002,
   amount: string = "10",
 ) {
-  const kit = getAppKit();
+  const kit = await getAppKit();
   const chain = chainString(chainId);
 
   const result = await kit.send({
@@ -228,7 +213,6 @@ const PROXY_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 declare global {
-  // eslint-disable-next-line no-var
   var __circleProxyInstalled: boolean | undefined;
 }
 
@@ -306,7 +290,7 @@ export async function swapViaKit(
   amount: string,
   slippage: number = 0.5,
 ) {
-  const kit = getAppKit();
+  const kit = await getAppKit();
   const chain = chainString(chainId);
   const slippageBps = Math.max(1, Math.round(slippage * 100));
 
@@ -377,7 +361,7 @@ export async function bridgeUsdc(
   toChain: string,
   amount: string,
 ) {
-  const kit = getAppKit();
+  const kit = await getAppKit();
 
   const result = await kit.bridge({
     from: { adapter, chain: fromChain },

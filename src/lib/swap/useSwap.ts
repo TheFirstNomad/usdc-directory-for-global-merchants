@@ -168,7 +168,7 @@ export function useSwap({
         data: attributedApprove,
         account: userAddress,
         chainId,
-      } as any);
+      } as Parameters<typeof sendTransactionAsync>[0]);
       if (publicClient) {
         await publicClient.waitForTransactionReceipt({ hash });
       }
@@ -270,7 +270,7 @@ export function useSwap({
           value: isNativeIn ? amountInParsed : 0n,
           account: userAddress,
           chainId: 8453,
-        } as any);
+        } as Parameters<typeof sendTransactionAsync>[0]);
 
         setTxHash(hash);
         if (publicClient) {

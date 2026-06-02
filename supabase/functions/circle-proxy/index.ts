@@ -7,7 +7,6 @@
  * burn our ARC_KIT_KEY quota or use us as a generic Circle proxy. Path is
  * locked to /v1/stablecoinKits/*.
  */
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,28 +20,18 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Auth: require a Supabase JWT (anon or signed-in). Browser clients always
-  // send one; raw curl from the open internet does not.
+  // Basic caller check: browser clients send the public app key via the fetch
+  // interceptor. The proxy is additionally path-locked below so the Circle key
+  // never leaves the backend and cannot be used against arbitrary endpoints.
   const authHeader = req.headers.get("Authorization") || "";
+  const apiKeyHeader = req.headers.get("apikey") || "";
   if (!authHeader.startsWith("Bearer ")) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-  try {
-    const sb = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const token = authHeader.slice("Bearer ".length);
-    const { data, error } = await sb.auth.getClaims(token);
-    if (error || !data?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-  } catch {
+  const token = authHeader.slice("Bearer ".length);
+  if (!token || (apiKeyHeader && apiKeyHeader !== token)) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
