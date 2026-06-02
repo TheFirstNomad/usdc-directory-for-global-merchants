@@ -36,17 +36,17 @@ Deno.serve(async (req) => {
       // Public app calls use the project anon key. This is allowed because the
       // proxy is path-locked below and the Circle kit key never leaves the server.
     } else {
-    const sb = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      anonKey,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data, error } = await sb.auth.getClaims(token);
-    if (error || !data?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+      const sb = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        anonKey,
+        { global: { headers: { Authorization: authHeader } } },
+      );
+      const { data, error } = await sb.auth.getClaims(token);
+      if (error || !data?.claims) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
   } catch {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
