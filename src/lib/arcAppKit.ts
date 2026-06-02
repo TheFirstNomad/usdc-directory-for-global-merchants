@@ -72,7 +72,7 @@ const ARC_TESTNET_HEX = "0x4cf532"; // 5042002
 /**
  * Ensure the connected wallet is on Arc Testnet without injecting RPC settings.
  * If the wallet doesn't already know Arc, we stop with a clear user-facing error
- * instead of calling wallet_addEthereumChain.
+ * instead of trying to add new wallet RPC settings.
  */
 export async function ensureArcChain(passedProvider?: unknown): Promise<void> {
   const provider = (passedProvider as { request?: (a: { method: string; params?: unknown[] }) => Promise<unknown> })
