@@ -21,26 +21,32 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Auth: require a Supabase JWT (anon or signed-in). Browser clients always
-  // send one; raw curl from the open internet does not.
+  // Auth: require the app's anon key or a signed-in user token. Browser clients
+  // send the anon key through the fetch interceptor; raw open-internet requests do not.
   const authHeader = req.headers.get("Authorization") || "";
   if (!authHeader.startsWith("Bearer ")) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  const token = authHeader.slice("Bearer ".length);
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
   try {
+    if (anonKey && token === anonKey) {
+      // Public app calls use the project anon key. This is allowed because the
+      // proxy is path-locked below and the Circle kit key never leaves the server.
+    } else {
     const sb = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
+      anonKey,
       { global: { headers: { Authorization: authHeader } } },
     );
-    const token = authHeader.slice("Bearer ".length);
     const { data, error } = await sb.auth.getClaims(token);
     if (error || !data?.claims) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
     }
   } catch {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
