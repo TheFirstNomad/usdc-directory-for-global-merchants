@@ -6,7 +6,7 @@ import {
 } from "./contracts";
 import type { TokenInfo } from "./tokens";
 import { WETH_ADDRESS, getPoolFee } from "./tokens";
-import { createViemAdapterFromWallet, ensureArcChain, swapViaKit, type PaymentChainId } from "@/lib/arcAppKit";
+import { createViemAdapterFromWallet, swapViaKit, type PaymentChainId } from "@/lib/arcAppKit";
 import { withAttribution, DATA_SUFFIX } from "@/lib/builderCode";
 
 export type SwapState = "idle" | "approving" | "swapping" | "success" | "error";
@@ -60,7 +60,7 @@ const getReadableSwapError = (error: unknown) => {
     return "Swap could not be simulated. Recheck the amount, route, and slippage, then try again.";
   }
   if (normalized.includes("wallet provider unavailable") || normalized.includes("no valid eip-1193")) {
-    return "Wallet provider unavailable on Arc Testnet. Open your wallet, switch to Arc Testnet, then try again.";
+    return "Wallet provider unavailable. Please open your wallet and try again.";
   }
   if (normalized.includes("failed to fetch") || normalized.includes("networkerror") || normalized.includes("cors")) {
     return "Swap service unavailable — network blocked the request. Disable any ad-blocker for this site and try again.";
@@ -195,10 +195,13 @@ export function useSwap({
           amountIn,
           userAddress,
         });
+        
         // ── Arc Testnet: Circle App Kit swap ──
-        await ensureArcChain(walletProvider);
+        // We no longer force ensureArcChain here to avoid wallet RPC addition/forced switching prompts.
+        // Circle SDK will handle the adapter with the existing provider state.
         const adapter = await createViemAdapterFromWallet(walletProvider);
         console.debug("[useSwap] adapter ready");
+        
         const result = await swapViaKit(
           adapter,
           chainId as PaymentChainId,

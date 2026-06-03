@@ -70,37 +70,30 @@ function extractTxHash(result: unknown): string {
 const ARC_TESTNET_HEX = "0x4cf532"; // 5042002
 
 /**
- * Ensure the connected wallet is on Arc Testnet without injecting RPC settings.
- * If the wallet doesn't already know Arc, we stop with a clear user-facing error
- * instead of trying to add new wallet RPC settings.
+ * Attempt to switch the connected wallet to Arc Testnet.
+ * This is non-blocking and silent: it won't throw an error if the switch fails
+ * or if the network is not found in the wallet.
  */
 export async function ensureArcChain(passedProvider?: unknown): Promise<void> {
   const provider = (passedProvider as { request?: (a: { method: string; params?: unknown[] }) => Promise<unknown> })
     || (window as unknown as { ethereum?: { request: (a: { method: string; params?: unknown[] }) => Promise<unknown> } }).ethereum;
-  if (!provider || typeof provider.request !== "function") {
-    throw new Error("Wallet provider unavailable. Open the wallet and try again.");
-  }
+  
+  if (!provider || typeof provider.request !== "function") return;
+
   try {
     const current = (await provider.request({ method: "eth_chainId" })) as string;
     if (current?.toLowerCase() === ARC_TESTNET_HEX) {
       console.debug("[arcAppKit] ensureArcChain → already on Arc");
       return;
     }
-  } catch (e) {
-    console.debug("[arcAppKit] eth_chainId failed (continuing)", e);
-  }
-  try {
+
     await provider.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: ARC_TESTNET_HEX }],
     });
     console.debug("[arcAppKit] ensureArcChain → switched");
   } catch (err: unknown) {
-    const code = (err as { code?: number })?.code;
-    if (code === 4902 || code === -32603) {
-      throw new Error("Arc Testnet is not available in this wallet. Select Arc Testnet in the wallet network list, then try again.");
-    }
-    throw err;
+    console.warn("[arcAppKit] ensureArcChain soft-failed (continuing):", err);
   }
 }
 
@@ -119,7 +112,7 @@ export async function createViemAdapterFromWallet(passedProvider?: unknown) {
 
   if (!provider || typeof (provider as Record<string, unknown>).request !== "function") {
     throw new Error(
-      "Wallet provider unavailable. Open the wallet, switch it to Arc Testnet, then try again."
+      "Wallet provider unavailable. Please open your wallet and try again."
     );
   }
 
@@ -220,17 +213,30 @@ if (typeof globalThis !== "undefined" && !globalThis.__circleProxyInstalled) {
   const originalFetch = globalThis.fetch.bind(globalThis);
 
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.href : (input as Request).url;
+    let url = "";
+    if (typeof input === "string") url = input;
+    else if (input instanceof URL) url = input.href;
+    else if (input instanceof Request) url = input.url;
+
     if (!url || !url.startsWith(CIRCLE_API_ORIGIN)) {
-      return originalFetch(input as RequestInfo | URL, init);
+      return originalFetch(input, init);
     }
 
     const u = new URL(url);
     const path = u.pathname + u.search;
-    const method = init?.method ?? (typeof input !== "string" && !(input instanceof URL) ? (input as Request).method : "GET");
+    
+    // Extract method and body safely
+    let method = "GET";
     let body: unknown;
-    if (init?.body) {
-      try { body = JSON.parse(init.body as string); } catch { body = init.body; }
+
+    if (init) {
+      method = init.method ?? "GET";
+      if (init.body) {
+        try { body = JSON.parse(init.body as string); } catch { body = init.body; }
+      }
+    } else if (input instanceof Request) {
+      method = input.method;
+      try { body = await input.clone().json(); } catch { /* ignore */ }
     }
 
     const MAX_ATTEMPTS = 3;
