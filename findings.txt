@@ -1,0 +1,12 @@
+Audit Findings:
+
+1. src/lib/arcAppKit.ts:77 (ensureArcChain) throws a hard error if wallet_switchEthereumChain fails (e.g., network not found/4902). This prevents any further action if the user hasn't manually added Arc Testnet.
+2. src/lib/swap/useSwap.ts:199 explicitly awaits ensureArcChain(walletProvider), enforcing the chain switch at the moment of swap execution.
+3. src/pages/Swap.tsx:61 skips the UI-level wrong-chain warning for Arc, which contradicts the forced switch in useSwap.ts, creating a confusing UX.
+4. src/lib/arcAppKit.ts:222 (Global fetch patch) may fail to preserve all Request properties if a Request object is passed to fetch, as it reconstructs the call for the proxy.
+5. Inconsistency: Bridge.tsx and MyListings.tsx do not call ensureArcChain, while useSwap.ts does.
+
+Recommended Plan:
+1. Make ensureArcChain in src/lib/arcAppKit.ts non-blocking/silent (remove the throw).
+2. Remove the ensureArcChain call from src/lib/swap/useSwap.ts to allow the Circle SDK to handle (or fail) chain context naturally.
+3. Refine the fetch interceptor in src/lib/arcAppKit.ts to be more robust.
