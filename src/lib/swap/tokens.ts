@@ -80,6 +80,8 @@ export const POPULAR_PAIRS: Record<number, { from: string; to: string }[]> = {
   5042002: [
     { from: "USDC", to: "EURC" },
     { from: "EURC", to: "USDC" },
+    { from: "USDC", to: "cirBTC" },
+    { from: "cirBTC", to: "USDC" },
   ],
 };
 
