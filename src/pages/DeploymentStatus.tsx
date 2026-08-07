@@ -56,15 +56,6 @@ export default function DeploymentStatus() {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchHistory = useCallback(async () => {
-    const { data } = await supabase
-      .from("deployment_checks" as never)
-      .select("id, checked_at, mount_success, duration_ms, status_code, error")
-      .order("checked_at", { ascending: false })
-      .limit(288); // 24h at 5-min intervals
-    if (data) setHistory(data as unknown as HistoryRow[]);
-  }, []);
-
   const runCheck = useCallback(async () => {
     setLoading(true);
     try {
@@ -72,8 +63,9 @@ export default function DeploymentStatus() {
         body: { url: TARGET_URL },
       });
       if (error) throw error;
-      setResult(data as CheckResult);
-      await fetchHistory();
+      const payload = data as CheckResult & { history?: HistoryRow[] };
+      setResult(payload);
+      if (Array.isArray(payload.history)) setHistory(payload.history);
     } catch (e) {
       setResult({
         url: TARGET_URL,
@@ -85,12 +77,12 @@ export default function DeploymentStatus() {
     } finally {
       setLoading(false);
     }
-  }, [fetchHistory]);
+  }, []);
 
   useEffect(() => {
-    fetchHistory();
     runCheck();
-  }, [runCheck, fetchHistory]);
+  }, [runCheck]);
+
 
   const get = <T,>(camel?: T, snake?: T) => (camel !== undefined ? camel : snake);
   const ok = result ? (get(result.mountSuccess, result.mount_success) === true) : false;
