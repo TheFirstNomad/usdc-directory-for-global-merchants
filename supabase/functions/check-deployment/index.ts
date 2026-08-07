@@ -108,11 +108,19 @@ Deno.serve(async (req) => {
     // Opportunistic cleanup of old rows (caps table growth).
     supabase.rpc("cleanup_deployment_checks").then(() => {}).catch(() => {});
 
+    // History is not client-readable (RLS denies anon/authenticated); serve it here.
+    const { data: history } = await supabase
+      .from("deployment_checks")
+      .select("id, checked_at, mount_success, duration_ms, status_code, error")
+      .order("checked_at", { ascending: false })
+      .limit(288);
+
     return new Response(
       JSON.stringify({
         ...record,
         checkedAt: new Date().toISOString(),
         scripts: scriptMatches.slice(0, 10),
+        history: history ?? [],
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
