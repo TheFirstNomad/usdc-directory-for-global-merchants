@@ -3,10 +3,14 @@
  * the browser, bypassing CORS restrictions the Circle API imposes on
  * custom domains.
  *
- * Hardened: requires a valid Supabase JWT so anonymous internet traffic can't
- * burn our ARC_KIT_KEY quota or use us as a generic Circle proxy. Path is
- * locked to /v1/stablecoinKits/*.
+ * Hardened:
+ *  - the bearer token must be a genuine project-issued token (signature
+ *    verified server-side), not just any string that starts with "Bearer ";
+ *  - per-caller quota so the ARC_KIT_KEY budget cannot be drained;
+ *  - the path is locked to /v1/stablecoinKits/*.
  */
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,28 +18,66 @@ const corsHeaders = {
 };
 
 const CIRCLE_BASE = "https://api.circle.com";
+const RATE_LIMIT_MAX = 60; // requests per window
+const RATE_WINDOW_MS = 60_000;
+
+const unauthorized = () =>
+  new Response(JSON.stringify({ error: "Unauthorized" }), {
+    status: 401,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Basic caller check: browser clients send the public app key via the fetch
-  // interceptor. The proxy is additionally path-locked below so the Circle key
-  // never leaves the backend and cannot be used against arbitrary endpoints.
   const authHeader = req.headers.get("Authorization") || "";
-  const apiKeyHeader = req.headers.get("apikey") || "";
-  if (!authHeader.startsWith("Bearer ")) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  if (!authHeader.startsWith("Bearer ")) return unauthorized();
+  const token = authHeader.slice("Bearer ".length).trim();
+  if (!token) return unauthorized();
+
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  // Verify the token is really issued by this project (signature + expiry).
+  // Both signed-in user tokens and the app's own client token are accepted,
+  // anything forged or from another project is rejected.
+  const anonClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+  );
+  const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
+  if (claimsError || !claimsData?.claims) {
+    console.warn("[circle-proxy] rejected caller: token failed verification");
+    return unauthorized();
   }
-  const token = authHeader.slice("Bearer ".length);
-  if (!token || (apiKeyHeader && apiKeyHeader !== token)) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+
+  // Per-caller quota (subject when signed in, otherwise client IP).
+  const subject =
+    (claimsData.claims as Record<string, unknown>).sub as string | undefined;
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const bucketKey = `circle-proxy:${subject ?? ip}`;
+  const since = new Date(Date.now() - RATE_WINDOW_MS).toISOString();
+
+  const { count } = await admin
+    .from("agent_rate_limits")
+    .select("id", { count: "exact", head: true })
+    .eq("bucket_key", bucketKey)
+    .eq("endpoint", "circle-proxy")
+    .gte("created_at", since);
+
+  if ((count ?? 0) >= RATE_LIMIT_MAX) {
+    return new Response(
+      JSON.stringify({ error: "Too many requests. Please retry in a moment." }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
+  await admin.from("agent_rate_limits").insert({ bucket_key: bucketKey, endpoint: "circle-proxy" });
+
 
   try {
     const kitKey = Deno.env.get("ARC_KIT_KEY");
