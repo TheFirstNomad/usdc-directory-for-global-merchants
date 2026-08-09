@@ -95,8 +95,8 @@
     },
   },
   "overrides": {
-    "uuid": "^14.0.1",
-    "ws": "^8.21.3",
+    "uuid": "14.0.1",
+    "ws": "8.21.3",
   },
   "packages": {
     "@adobe/css-tools": ["@adobe/css-tools@4.4.4", "", {}, "sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg=="],
