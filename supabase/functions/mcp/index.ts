@@ -80,11 +80,25 @@ mcp.tool({
     },
   },
   handler: async (args: { query?: string; category?: string; limit?: number }) => {
-    const limit = Math.min(args.limit ?? 20, 50);
+    const limit = Math.min(Math.max(Number(args.limit ?? 20) || 20, 1), 50);
     let q = supabase.from("partners_public").select("id, name, description, website, categories, region");
-    if (args.category) q = q.contains("categories", [args.category]);
-    if (args.query) q = q.or(`name.ilike.%${args.query}%,description.ilike.%${args.query}%`);
+    if (typeof args.category === "string" && args.category.trim()) {
+      q = q.contains("categories", [args.category.trim().slice(0, 64)]);
+    }
+    if (typeof args.query === "string" && args.query.trim()) {
+      // Strip PostgREST filter metacharacters so raw input can't inject extra clauses/operators.
+      const safe = args.query
+        .trim()
+        .slice(0, 100)
+        .replace(/[,()."'\\*%:]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (safe) {
+        q = q.or(`name.ilike.%${safe}%,description.ilike.%${safe}%`);
+      }
+    }
     const { data } = await q.limit(limit);
+
     return { content: [{ type: "text", text: JSON.stringify({ count: data?.length ?? 0, results: data ?? [] }, null, 2) }] };
   },
 });
