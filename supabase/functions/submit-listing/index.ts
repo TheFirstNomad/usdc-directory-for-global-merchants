@@ -321,12 +321,19 @@ Deno.serve(async (req) => {
     const verification = await verifyPayment(chain, tx_hash, wallet_address);
     if (!verification.ok) return json({ error: `Payment verification failed: ${verification.error}` }, 402);
 
+    // The wallet that actually sent the funds on-chain is the only identity we
+    // trust. A client-supplied wallet_address is never used for authorisation.
+    const verifiedPayer = String(verification.payer ?? "").toLowerCase();
+    if (!verifiedPayer || verifiedPayer === "unknown")
+      return json({ error: "Could not determine the paying wallet from the transaction" }, 402);
+
     if (type === "listing") {
       const { data: newPartner, error: partnerErr } = await supabase
         .from("partners")
         .insert({
           name: company_name, description, website, categories, region, logo_url,
-          wallet_address: walletLower,
+          // Owner = verified on-chain payer, not the client-claimed address.
+          wallet_address: verifiedPayer,
           payment_status: "confirmed",
           payment_id: dedupKey,
           networks: [chain],
