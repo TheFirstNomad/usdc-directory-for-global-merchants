@@ -349,7 +349,7 @@ Deno.serve(async (req) => {
         contact_email: contact_email || "not-provided@usdc.directory",
         website: website || "https://usdc.directory",
         description, categories, region, logo_url,
-        wallet_address: walletLower,
+        wallet_address: verifiedPayer,
         payment_id: dedupKey,
         payment_status: "confirmed",
         status: "approved",
