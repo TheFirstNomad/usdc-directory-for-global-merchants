@@ -46,9 +46,6 @@ serve(async (req) => {
       .single();
 
     if (pErr || !partner) return json({ error: "Listing not found" }, 404);
-    if ((partner.wallet_address || "").toLowerCase() !== String(wallet_address).toLowerCase()) {
-      return json({ error: "Not the listing owner" }, 403);
-    }
 
     // Reject a payment transaction that was already used for a boost
     const { data: existing } = await supabase
@@ -63,6 +60,16 @@ serve(async (req) => {
     if (!verified.ok) {
       console.warn("boost-listing payment verification failed:", verified.error);
       return json({ error: `Payment verification failed: ${verified.error}` }, 402);
+    }
+
+    // Authorisation is bound to the wallet that actually sent the funds on-chain.
+    // The client-supplied wallet_address is never trusted for ownership.
+    const verifiedPayer = String(verified.payer ?? "").toLowerCase();
+    if (!verifiedPayer || verifiedPayer === "unknown") {
+      return json({ error: "Could not determine the paying wallet from the transaction" }, 402);
+    }
+    if ((partner.wallet_address || "").toLowerCase() !== verifiedPayer) {
+      return json({ error: "The paying wallet is not the owner of this listing" }, 403);
     }
 
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();

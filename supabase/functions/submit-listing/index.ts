@@ -305,7 +305,8 @@ Deno.serve(async (req) => {
     const { company_name, description, website, contact_email, categories, region, logo_url, partner_id } = dv.out;
     if (type === "update" && !partner_id) return json({ error: "partner_id required for updates" }, 400);
 
-    const walletLower = wallet_address.toLowerCase();
+    // Note: wallet_address from the client is only a hint (used by the Near
+    // verifier to locate the tx); it is never trusted for authorisation.
     const now = new Date().toISOString();
 
     // Dedupe by tx hash (scoped per chain in case formats overlap)
@@ -321,12 +322,19 @@ Deno.serve(async (req) => {
     const verification = await verifyPayment(chain, tx_hash, wallet_address);
     if (!verification.ok) return json({ error: `Payment verification failed: ${verification.error}` }, 402);
 
+    // The wallet that actually sent the funds on-chain is the only identity we
+    // trust. A client-supplied wallet_address is never used for authorisation.
+    const verifiedPayer = String(verification.payer ?? "").toLowerCase();
+    if (!verifiedPayer || verifiedPayer === "unknown")
+      return json({ error: "Could not determine the paying wallet from the transaction" }, 402);
+
     if (type === "listing") {
       const { data: newPartner, error: partnerErr } = await supabase
         .from("partners")
         .insert({
           name: company_name, description, website, categories, region, logo_url,
-          wallet_address: walletLower,
+          // Owner = verified on-chain payer, not the client-claimed address.
+          wallet_address: verifiedPayer,
           payment_status: "confirmed",
           payment_id: dedupKey,
           networks: [chain],
@@ -342,7 +350,7 @@ Deno.serve(async (req) => {
         contact_email: contact_email || "not-provided@usdc.directory",
         website: website || "https://usdc.directory",
         description, categories, region, logo_url,
-        wallet_address: walletLower,
+        wallet_address: verifiedPayer,
         payment_id: dedupKey,
         payment_status: "confirmed",
         status: "approved",
@@ -360,8 +368,9 @@ Deno.serve(async (req) => {
       .eq("id", partner_id!)
       .maybeSingle();
     if (loadErr || !existing) return json({ error: "Partner not found" }, 404);
-    if ((existing.wallet_address || "").toLowerCase() !== walletLower)
-      return json({ error: "Not the owner of this listing" }, 403);
+    // Authorisation is bound to the wallet that actually paid on-chain.
+    if ((existing.wallet_address || "").toLowerCase() !== verifiedPayer)
+      return json({ error: "The paying wallet is not the owner of this listing" }, 403);
 
     const { error: updateErr } = await supabase
       .from("partners")
@@ -374,7 +383,7 @@ Deno.serve(async (req) => {
       contact_email: contact_email || "not-provided@usdc.directory",
       website: website || "https://usdc.directory",
       description, categories, region,
-      wallet_address: walletLower,
+      wallet_address: verifiedPayer,
       payment_id: dedupKey,
       payment_status: "confirmed",
       status: "approved",
