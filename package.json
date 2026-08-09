@@ -104,7 +104,16 @@
   },
   "overrides": {
     "ws": "^8.21.3",
-    "uuid": "^14.0.1"
+    "uuid": "^14.0.1",
+    "jayson": {
+      "ws": "^8.21.3"
+    },
+    "viem": {
+      "ws": "^8.21.3"
+    },
+    "rpc-websockets": {
+      "uuid": "^14.0.1"
+    }
   },
   "resolutions": {
     "ws": "^8.21.3",
