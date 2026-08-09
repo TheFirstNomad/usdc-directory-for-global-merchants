@@ -490,7 +490,7 @@ Deno.serve(async (req) => {
       if (!gate.ok) return gate.response;
       const { data, error } = await supabase
         .from("partners")
-        .select("id, name, description, website, logo_url, categories, region, networks, wallet_address, verified, boosted_until, created_at")
+        .select("id, name, description, website, logo_url, categories, region, networks, verified, boosted_until, created_at")
         .contains("categories", ["AI Agents"])
         .order("boosted_until", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false })
@@ -506,7 +506,7 @@ Deno.serve(async (req) => {
       if (!gate.ok) return gate.response;
       const { data, error } = await supabase
         .from("partners")
-        .select("id, name, description, website, logo_url, categories, region, networks, wallet_address, verified, boosted_until, created_at")
+        .select("id, name, description, website, logo_url, categories, region, networks, verified, boosted_until, created_at")
         .eq("id", detailMatch[1])
         .maybeSingle();
       if (error) return json({ error: error.message }, 500);
