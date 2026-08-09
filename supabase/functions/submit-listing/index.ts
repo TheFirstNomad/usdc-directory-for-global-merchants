@@ -367,8 +367,9 @@ Deno.serve(async (req) => {
       .eq("id", partner_id!)
       .maybeSingle();
     if (loadErr || !existing) return json({ error: "Partner not found" }, 404);
-    if ((existing.wallet_address || "").toLowerCase() !== walletLower)
-      return json({ error: "Not the owner of this listing" }, 403);
+    // Authorisation is bound to the wallet that actually paid on-chain.
+    if ((existing.wallet_address || "").toLowerCase() !== verifiedPayer)
+      return json({ error: "The paying wallet is not the owner of this listing" }, 403);
 
     const { error: updateErr } = await supabase
       .from("partners")
