@@ -305,7 +305,8 @@ Deno.serve(async (req) => {
     const { company_name, description, website, contact_email, categories, region, logo_url, partner_id } = dv.out;
     if (type === "update" && !partner_id) return json({ error: "partner_id required for updates" }, 400);
 
-    const walletLower = wallet_address.toLowerCase();
+    // Note: wallet_address from the client is only a hint (used by the Near
+    // verifier to locate the tx); it is never trusted for authorisation.
     const now = new Date().toISOString();
 
     // Dedupe by tx hash (scoped per chain in case formats overlap)
