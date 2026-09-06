@@ -290,7 +290,7 @@ const ArcPaymentPanel = ({ type, submissionData, onSuccess }: ArcPaymentPanelPro
         <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
           <p className="text-xs text-foreground/90">
-            <strong>Arc Testnet</strong> is for swap & bridge demos only. Listings require a mainnet — pay 5 USDC on Base (below) or any other chain including Solana, Sui, Near.
+            <strong>Arc Testnet</strong> is for swap demos only. Listings require a mainnet — pay 5 USDC on Base (below) or any other chain including Solana, Sui, Near.
           </p>
         </div>
       )}

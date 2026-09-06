@@ -24,7 +24,6 @@ const SubmitAIAgent = lazy(() => import("./pages/SubmitAIAgent.tsx"));
 const AIAgents = lazy(() => import("./pages/AIAgents.tsx"));
 const ApiDocs = lazy(() => import("./pages/ApiDocs.tsx"));
 const Swap = lazy(() => import("./pages/Swap.tsx"));
-const Bridge = lazy(() => import("./pages/Bridge.tsx"));
 const AdminFeatured = lazy(() => import("./pages/AdminFeatured.tsx"));
 const AdminListings = lazy(() => import("./pages/AdminListings.tsx"));
 const DeploymentStatus = lazy(() => import("./pages/DeploymentStatus.tsx"));
@@ -54,7 +53,6 @@ const App = () => (
               <Route path="/ai-agents" element={<AIAgents />} />
               <Route path="/api-docs" element={<ApiDocs />} />
               <Route path="/swap" element={<Swap />} />
-              <Route path="/bridge" element={<Bridge />} />
               <Route path="/insights" element={<Insights />} />
               <Route path="/merchant/:id" element={<MerchantDetail />} />
               <Route path="/edit/:id" element={<EditListing />} />
