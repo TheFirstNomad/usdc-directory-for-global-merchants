@@ -3,7 +3,6 @@
  *
  * Handles:
  * - kit.send()   – listing payments (testnet + mainnet)
- * - kit.bridge() – cross-chain USDC transfers (testnet)
  * - kit.swap()   – token swaps (testnet + mainnet)
  *
  * All execution goes through Circle App Kit. The Uniswap V3 Quoter is still
@@ -350,35 +349,5 @@ export async function swapViaKit(
   throw lastErr;
 }
 
-
-// ── Bridge USDC ─────────────────────────────────────────────────────
-/**
- * Bridges USDC between chains via Circle's cross-chain transfer protocol.
- *
- * @param adapter   - Viem adapter created by `createViemAdapterFromWallet`.
- * @param fromChain - Source chain string (e.g. "Ethereum_Sepolia", "Arc_Testnet").
- * @param toChain   - Destination chain string.
- * @param amount    - USDC amount as a decimal string.
- * @returns Transaction hash.
- */
-export async function bridgeUsdc(
-  adapter: Awaited<ReturnType<typeof createViemAdapterFromWallet>>,
-  fromChain: string,
-  toChain: string,
-  amount: string,
-) {
-  const kit = await getAppKit();
-
-  const result = await kit.bridge({
-    from: { adapter, chain: fromChain },
-    to: { adapter, chain: toChain },
-    amount,
-    token: "USDC",
-  } as Parameters<typeof kit.bridge>[0]);
-
-
-  const txHash = extractTxHash(result);
-  return { txHash };
-}
 
 export default getAppKit;

@@ -13,7 +13,6 @@ USDC Directory lists merchants, fintechs, exchanges, wallets, infrastructure pro
 - [Submit a Listing](/submit): List your business — 5 USDC on any chain.
 - [Submit an AI Agent](/submit/ai-agent): Self-list an agent — 5 USDC on any chain.
 - [Swap](/swap): Base Mainnet swaps via Circle Arc App Kit.
-- [Bridge](/bridge): Cross-chain USDC via Circle CCTP.
 - [Agent API Docs](/api-docs): Paid API for AI agents (x402 + on-chain USDC).
 
 ## Agent API (paid, x402)

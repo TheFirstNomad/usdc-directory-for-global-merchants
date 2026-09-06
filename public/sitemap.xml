@@ -49,12 +49,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://usdc.directory/bridge</loc>
-    <lastmod>2026-09-06T13:55:41.226Z</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://usdc.directory/map</loc>
     <lastmod>2026-09-06T13:55:41.226Z</lastmod>
     <changefreq>monthly</changefreq>
